@@ -1,0 +1,29 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres:16
+    container_name: posteaze_postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: posteaze_db
+      POSTGRES_USER: posteaze_user
+      POSTGRES_PASSWORD: posteaze_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:alpine
+    container_name: posteaze_redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
+
+# Notes for local development:
+# - Run this with: docker-compose up -d
+# - Access Postgres on localhost:5432
+# - Access Redis on localhost:6379
+# - Run your Go backend directly with: go run main.go
+# - Your React frontend can also be run with: npm run dev
