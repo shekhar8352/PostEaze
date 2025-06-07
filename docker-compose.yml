@@ -1,14 +1,14 @@
 version: '3.8'
 services:
   postgres:
-    image: postgres:16
+    image: postgres:15-alpine
     container_name: posteaze_postgres
     ports:
       - "5432:5432"
     environment:
-      POSTGRES_DB: posteaze_db
-      POSTGRES_USER: posteaze_user
-      POSTGRES_PASSWORD: posteaze_pass
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
