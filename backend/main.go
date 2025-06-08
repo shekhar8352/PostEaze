@@ -12,6 +12,7 @@ import (
 
 	"posteaze-backend/models"
 	"posteaze-backend/pkg/config"
+	"posteaze-backend/routes"
 )
 
 func main() {
@@ -59,11 +60,7 @@ func main() {
 	router := gin.Default()
 
 	// Register routes
-	// authRoutes := router.Group("/api/auth")
-	// {
-	// 	authRoutes.POST("/signup", controllers.SignUp)
-	// 	authRoutes.POST("/login", controllers.Login)
-	// }
+	routes.RegisterRoutes(router)
 
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(200, gin.H{
