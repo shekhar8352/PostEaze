@@ -1,14 +1,17 @@
 package auth
 
 import (
-	"github.com/gin-gonic/gin"
 	"posteaze-backend/controllers"
+	"posteaze-backend/services"
+
+	"github.com/gin-gonic/gin"
 )
 
 func RegisterAuthRoutes(rg *gin.RouterGroup) {
 	auth := rg.Group("/auth")
 
-	authController := controllers.NewAuthController()
+	authService := services.NewAuthService()
+	authController := controllers.NewAuthController(authService)
 
 	auth.POST("/signup", authController.SignupHandler)
 	auth.POST("/login", authController.LoginHandler)

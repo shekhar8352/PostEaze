@@ -29,13 +29,12 @@ type AuthService struct {
 }
 
 func NewAuthService() *AuthService {
-	db := config.GetAppContext().DB
 	return &AuthService{
-		UserRepo: repository.NewUserRepository(db),
+		UserRepo: repository.NewUserRepository(config.GetAppContext().DB),
 	}
 }
 
-func (s *AuthService) Signup(ctx context.Context, params SignupParams) (*models.User, error) {
+func (s *AuthService) Signup(ctx context.Context, params SignupParams) (map[string]interface{}, error) {
 	db := config.GetAppContext().DB
 
 	hashedPassword, err := utils.HashPassword(params.Password)
@@ -66,18 +65,55 @@ func (s *AuthService) Signup(ctx context.Context, params SignupParams) (*models.
 		return tx.Create(user).Error
 	})
 
-	return user, err
+	if err != nil {
+		return nil, err
+	}
+
+	accessToken, err := utils.GenerateAccessToken(user.ID, string(user.UserType))
+	if err != nil {
+		return nil, err
+	}
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]interface{}{
+		"user":          user,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}, nil
 }
 
-func (s *AuthService) Login(ctx context.Context, params LoginParams) (*models.User, error) {
+func (s *AuthService) Login(ctx context.Context, params LoginParams) (map[string]interface{}, error) {
+	utils.Logger.Info("Attempting to login user with email: ", params.Email)
+
 	user, err := s.UserRepo.FindByEmail(ctx, params.Email)
 	if err != nil {
+		utils.Logger.Error("Error finding user by email: ", err)
 		return nil, errors.New("invalid credentials")
 	}
 
 	if !utils.CheckPasswordHash(params.Password, user.Password) {
+		utils.Logger.Error("Error validating password for user with email: ", params.Email)
 		return nil, errors.New("invalid credentials")
 	}
 
-	return user, nil
+	accessToken, err := utils.GenerateAccessToken(user.ID, string(user.UserType))
+	if err != nil {
+		utils.Logger.Error("Error generating access token for user with email: ", params.Email)
+		return nil, err
+	}
+	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		utils.Logger.Error("Error generating refresh token for user with email: ", params.Email)
+		return nil, err
+	}
+
+	utils.Logger.Info("Logged in user successfully: ", user)
+	return map[string]interface{}{
+		"user":          user,
+		"access_token":  accessToken,
+		"refresh_token": refreshToken,
+	}, nil
 }
