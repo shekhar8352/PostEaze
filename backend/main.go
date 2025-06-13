@@ -51,6 +51,7 @@ func main() {
 		&models.User{},
 		&models.Team{},
 		&models.TeamMember{},
+		&models.RefreshToken{},
 	)
 	if err != nil {
 		log.Fatalf("Failed to run migrations: %v", err)
