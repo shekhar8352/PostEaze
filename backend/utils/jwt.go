@@ -67,3 +67,7 @@ func GetUserIDFromToken(tokenStr string) (uuid.UUID, error) {
 	}
 	return claims.UserID, nil
 }
+
+func GetRefreshTokenExpiry() time.Time {
+	return time.Now().Add(7 * 24 * time.Hour)
+}

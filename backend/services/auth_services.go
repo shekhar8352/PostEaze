@@ -26,11 +26,13 @@ type LoginParams struct {
 
 type AuthService struct {
 	UserRepo repository.UserRepository
+	TokenRepo repository.RefreshTokenRepository
 }
 
 func NewAuthService() *AuthService {
 	return &AuthService{
 		UserRepo: repository.NewUserRepository(config.GetAppContext().DB),
+		TokenRepo: repository.NewRefreshTokenRepository(config.GetAppContext().DB),
 	}
 }
 
@@ -64,7 +66,6 @@ func (s *AuthService) Signup(ctx context.Context, params SignupParams) (map[stri
 		}
 		return tx.Create(user).Error
 	})
-
 	if err != nil {
 		return nil, err
 	}
@@ -73,7 +74,18 @@ func (s *AuthService) Signup(ctx context.Context, params SignupParams) (map[stri
 	if err != nil {
 		return nil, err
 	}
+
 	refreshToken, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Store refresh token
+	err = s.TokenRepo.Create(ctx, &models.RefreshToken{
+		UserID:    user.ID,
+		Token:     refreshToken,
+		ExpiresAt: utils.GetRefreshTokenExpiry(), // you can define this as helper
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -84,6 +96,7 @@ func (s *AuthService) Signup(ctx context.Context, params SignupParams) (map[stri
 		"refresh_token": refreshToken,
 	}, nil
 }
+
 
 func (s *AuthService) Login(ctx context.Context, params LoginParams) (map[string]interface{}, error) {
 	utils.Logger.Info("Attempting to login user with email: ", params.Email)
