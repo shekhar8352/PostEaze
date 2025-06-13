@@ -52,3 +52,33 @@ func (a *AuthController) LoginHandler(c *gin.Context) {
 	utils.SendSuccess(c, user)
 	utils.Logger.Info("Logged in user successfully: ", user)
 }
+
+func (a *AuthController) RefreshTokenHandler(c *gin.Context) {
+	var body services.RefreshTokenParams
+	if err := c.ShouldBindJSON(&body); err != nil || body.RefreshToken == "" {
+		utils.SendError(c, http.StatusBadRequest, "Refresh token is required")
+		utils.Logger.Info("Error binding JSON: ", err)
+		return
+	}
+
+	user, err := a.Service.RefreshToken(c.Request.Context(), body.RefreshToken)
+	if err != nil {
+		utils.SendError(c, http.StatusUnauthorized, err.Error())
+		utils.Logger.Info("Error refreshing token: ", err)
+		return
+	}
+
+	utils.SendSuccess(c, user)
+	utils.Logger.Info("Refreshed token successfully: ", user)
+}
+
+func (a *AuthController) LogoutHandler(c *gin.Context) {
+	err := a.Service.Logout(c.Request.Context(), c.GetHeader("Authorization"))
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		utils.Logger.Info("Error logging out user: ", err)
+		return
+	}
+
+	utils.SendSuccess(c, "Logged out successfully")
+}

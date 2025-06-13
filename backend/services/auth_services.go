@@ -24,14 +24,18 @@ type LoginParams struct {
 	Password string `json:"password" binding:"required"`
 }
 
+type RefreshTokenParams struct {
+	RefreshToken string `json:"refresh_token" binding:"required"`
+}
+
 type AuthService struct {
-	UserRepo repository.UserRepository
+	UserRepo  repository.UserRepository
 	TokenRepo repository.RefreshTokenRepository
 }
 
 func NewAuthService() *AuthService {
 	return &AuthService{
-		UserRepo: repository.NewUserRepository(config.GetAppContext().DB),
+		UserRepo:  repository.NewUserRepository(config.GetAppContext().DB),
 		TokenRepo: repository.NewRefreshTokenRepository(config.GetAppContext().DB),
 	}
 }
@@ -97,7 +101,6 @@ func (s *AuthService) Signup(ctx context.Context, params SignupParams) (map[stri
 	}, nil
 }
 
-
 func (s *AuthService) Login(ctx context.Context, params LoginParams) (map[string]interface{}, error) {
 	utils.Logger.Info("Attempting to login user with email: ", params.Email)
 
@@ -129,4 +132,29 @@ func (s *AuthService) Login(ctx context.Context, params LoginParams) (map[string
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 	}, nil
+}
+
+func (s *AuthService) RefreshToken(ctx context.Context, token string) (map[string]string, error) {
+	refreshToken, err := s.TokenRepo.FindValidToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+
+	newAccess, err := utils.GenerateAccessToken(refreshToken.UserID, string(refreshToken.User.UserType))
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]string{
+		"access_token": newAccess,
+	}, nil
+}
+
+func (s *AuthService) Logout(ctx context.Context, refreshToken string) error {
+	err := s.TokenRepo.RevokeAllForUser(ctx, refreshToken)
+	if err != nil {
+		return nil
+	}
+
+	return err
 }
