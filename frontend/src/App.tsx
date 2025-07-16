@@ -1,15 +1,5 @@
-import './App.css'
-import '@mantine/core/styles.css';
+import AppRoutes from './routes';
 
-import { MantineProvider } from '@mantine/core';
+const App = () => <AppRoutes />;
 
-function App() {
-
-  return (
-    <MantineProvider>
-      <h1>PostEaze</h1>
-    </MantineProvider>
-  )
-}
-
-export default App
+export default App;
