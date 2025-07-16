@@ -1,4 +1,4 @@
-import { RouteObject } from 'react-router-dom';
+import type { RouteObject } from 'react-router-dom';
 import SignupPage from './pages/SignupPage';
 
 const authRoutes: RouteObject[] = [
