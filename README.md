@@ -27,7 +27,7 @@ The project is structured as follows:
 ├── backend/ # Go backend
 ├── docker-compose.yml # Multi-container setup
 ├── README.md # Main documentation
-
+```
 
 - Frontend: [`frontend/`](./frontend)
 - Backend: [`backend/`](./backend)
@@ -75,10 +75,12 @@ We follow the **GitFlow** strategy:
 ```bash
 git clone https://github.com/your-username/PostEaze.git
 cd PostEaze
+```
 
 ### 3. Run with Docker
 ```bash
 docker-compose up --build
+```
 
 ### 4. Run without Docker
 ```bash
@@ -88,3 +90,4 @@ go run main.go
 cd frontend
 npm install
 npm run dev
+```
