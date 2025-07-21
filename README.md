@@ -45,12 +45,12 @@ The project is structured as follows:
 ## Branching Strategy
 We follow the **GitFlow** strategy:
 - `main`: Production-ready code
-- `develop`: Ongoing development branch
-- `feature/xyz`: Features branch from `develop`
+- `dev`: Ongoing development branch
+- `feature/xyz`: Features branch from `dev`
 - `hotfix/xyz`: Urgent fixes from `main`
 
 ## Pull Request Protocol
-- Create your branch from `develop` (e.g. `feature/signup-page`)
+- Create your branch from `dev` (e.g. `feature/signup-page`)
 - Rebase frequently to keep your branch up-to-date
 - Ensure all tests (if any) pass before opening a PR
 - Use descriptive PR titles and body
