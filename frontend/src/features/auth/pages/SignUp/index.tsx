@@ -1,6 +1,6 @@
 // src/features/auth/pages/SignupPage.tsx
-import { Paper, Title } from '@mantine/core';
-import SignupForm from '../components/SignupForm';
+import { Paper, Title } from "@mantine/core";
+import SignupForm from "../../components/signUp";
 
 const SignupPage = () => {
   return (
