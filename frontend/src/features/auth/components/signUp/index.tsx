@@ -1,20 +1,25 @@
 // src/features/auth/components/SignupForm.tsx
-import { useFormik } from 'formik';
-import * as Yup from 'yup';
-import { TextInput, PasswordInput, Button, Select } from '@mantine/core';
-import { useAppDispatch } from '@/app/hooks';
-import { signupUser } from '../thunks';
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import { TextInput, PasswordInput, Button, Select } from "@mantine/core";
+import { useAppDispatch } from "@/app/hooks";
+import { signupUser } from "../../thunks";
 
 const SignupForm = () => {
   const dispatch = useAppDispatch();
 
   const formik = useFormik({
-    initialValues: { name: '', email: '', password: '', userType: 'individual' },
+    initialValues: {
+      name: "",
+      email: "",
+      password: "",
+      userType: "individual",
+    },
     validationSchema: Yup.object({
-      name: Yup.string().required('Required'),
-      email: Yup.string().email('Invalid email').required('Required'),
-      password: Yup.string().min(6).required('Required'),
-      userType: Yup.string().oneOf(['individual', 'team']).required('Required'),
+      name: Yup.string().required("Required"),
+      email: Yup.string().email("Invalid email").required("Required"),
+      password: Yup.string().min(6).required("Required"),
+      userType: Yup.string().oneOf(["individual", "team"]).required("Required"),
     }),
     onSubmit: (values) => {
       dispatch(signupUser(values));
@@ -50,11 +55,11 @@ const SignupForm = () => {
         label="User Type"
         name="userType"
         data={[
-          { value: 'individual', label: 'Individual' },
-          { value: 'team', label: 'Team' },
+          { value: "individual", label: "Individual" },
+          { value: "team", label: "Team" },
         ]}
         value={formik.values.userType}
-        onChange={(value) => formik.setFieldValue('userType', value)}
+        onChange={(value) => formik.setFieldValue("userType", value)}
         error={formik.touched.userType && formik.errors.userType}
         mt="sm"
       />
