@@ -6,9 +6,6 @@
 /backend/*.dll
 /backend/*.so
 /backend/*.dylib
-/backend/vendor/
-/backend/go.sum
-/backend/go.mod
 
 # Ignore Go build outputs and dependency cache
 /bin/
