@@ -1,4 +1,3 @@
-// src/features/auth/components/SignupForm.tsx
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { TextInput, PasswordInput, Button, Select } from "@mantine/core";
@@ -34,6 +33,7 @@ const SignupForm = () => {
         value={formik.values.name}
         onChange={formik.handleChange}
         error={formik.touched.name && formik.errors.name}
+        data-testid="name-input"
       />
       <TextInput
         label="Email"
@@ -42,6 +42,7 @@ const SignupForm = () => {
         onChange={formik.handleChange}
         error={formik.touched.email && formik.errors.email}
         mt="sm"
+        data-testid="email-input"
       />
       <PasswordInput
         label="Password"
@@ -50,6 +51,7 @@ const SignupForm = () => {
         onChange={formik.handleChange}
         error={formik.touched.password && formik.errors.password}
         mt="sm"
+        data-testid="password-input"
       />
       <Select
         label="User Type"
@@ -62,8 +64,9 @@ const SignupForm = () => {
         onChange={(value) => formik.setFieldValue("userType", value)}
         error={formik.touched.userType && formik.errors.userType}
         mt="sm"
+        data-testid="user-type-select"
       />
-      <Button fullWidth type="submit" mt="md">
+      <Button fullWidth type="submit" mt="md" data-testid="signup-button">
         Sign Up
       </Button>
     </form>
