@@ -31,4 +31,6 @@ const (
 	DatabaseMaxIdleConnectionsConfigKey             = "maxIdleConnections"
 	DatabaseMaxConnectionLifetimeInSecondsConfigKey = "maxConnectionLifetimeInSeconds"
 	DatabaseMaxConnectionIdleTimeInSecondsConfigKey = "maxConnectionIdleTimeInSeconds"
+
+	APIGetCatsFactConfigKey = "getCatsFact"
 )

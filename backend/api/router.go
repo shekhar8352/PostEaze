@@ -28,7 +28,6 @@ func Init() error {
 }
 
 func addV1UserAuthRoutes(v1 *route.RouterGroup) {
-	// auth := rg.Group("/auth")
 	authv1 := v1.Group(constants.AuthRoute)
 
 	authv1.POST(constants.SignUpRoute)

@@ -3,11 +3,14 @@ package main
 import (
 	"context"
 	"log"
+	"time"
 
 	"github.com/shekhar8352/PostEaze/api"
 	"github.com/shekhar8352/PostEaze/constants"
 	"github.com/shekhar8352/PostEaze/utils/configs"
+	sql "github.com/shekhar8352/PostEaze/utils/database"
 	"github.com/shekhar8352/PostEaze/utils/flags"
+	httpclient "github.com/shekhar8352/PostEaze/utils/http"
 )
 
 func main() {
@@ -16,6 +19,10 @@ func main() {
 	initConfigs(ctx)
 	initDatabase(ctx)
 	initRouter(ctx)
+	initHttp(ctx)
+	// e.g initS3(ctx)
+	// initCron(ctx)
+	// initRedis(ctx)
 
 	// err := godotenv.Load(".env")
 	// if err != nil {
@@ -82,17 +89,50 @@ func initConfigs(ctx context.Context) {
 		err = configs.InitRelease(flags.Env(), flags.AWSRegion(), configNames...)
 	}
 	if err != nil {
-		log.Fatal(ctx, "error in initialising configs")
+		log.Fatal(ctx, "error in initialising configs", err)
 	}
 }
 
 func initDatabase(ctx context.Context) {
+	// to be done
+	driverName, err := configs.Get().GetString(constants.DatabaseConfig, constants.DatabaseDriverNameConfigKey)
+	if err != nil {
+		log.Fatal(ctx, " failed to get database driver name ", err)
+		return
+	}
+	url, err := configs.Get().GetStringWithEnv(constants.DatabaseConfig, constants.DatabaseURLConfigKey)
+	if err != nil {
+		log.Fatal(ctx, " failed to get database url ", err)
+		return
+	}
+	err = sql.Init(ctx, sql.Config{
+		DriverName: driverName,
+		URL:        url,
+		MaxOpenConnections: int(configs.Get().GetIntD(constants.DatabaseConfig,
+			constants.DatabaseMaxOpenConnectionsConfigKey, 1)),
+		MaxIdleConnections: int(configs.Get().GetIntD(constants.DatabaseConfig,
+			constants.DatabaseMaxIdleConnectionsConfigKey, 0)),
+		ConnectionMaxLifetime: time.Duration(configs.Get().GetIntD(constants.DatabaseConfig,
+			constants.DatabaseMaxConnectionLifetimeInSecondsConfigKey, 30)) * time.Second,
+		ConnectionMaxIdleTime: time.Duration(configs.Get().GetIntD(constants.DatabaseConfig,
+			constants.DatabaseMaxConnectionIdleTimeInSecondsConfigKey, 10)) * time.Second,
+	})
+	if err != nil {
+		log.Fatal(ctx, " failed to initialize database ", err)
+	}
+}
+
+func initHttp(ctx context.Context) {
+	httpclient.InitHttp(
+		httpclient.NewRequestConfig(constants.GetAccountDetailsAPI,
+			configs.Get().GetMapD(constants.APIConfig, constants.APIGetAccountDetailsConfigKey, nil)),
+	)
 
 }
 
 func initRouter(ctx context.Context) {
 	err := api.Init()
 	if err != nil {
-		log.Fatal(ctx, "error in initialising router", err)
+		log.Fatal(ctx, " error in initialising router ", err)
 	}
 }
