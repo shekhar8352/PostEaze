@@ -11,7 +11,6 @@ import (
 )
 
 func Signup(ctx context.Context, params modelsv1.SignupParams) (map[string]interface{}, error) {
-	// db := config.GetAppContext().DB
 
 	hashedPassword, err := utils.HashPassword(params.Password)
 	if err != nil {
@@ -74,15 +73,6 @@ func Signup(ctx context.Context, params modelsv1.SignupParams) (map[string]inter
 		return nil, err
 	}
 
-	// Store refresh token
-	// err = s.TokenRepo.Create(ctx, &models.RefreshToken{
-	// 	UserID:    user.ID,
-	// 	Token:     refreshToken,
-	// 	ExpiresAt: utils.GetRefreshTokenExpiry(), // you can define this as helper
-	// })
-	// if err != nil {
-	// 	return nil, err
-	// }
 	err = repositories.InsertRefreshTokenOfUser(ctx, user.ID, refreshToken, utils.GetRefreshTokenExpiry())
 	if err != nil {
 		return nil, err
@@ -97,12 +87,6 @@ func Signup(ctx context.Context, params modelsv1.SignupParams) (map[string]inter
 
 func Login(ctx context.Context, params modelsv1.LoginParams) (map[string]interface{}, error) {
 	utils.Logger.Info("Attempting to login user with email: ", params.Email)
-
-	// user, err := s.UserRepo.FindByEmail(ctx, params.Email)
-	// if err != nil {
-	// 	utils.Logger.Error("Error finding user by email: ", err)
-	// 	return nil, errors.New("invalid credentials")
-	// }
 	user, err := repositories.GetUserByEmail(ctx, params.Email)
 	if err != nil {
 		return nil, err
@@ -146,10 +130,6 @@ func Login(ctx context.Context, params modelsv1.LoginParams) (map[string]interfa
 }
 
 func RefreshToken(ctx context.Context, token string) (map[string]string, error) {
-	// refreshToken, err := s.TokenRepo.FindValidToken(ctx, token)
-	// if err != nil {
-	// 	return nil, err
-	// }
 	user, err := repositories.GetUserbyToken(ctx, token)
 	if err != nil {
 		return nil, err
@@ -165,10 +145,6 @@ func RefreshToken(ctx context.Context, token string) (map[string]string, error) 
 }
 
 func Logout(ctx context.Context, refreshToken string) error {
-	// err := s.TokenRepo.RevokeAllForUser(ctx, refreshToken)
-	// if err != nil {
-	// 	return nil
-	// }
 	user, err := repositories.GetUserbyToken(ctx, refreshToken)
 	if err != nil {
 		return err
