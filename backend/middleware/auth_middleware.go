@@ -2,8 +2,9 @@ package middleware
 
 import (
 	"net/http"
-	"posteaze-backend/utils"
 	"strings"
+
+	"github.com/shekhar8352/PostEaze/utils"
 
 	"github.com/gin-gonic/gin"
 )
