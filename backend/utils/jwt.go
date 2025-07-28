@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/google/uuid"
+	"github.com/shekhar8352/PostEaze/constants"
 )
 
 var (
@@ -14,12 +14,12 @@ var (
 )
 
 type JWTClaims struct {
-	UserID uuid.UUID `json:"user_id"`
-	Role   string    `json:"role"`
+	UserID string `json:"user_id"`
+	Role   string `json:"role"`
 	jwt.RegisteredClaims
 }
 
-func GenerateAccessToken(userID uuid.UUID, role string) (string, error) {
+func GenerateAccessToken(userID string, role string) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
 		Role:   role,
@@ -32,7 +32,7 @@ func GenerateAccessToken(userID uuid.UUID, role string) (string, error) {
 	return token.SignedString(accessSecret)
 }
 
-func GenerateRefreshToken(userID uuid.UUID) (string, error) {
+func GenerateRefreshToken(userID string) (string, error) {
 	claims := JWTClaims{
 		UserID: userID,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -60,10 +60,10 @@ func ParseToken(tokenStr string, isRefresh bool) (*JWTClaims, error) {
 	return nil, err
 }
 
-func GetUserIDFromToken(tokenStr string) (uuid.UUID, error) {
+func GetUserIDFromToken(tokenStr string) (string, error) {
 	claims, err := ParseToken(tokenStr, false)
 	if err != nil {
-		return uuid.Nil, err
+		return constants.Empty, err
 	}
 	return claims.UserID, nil
 }

@@ -12,7 +12,7 @@ const (
 	DefaultPort           = 8080
 	BaseConfigPathKey     = "base-config-path"
 	BaseConfigPathUsage   = "path to configs directory"
-	DefaultBaseConfigPath = "resources/configs/local"
+	DefaultBaseConfigPath = "resources/configs/dev"
 	EnvKey                = "ENV"
 	AWSRegionKey          = "AWS_REGION"
 )
