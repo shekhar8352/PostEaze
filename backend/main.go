@@ -1,86 +1,73 @@
 package main
 
 import (
-	"context"
+	"fmt"
 	"log"
-	"time"
+	"os"
 
-	_ "github.com/lib/pq"
-	"github.com/shekhar8352/PostEaze/api"
-	"github.com/shekhar8352/PostEaze/constants"
-	"github.com/shekhar8352/PostEaze/utils/configs"
-	sql "github.com/shekhar8352/PostEaze/utils/database"
-	"github.com/shekhar8352/PostEaze/utils/env"
-	"github.com/shekhar8352/PostEaze/utils/flags"
-	httpclient "github.com/shekhar8352/PostEaze/utils/http"
+	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+
+	"posteaze-backend/models"
+	"posteaze-backend/pkg/config"
+	"posteaze-backend/routes"
 )
 
 func main() {
-	// this main function initializes all the services required to run the application e.g database , router , configs , redis etc
-	ctx := context.Background()
-	initEnv()
-	initConfigs(ctx)
-	initDatabase(ctx)
-	initRouter(ctx)
-	initHttp(ctx)
-}
-func initEnv() {
-	env.InitEnv()
-}
-func initConfigs(ctx context.Context) {
-	var err error
-	configNames := []string{constants.APIConfig, constants.ApplicationConfig, constants.DatabaseConfig}
-	if flags.Mode() == constants.DevMode {
-		err = configs.InitDev(flags.BaseConfigPath(), configNames...)
-	} else if flags.Mode() == constants.ReleaseMode {
-		err = configs.InitRelease(flags.Env(), flags.AWSRegion(), configNames...)
-	}
+	err := godotenv.Load(".env")
 	if err != nil {
-		log.Fatal(ctx, "error in initialising configs", err)
+		log.Fatalf("Error loading .env file: %s", err)
 	}
-}
 
-func initDatabase(ctx context.Context) {
-	// to be done
-	driverName, err := configs.Get().GetString(constants.DatabaseConfig, constants.DatabaseDriverNameConfigKey)
-	if err != nil {
-		log.Fatal(ctx, " failed to get database driver name ", err)
-		return
+	port := os.Getenv("PORT")
+	dbUser := os.Getenv("POSTGRES_USER")
+	dbPass := os.Getenv("POSTGRES_PASSWORD")
+	dbName := os.Getenv("POSTGRES_DB")
+	host := os.Getenv("POSTGRES_HOST")
+	if host == "" {
+		host = "localhost"
 	}
-	urlString, err := configs.Get().GetString(constants.DatabaseConfig, constants.DatabaseURLConfigKey)
-	if err != nil {
-		log.Fatal(ctx, " failed to get database url ", err)
-		return
-	}
-	url := env.ApplyEnvironmentToString(urlString)
-	err = sql.Init(ctx, sql.Config{
-		DriverName: driverName,
-		URL:        url,
-		MaxOpenConnections: int(configs.Get().GetIntD(constants.DatabaseConfig,
-			constants.DatabaseMaxOpenConnectionsConfigKey, 1)),
-		MaxIdleConnections: int(configs.Get().GetIntD(constants.DatabaseConfig,
-			constants.DatabaseMaxIdleConnectionsConfigKey, 0)),
-		ConnectionMaxLifetime: time.Duration(configs.Get().GetIntD(constants.DatabaseConfig,
-			constants.DatabaseMaxConnectionLifetimeInSecondsConfigKey, 30)) * time.Second,
-		ConnectionMaxIdleTime: time.Duration(configs.Get().GetIntD(constants.DatabaseConfig,
-			constants.DatabaseMaxConnectionIdleTimeInSecondsConfigKey, 10)) * time.Second,
-	})
-	if err != nil {
-		log.Fatal(ctx, " failed to initialize database ", err)
-	}
-}
 
-func initHttp(ctx context.Context) {
-	httpclient.InitHttp(
-		httpclient.NewRequestConfig(constants.APIGetCatsFactConfigKey,
-			configs.Get().GetMapD(constants.APIConfig, constants.APIGetCatsFactConfigKey, nil)),
+	if port == "" {
+		log.Println("PORT is not found in the environment variable")
+		port = "8080"
+	}
+
+	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=5432 sslmode=disable TimeZone=Asia/Kolkata", host, dbUser, dbPass, dbName)
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
+	if err != nil {
+		log.Fatalf("Failed to connect to DB: %v", err)
+	}
+
+	// Run extension for UUID generation
+	if err := db.Exec(`CREATE EXTENSION IF NOT EXISTS "pgcrypto"`).Error; err != nil {
+		log.Fatalf("Failed to enable pgcrypto extension: %v", err)
+	}
+
+	// Run DB migrations
+	err = db.AutoMigrate(
+		&models.User{},
+		&models.Team{},
+		&models.TeamMember{},
+		&models.RefreshToken{},
 	)
-
-}
-
-func initRouter(ctx context.Context) {
-	err := api.Init()
 	if err != nil {
-		log.Fatal(ctx, " error in initialising router ", err)
+		log.Fatalf("Failed to run migrations: %v", err)
 	}
+
+	config.InitAppContext(db)
+	router := gin.Default()
+
+	// Register routes
+	routes.RegisterRoutes(router)
+
+	router.GET("/", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "PostEaze backend running with Gin!",
+		})
+	})
+
+	router.Run(":" + port)
 }
