@@ -1,8 +1,9 @@
-import { useRoutes } from 'react-router-dom';
-import { authRoutes } from '@/features/auth';
+import { useRoutes } from "react-router-dom";
+import { authRoutes } from "@/features/auth";
+import { landingRoutes } from "@/features/landing";
 
 const AppRoutes = () => {
-  const routes = [...authRoutes]; // Later add dashboard, posts, etc.
+  const routes = [...authRoutes, ...landingRoutes]; // Later add dashboard, posts, etc.
   return useRoutes(routes);
 };
 
