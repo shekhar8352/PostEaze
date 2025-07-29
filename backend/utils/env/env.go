@@ -4,11 +4,14 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/joho/godotenv"
 )
 
 var envObj map[string]string
 
 func InitEnv() {
+	_ = godotenv.Load()
 	env := os.Environ()
 	envObj = make(map[string]string)
 	for _, e := range env {
