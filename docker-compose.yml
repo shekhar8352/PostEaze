@@ -1,28 +1,79 @@
+version: "3.8"
+
 services:
+  backend:
+    build: ./backend
+    container_name: posteaze-backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    # Remove external port exposure for security
+    expose:
+      - "8080"
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - posteaze
+
+  frontend:
+    build: ./frontend
+    container_name: posteaze-frontend
+    restart: unless-stopped
+    # Remove external port exposure
+    expose:
+      - "80"
+    depends_on:
+      - backend
+    networks:
+      - posteaze
+
   postgres:
-    image: postgres:15-alpine
-    container_name: posteaze_postgres
-    ports:
-      - "5432:5432"
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DB}
+    image: postgres:16
+    container_name: posteaze-postgres
+    restart: unless-stopped
+    env_file:
+      - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-db:/docker-entrypoint-initdb.d  # For initialization scripts
+    ports:
+      - "5432:5432"  # Exposed for team development access
+    networks:
+      - posteaze
 
   redis:
-    image: redis:alpine
-    container_name: posteaze_redis
+    image: redis:7
+    container_name: posteaze-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD}  # Password protection
     ports:
-      - "6379:6379"
+      - "6379:6379"  # Exposed for team development access
+    networks:
+      - posteaze
+
+  caddy:
+    image: caddy:alpine
+    container_name: posteaze-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - posteaze
 
 volumes:
   postgres_data:
+  caddy_data:
+  caddy_config:
 
-# Notes for local development:
-# - Run this with: docker-compose up -d
-# - Access Postgres on localhost:5432
-# - Access Redis on localhost:6379
-# - Run your Go backend directly with: go run main.go
-# - Your React frontend can also be run with: npm run dev
+networks:
+  posteaze:
+    driver: bridge
