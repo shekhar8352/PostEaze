@@ -1,0 +1,48 @@
+# Caddyfile for Development Environment
+dev.posteaze.in {
+    # Serve frontend for root and static assets
+    root * /usr/share/nginx/html
+    
+    # Handle API requests - proxy to backend
+    handle /api/* {
+        reverse_proxy posteaze-backend:8080
+    }
+    
+    # Handle WebSocket connections if needed
+    handle /ws/* {
+        reverse_proxy posteaze-backend:8080
+    }
+    
+    # Serve frontend for all other routes (SPA routing)
+    handle /* {
+        reverse_proxy posteaze-frontend:80
+    }
+    
+    # Development-specific headers (less restrictive)
+    header {
+        # Enable HSTS but shorter duration for dev
+        Strict-Transport-Security max-age=86400;
+        # Allow development tools
+        X-Content-Type-Options nosniff
+        # Remove server info
+        -Server
+        # CORS headers for development (adjust origins as needed)
+        Access-Control-Allow-Origin "*"
+        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
+        Access-Control-Allow-Headers "Authorization, Content-Type"
+    }
+    
+    # Enable compression
+    encode gzip
+    
+    # Development logging (more verbose)
+    log {
+        output file /data/dev-access.log
+        level DEBUG
+    }
+}
+
+# Redirect www to non-www
+www.dev.posteaze.in {
+    redir https://dev.posteaze.in{uri}
+}
