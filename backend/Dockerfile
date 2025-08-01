@@ -16,6 +16,6 @@ COPY . .
 # Build with vendor mode
 RUN go build -mod=vendor -o main .
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["./main"]
