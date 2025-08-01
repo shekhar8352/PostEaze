@@ -9,7 +9,7 @@ services:
       - .env
     # Remove external port exposure for security
     expose:
-      - "8080"
+      - "8000"
     depends_on:
       - postgres
     networks:

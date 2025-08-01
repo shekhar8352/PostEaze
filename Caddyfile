@@ -5,7 +5,7 @@ dev.posteaze.in {
     
     # Handle API requests - proxy to backend
     handle /api/* {
-        reverse_proxy posteaze-backend:8080
+        reverse_proxy posteaze-backend:8000
     }
     
     # Handle WebSocket connections if needed
