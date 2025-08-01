@@ -16,6 +16,7 @@ func Init() error {
 	// )
 
 	s := gin.Default()
+	s.Use(middleware.GinLoggingMiddleware())
 	api := s.Group(constants.ApiRoute)
 	v1 := api.Group(constants.V1Route)
 	{
