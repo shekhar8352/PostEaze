@@ -3,9 +3,8 @@ dev.posteaze.in {
     # Serve frontend for root and static assets
     root * /usr/share/nginx/html
 
-    handle_path /* {
-        try_files {path} /index.html
-        file_server
+    handle /* {
+        reverse_proxy posteaze-frontend:80
     }
 
     # Handle API requests - proxy to backend
