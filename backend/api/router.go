@@ -16,8 +16,8 @@ func Init() error {
 	// )
 
 	s := gin.Default()
-
-	v1 := s.Group(constants.V1Route)
+	api := s.Group(constants.ApiRoute)
+	v1 := api.Group(constants.V1Route)
 	{
 		addV1UserAuthRoutes(v1)
 	}
