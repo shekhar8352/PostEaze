@@ -1,6 +1,7 @@
 package constants
 
 const (
+	ApiRoute     = "/api"
 	V1Route      = "/v1"
 	AuthRoute    = "/auth"
 	SignUpRoute  = "/signup"
