@@ -86,30 +86,30 @@ func Signup(ctx context.Context, params modelsv1.SignupParams) (map[string]inter
 }
 
 func Login(ctx context.Context, params modelsv1.LoginParams) (map[string]interface{}, error) {
-	utils.Logger.Info("Attempting to login user with email: ", params.Email)
+	utils.Logger.Info(ctx, "Attempting to login user with email: %s", params.Email)
 	user, err := repositories.GetUserByEmail(ctx, params.Email)
 	if err != nil {
 		return nil, err
 	}
 	if !utils.CheckPasswordHash(params.Password, user.Password) {
-		utils.Logger.Error("Error validating password for user with email: ", params.Email)
+		utils.Logger.Error(ctx, "Error validating password for user with email: %s", params.Email)
 		return nil, errors.New("invalid credentials")
 	}
 
 	accessToken, err := utils.GenerateAccessToken(user.ID, string(user.UserType))
 	if err != nil {
-		utils.Logger.Error("Error generating access token for user with email: ", params.Email)
+		utils.Logger.Error(ctx, "Error generating access token for user with email: %s", params.Email)
 		return nil, err
 	}
 	refreshToken, err := utils.GenerateRefreshToken(user.ID)
 	if err != nil {
-		utils.Logger.Error("Error generating refresh token for user with email: ", params.Email)
+		utils.Logger.Error(ctx, "Error generating refresh token for user with email: %s", params.Email)
 		return nil, err
 	}
 
 	err = repositories.InsertRefreshTokenOfUser(ctx, user.ID, refreshToken, utils.GetRefreshTokenExpiry())
 	if err != nil {
-		utils.Logger.Error("Error inserting refresh token for user with ID : ", user.ID)
+		utils.Logger.Error(ctx, "Error inserting refresh token for user with ID : %s", user.ID)
 	}
 
 	userDetail := &modelsv1.User{
@@ -121,7 +121,7 @@ func Login(ctx context.Context, params modelsv1.LoginParams) (map[string]interfa
 		UpdatedAt: user.UpdatedAt,
 	}
 
-	utils.Logger.Info("Logged in user successfully: ", user)
+	utils.Logger.Info(ctx, "Logged in user successfully: %s", user)
 	return map[string]interface{}{
 		"user":          userDetail,
 		"access_token":  accessToken,
