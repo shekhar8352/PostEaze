@@ -7,11 +7,11 @@
 set -e  # Exit on any error
 
 # Configuration
-PROJECT_DIR="/home/$(whoami)/posteaze"
-BACKUP_DIR="/home/$(whoami)/backups"
-LOG_FILE="/home/$(whoami)/deploy.log"
+PROJECT_DIR="/root/PostEaze"
+BACKUP_DIR="/root/backups"
+LOG_FILE="/root/deploy.log"
 GIT_REPO="origin"
-GIT_BRANCH="develop"
+GIT_BRANCH="dev"
 COMPOSE_FILE="docker-compose.yml"
 
 # Load environment variables from .env
@@ -33,12 +33,12 @@ error() { echo -e "${RED}[ERROR $(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a 
 warning() { echo -e "${YELLOW}[WARNING $(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"; }
 info() { echo -e "${BLUE}[INFO $(date +'%Y-%m-%d %H:%M:%S')]${NC} $1" | tee -a "$LOG_FILE"; }
 
-check_user() {
-    if [[ $EUID -eq 0 ]]; then
-        error "This script should not be run as root for security reasons"
-        exit 1
-    fi
-}
+# check_user() {
+#     if [[ $EUID -eq 0 ]]; then
+#         error "This script should not be run as root for security reasons"
+#         exit 1
+#     fi
+# }
 
 check_prerequisites() {
     log "Checking prerequisites..."
@@ -241,7 +241,7 @@ main() {
 
     trap 'rollback' ERR
 
-    check_user
+    # check_user
     check_prerequisites
     setup_directories
     check_project_directory
