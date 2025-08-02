@@ -8,4 +8,7 @@ const (
 	LogInRoute   = "/login"
 	RefreshRoute = "/refresh"
 	LogOutRoute  = "/logout"
+	LogRoute     = "/log"
+	LogById      = "/byId/:log_id"
+	LogByDate    = "/byDate/:date"
 )
