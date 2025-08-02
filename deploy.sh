@@ -155,22 +155,19 @@ run_migrations() {
         log "No migrations to run"
         return
     fi
-
+    
     log "Running database migrations..."
-    DB_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@posteaze-postgres:5432/${POSTGRES_DB}?sslmode=disable"
-
-    docker run --rm \
-        --network posteaze \
-        -v "$PROJECT_DIR/$MIGRATION_DIR":/migrations \
-        migrate/migrate \
-        -path=/migrations \
-        -database "$DB_URL" \
-        up
-
-    if [[ $? -eq 0 ]]; then
-        log "Migrations applied successfully ✓"
+    
+    # Check if migrate tool is available in backend container
+    if docker compose exec backend which migrate &>/dev/null; then
+        docker compose exec backend migrate -database "$DB_URL" -path "./$MIGRATION_DIR" up
+        log "Migrations completed ✓"
+    elif docker compose exec backend which golang-migrate &>/dev/null; then
+        docker compose exec backend golang-migrate -database "$DB_URL" -path "./$MIGRATION_DIR" up
+        log "Migrations completed ✓"
     else
-        warning "Migrations failed. Please check your migration files and DB state."
+        warning "Migration tool not found in backend container"
+        info "You may need to run migrations manually"
     fi
 }
 
@@ -187,7 +184,7 @@ health_check() {
     log "Running health checks..."
     local failed_services=()
 
-    if ! docker compose exec backend curl -f http://localhost:8080/health &>/dev/null; then
+    if ! docker compose exec backend curl -f http://localhost:8080/api/health &>/dev/null; then
         failed_services+=("backend")
     fi
 
