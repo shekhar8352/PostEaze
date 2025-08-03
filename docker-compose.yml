@@ -7,9 +7,10 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    # Remove external port exposure for security
     expose:
       - "8000"
+    volumes:
+      - ./backend/logs:/app/logs
     depends_on:
       - postgres
     networks:
@@ -19,7 +20,6 @@ services:
     build: ./frontend
     container_name: posteaze-frontend
     restart: unless-stopped
-    # Remove external port exposure
     expose:
       - "80"
     depends_on:
@@ -35,7 +35,7 @@ services:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d  # For initialization scripts
+      - ./init-db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"  # Exposed for team development access
     networks:
