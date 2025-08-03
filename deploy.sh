@@ -155,15 +155,16 @@ run_migrations() {
         log "No migrations to run"
         return
     fi
-    
+
     log "Running database migrations..."
-    
-    # Check if migrate tool is available in backend container
+    DB_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@posteaze-postgres:5432/${POSTGRES_DB}?sslmode=disable"
+    CONTAINER_PATH="/app/migrations"
+
     if docker compose exec backend which migrate &>/dev/null; then
-        docker compose exec backend migrate -database "$DB_URL" -path "./$MIGRATION_DIR" up
+        docker compose exec backend migrate -database "$DB_URL" -path "$CONTAINER_PATH" up
         log "Migrations completed ✓"
     elif docker compose exec backend which golang-migrate &>/dev/null; then
-        docker compose exec backend golang-migrate -database "$DB_URL" -path "./$MIGRATION_DIR" up
+        docker compose exec backend golang-migrate -database "$DB_URL" -path "$CONTAINER_PATH" up
         log "Migrations completed ✓"
     else
         warning "Migration tool not found in backend container"
