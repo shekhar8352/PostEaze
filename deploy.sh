@@ -185,7 +185,7 @@ health_check() {
     log "Running health checks..."
     local failed_services=()
 
-    if ! docker compose exec backend curl -f http://localhost:8080/api/health &>/dev/null; then
+    if ! docker compose exec backend curl -f https://dev.posteaze.in/api/api/health &>/dev/null; then
         failed_services+=("backend")
     fi
 
