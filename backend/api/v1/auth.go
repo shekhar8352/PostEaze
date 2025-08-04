@@ -24,7 +24,7 @@ func SignupHandler(c *gin.Context) {
 		return
 	}
 
-	utils.SendSuccess(c, user)
+	utils.SendSuccess(c, user, "Signed up successfully")
 }
 
 func LoginHandler(c *gin.Context) {
@@ -42,7 +42,7 @@ func LoginHandler(c *gin.Context) {
 		return
 	}
 
-	utils.SendSuccess(c, user)
+	utils.SendSuccess(c, user, "Logged in successfully")
 	utils.Logger.Info(c.Request.Context(), "Logged in user successfully: %s", user)
 }
 
@@ -61,7 +61,7 @@ func RefreshTokenHandler(c *gin.Context) {
 		return
 	}
 
-	utils.SendSuccess(c, user)
+	utils.SendSuccess(c, user, "Refreshed token successfully")
 	utils.Logger.Info(c.Request.Context(), "Refreshed token successfully: ", user)
 }
 
@@ -73,5 +73,5 @@ func LogoutHandler(c *gin.Context) {
 		return
 	}
 
-	utils.SendSuccess(c, "Logged out successfully")
+	utils.SendSuccess(c, nil, "Logged out successfully")
 }

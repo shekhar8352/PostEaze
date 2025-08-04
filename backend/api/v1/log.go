@@ -26,7 +26,7 @@ func GetLogByIDHandler(c *gin.Context) {
 
 	utils.Logger.Info(c.Request.Context(), "Read log by ID successfully: ", log)
 
-	utils.SendSuccess(c, log)
+	utils.SendSuccess(c, log, "Read log by ID successfully")
 }
 
 func GetLogsByDate(c *gin.Context) {
@@ -49,5 +49,5 @@ func GetLogsByDate(c *gin.Context) {
 		return
 	}
 
-	utils.SendSuccess(c, gin.H{"logs": logs, "total": total})
+	utils.SendSuccess(c, gin.H{"logs": logs, "total": total}, "Read logs by date successfully")
 }
