@@ -37,6 +37,7 @@ docker-compose.override.yml
 # === OS files ===
 .DS_Store
 Thumbs.db
+deploy.sh
 
 # Logs
 *.log
