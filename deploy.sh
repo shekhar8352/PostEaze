@@ -233,6 +233,22 @@ send_notification() {
     log "Deployment $status"
 }
 
+generate_swagger() {
+    log "Generating Swagger docs..."
+    if [[ -d "$PROJECT_DIR/backend" ]]; then
+        cd "$PROJECT_DIR/backend"
+        swag init -g ./api/router.go
+        if [[ $? -eq 0 ]]; then
+            log "Swagger docs generated successfully ✓"
+        else
+            warning "Failed to generate Swagger docs"
+        fi
+        cd "$PROJECT_DIR"  # return to project root
+    else
+        warning "Backend folder not found, skipping Swagger generation"
+    fi
+}
+
 main() {
     log "Starting PostEaze Dev Deployment"
     log "============================================="
@@ -248,6 +264,7 @@ main() {
     backup_app_files
     pull_changes
     check_migrations
+    generate_swagger
     deploy_containers
     run_migrations
     health_check
