@@ -55,7 +55,7 @@ func Init() error {
 	}
 
 	// Swagger endpoint
-	s.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
+	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	// this is a blocking call unless application receives shut down signal
 	// or some error occurs
