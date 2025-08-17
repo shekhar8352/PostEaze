@@ -4,6 +4,9 @@ FROM golang:1.23-alpine
 RUN apk add --no-cache git curl
 RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
 
+# Install swag CLI
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
 # Set working directory
 WORKDIR /app
 
