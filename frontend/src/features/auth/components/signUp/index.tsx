@@ -1,7 +1,7 @@
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { TextInput, PasswordInput, Button, Select } from "@mantine/core";
-import { useAppDispatch } from "@/app/hooks";
+import { useAppDispatch } from "@/app/store/hooks";
 import { signupUser } from "../../thunks";
 
 const SignupForm = () => {
