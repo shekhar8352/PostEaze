@@ -6,6 +6,9 @@ type LogEntry struct {
 	Level     string            `json:"level"`
 	Message   string            `json:"message"`
 	LogID     string            `json:"log_id,omitempty"`
+	File      string            `json:"file,omitempty"`
+	Line      int               `json:"line,omitempty"`
+	Function  string            `json:"function,omitempty"`
 	Method    string            `json:"method,omitempty"`
 	Path      string            `json:"path,omitempty"`
 	Status    int               `json:"status,omitempty"`
