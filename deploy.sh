@@ -233,6 +233,20 @@ send_notification() {
     log "Deployment $status"
 }
 
+generate_swagger() {
+    log "Generating Swagger docs..."
+
+    if docker compose ps backend &>/dev/null; then
+        if docker compose exec backend sh -c "cd /app && swag init -g ./api/router.go"; then
+            log "Swagger docs generated successfully ✓"
+        else
+            warning "Failed to generate Swagger docs inside backend container"
+        fi
+    else
+        warning "Backend container not running, skipping Swagger generation"
+    fi
+}
+
 main() {
     log "Starting PostEaze Dev Deployment"
     log "============================================="
@@ -248,6 +262,7 @@ main() {
     backup_app_files
     pull_changes
     check_migrations
+    generate_swagger
     deploy_containers
     run_migrations
     health_check
