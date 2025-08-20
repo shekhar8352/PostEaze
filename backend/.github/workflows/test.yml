@@ -1,0 +1,467 @@
+name: Backend Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test.yml'
+  pull_request:
+    branches: [ main, develop ]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/test.yml'
+
+env:
+  GO_VERSION: '1.23'
+
+jobs:
+  # Unit Tests
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Run unit tests
+      working-directory: ./backend
+      run: |
+        chmod +x scripts/test.sh
+        ./scripts/test.sh --type unit --coverage --race --parallel --format json > unit_test_results.json
+        
+    - name: Upload unit test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: unit-test-results
+        path: backend/unit_test_results.json
+        
+    - name: Upload unit test coverage
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: unit-coverage
+        path: |
+          backend/coverage.out
+          backend/coverage.html
+
+  # Integration Tests with SQLite
+  integration-tests-sqlite:
+    name: Integration Tests (SQLite)
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Run integration tests (SQLite)
+      working-directory: ./backend
+      run: |
+        chmod +x scripts/test.sh
+        ./scripts/test.sh --type integration --database sqlite --coverage --parallel --format json > integration_sqlite_results.json
+        
+    - name: Upload integration test results (SQLite)
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-sqlite-results
+        path: backend/integration_sqlite_results.json
+        
+    - name: Upload integration test coverage (SQLite)
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-sqlite-coverage
+        path: |
+          backend/coverage.out
+          backend/coverage.html
+
+  # Integration Tests with PostgreSQL
+  integration-tests-postgres:
+    name: Integration Tests (PostgreSQL)
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: password
+          POSTGRES_USER: postgres
+          POSTGRES_DB: postease_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Wait for PostgreSQL
+      run: |
+        until pg_isready -h localhost -p 5432 -U postgres; do
+          echo "Waiting for PostgreSQL..."
+          sleep 2
+        done
+        
+    - name: Run integration tests (PostgreSQL)
+      working-directory: ./backend
+      env:
+        DATABASE_URL: postgres://postgres:password@localhost:5432/postease_test?sslmode=disable
+      run: |
+        chmod +x scripts/test.sh
+        ./scripts/test.sh --type integration --database postgres --coverage --parallel --format json > integration_postgres_results.json
+        
+    - name: Upload integration test results (PostgreSQL)
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-postgres-results
+        path: backend/integration_postgres_results.json
+        
+    - name: Upload integration test coverage (PostgreSQL)
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-postgres-coverage
+        path: |
+          backend/coverage.out
+          backend/coverage.html
+
+  # Benchmark Tests
+  benchmark-tests:
+    name: Benchmark Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Run benchmark tests
+      working-directory: ./backend
+      run: |
+        chmod +x scripts/test.sh
+        ./scripts/test.sh --benchmark --race > benchmark_results.txt
+        
+    - name: Upload benchmark results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: benchmark-results
+        path: backend/benchmark_results.txt
+
+  # Code Quality
+  code-quality:
+    name: Code Quality
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Run go fmt
+      working-directory: ./backend
+      run: |
+        if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
+          echo "Code is not formatted. Please run 'go fmt ./...'"
+          gofmt -s -l .
+          exit 1
+        fi
+        
+    - name: Run go vet
+      working-directory: ./backend
+      run: go vet ./...
+      
+    - name: Install golangci-lint
+      run: |
+        curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.54.2
+        
+    - name: Run golangci-lint
+      working-directory: ./backend
+      run: $(go env GOPATH)/bin/golangci-lint run
+      
+    - name: Install gosec
+      run: go install github.com/securecodewarrior/gosec/v2/cmd/gosec@latest
+      
+    - name: Run gosec
+      working-directory: ./backend
+      run: gosec ./...
+
+  # Coverage Report
+  coverage-report:
+    name: Coverage Report
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests-sqlite]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Run comprehensive coverage
+      working-directory: ./backend
+      run: |
+        chmod +x scripts/test.sh
+        ./scripts/test.sh --coverage --threshold 80 --parallel
+        
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./backend/coverage.out
+        flags: backend
+        name: backend-coverage
+        fail_ci_if_error: true
+        
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report
+        path: |
+          backend/coverage.out
+          backend/coverage.html
+
+  # Test Matrix (Multiple Go versions)
+  test-matrix:
+    name: Test Matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        go-version: ['1.21', '1.22', '1.23']
+        
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ matrix.go-version }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ matrix.go-version }}-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-${{ matrix.go-version }}-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Run tests (Unix)
+      if: runner.os != 'Windows'
+      working-directory: ./backend
+      run: |
+        chmod +x scripts/test.sh
+        ./scripts/test.sh --type unit --short
+        
+    - name: Run tests (Windows)
+      if: runner.os == 'Windows'
+      working-directory: ./backend
+      run: |
+        .\scripts\test.ps1 -Type unit -Short
+
+  # Performance Regression Tests
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: ${{ env.GO_VERSION }}
+        
+    - name: Cache Go modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.cache/go-build
+          ~/go/pkg/mod
+        key: ${{ runner.os }}-go-${{ hashFiles('backend/go.sum') }}
+        restore-keys: |
+          ${{ runner.os }}-go-
+          
+    - name: Install dependencies
+      working-directory: ./backend
+      run: go mod download
+      
+    - name: Run performance tests
+      working-directory: ./backend
+      run: |
+        chmod +x scripts/test.sh
+        ./scripts/test.sh --benchmark > current_benchmarks.txt
+        
+    - name: Compare with baseline (if available)
+      working-directory: ./backend
+      run: |
+        # This would compare with stored baseline benchmarks
+        # Implementation depends on your performance tracking needs
+        echo "Performance comparison would be implemented here"
+        
+    - name: Upload performance results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: performance-results
+        path: backend/current_benchmarks.txt
+
+  # Test Summary
+  test-summary:
+    name: Test Summary
+    runs-on: ubuntu-latest
+    needs: [unit-tests, integration-tests-sqlite, integration-tests-postgres, code-quality]
+    if: always()
+    
+    steps:
+    - name: Download all artifacts
+      uses: actions/download-artifact@v3
+      
+    - name: Generate test summary
+      run: |
+        echo "# Test Execution Summary" > test_summary.md
+        echo "" >> test_summary.md
+        echo "## Test Results" >> test_summary.md
+        echo "- Unit Tests: ${{ needs.unit-tests.result }}" >> test_summary.md
+        echo "- Integration Tests (SQLite): ${{ needs.integration-tests-sqlite.result }}" >> test_summary.md
+        echo "- Integration Tests (PostgreSQL): ${{ needs.integration-tests-postgres.result }}" >> test_summary.md
+        echo "- Code Quality: ${{ needs.code-quality.result }}" >> test_summary.md
+        echo "" >> test_summary.md
+        echo "## Artifacts Generated" >> test_summary.md
+        echo "- Unit test results and coverage" >> test_summary.md
+        echo "- Integration test results and coverage" >> test_summary.md
+        echo "- Benchmark results" >> test_summary.md
+        echo "- Code quality reports" >> test_summary.md
+        
+    - name: Upload test summary
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-summary
+        path: test_summary.md
