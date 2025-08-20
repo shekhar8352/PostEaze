@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -38,7 +39,14 @@ func SearchLogs(query, date, level string) ([]modelsv1.LogEntry, int, error) {
 			continue
 		}
 
-		logs, _, err := ReadAndFilterLogs(logFile, func(entry modelsv1.LogEntry) bool {
+		// Configure options for optimized search operations
+		options := ReadLogsOptions{
+			MaxResults:             5000, // Reasonable limit for search operations
+			ChunkSize:              800,  // Medium chunks for search processing
+			EnableEarlyTermination: true, // Enable early termination for search performance
+		}
+
+		logs, _, err := ReadAndFilterLogsWithOptions(logFile, func(entry modelsv1.LogEntry) bool {
 			// Check if query matches message, path, or other fields
 			if strings.Contains(strings.ToLower(entry.Message), queryLower) ||
 				strings.Contains(strings.ToLower(entry.Path), queryLower) ||
@@ -50,7 +58,7 @@ func SearchLogs(query, date, level string) ([]modelsv1.LogEntry, int, error) {
 				return true
 			}
 			return false
-		})
+		}, options)
 
 		if err != nil {
 			continue
@@ -72,65 +80,72 @@ func ReadLogsByDate(date, level string) ([]modelsv1.LogEntry, int, error) {
 	logDir := GetLogDirectory()
 	logFile := filepath.Join(logDir, fmt.Sprintf("app-%s.log", date))
 
-	return ReadAndFilterLogs(logFile, func(entry modelsv1.LogEntry) bool {
+	// Configure options for date-based log reading
+	options := ReadLogsOptions{
+		MaxResults:             0,    // No limit for date-based searches
+		ChunkSize:              1000, // Larger chunks for date processing
+		EnableEarlyTermination: false, // Don't enable early termination for date searches
+	}
+
+	return ReadAndFilterLogsWithOptions(logFile, func(entry modelsv1.LogEntry) bool {
 		if level != "" && !strings.EqualFold(entry.Level, level) {
 			return false
 		}
 		return true
-	})
+	}, options)
 }
 
-// ReadLogsByLogID reads all logs for a specific log ID (last 3 days)
-func ReadLogsByLogID(logID string) ([]modelsv1.LogEntry, error) {
-	var allLogs []modelsv1.LogEntry
-	logDir := GetLogDirectory()
+// ReadAndFilterLogs reads and filters logs from a file with enhanced error handling and performance optimizations
+func ReadAndFilterLogs(filename string, filter func(modelsv1.LogEntry) bool) ([]modelsv1.LogEntry, int, error) {
+	return ReadAndFilterLogsWithOptions(filename, filter, ReadLogsOptions{})
+}
 
-	// Get last 3 days (including today)
-	dates := GetLast3Days()
-	
-	for _, date := range dates {
-		logFile := filepath.Join(logDir, fmt.Sprintf("app-%s.log", date))
-		
-		if _, err := os.Stat(logFile); os.IsNotExist(err) {
-			continue // Skip if log file doesn't exist
-		}
+// ReadLogsOptions provides configuration options for log reading operations
+type ReadLogsOptions struct {
+	// MaxResults limits the number of results returned (0 = no limit)
+	MaxResults int
+	// ChunkSize defines the number of lines to process in each chunk (0 = use default)
+	ChunkSize int
+	// EnableEarlyTermination allows stopping when MaxResults is reached
+	EnableEarlyTermination bool
+}
 
-		logs, _, err := ReadAndFilterLogs(logFile, func(entry modelsv1.LogEntry) bool {
-			return entry.LogID == logID
-		})
-
-		if err != nil {
-			continue // Skip problematic files
-		}
-
-		allLogs = append(allLogs, logs...)
+// ReadAndFilterLogsWithOptions reads and filters logs from a file with performance optimizations
+func ReadAndFilterLogsWithOptions(filename string, filter func(modelsv1.LogEntry) bool, options ReadLogsOptions) ([]modelsv1.LogEntry, int, error) {
+	// Check if file exists first
+	if _, err := os.Stat(filename); os.IsNotExist(err) {
+		return nil, 0, NewLogFileNotFoundError(filename)
 	}
 
-	// Sort by timestamp
-	sort.Slice(allLogs, func(i, j int) bool {
-		return allLogs[i].Timestamp < allLogs[j].Timestamp
-	})
-
-	return allLogs, nil
-}
-
-// ReadAndFilterLogs reads and filters logs from a file
-func ReadAndFilterLogs(filename string, filter func(modelsv1.LogEntry) bool) ([]modelsv1.LogEntry, int, error) {
 	file, err := os.Open(filename)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, NewLogFileReadError(filename, fmt.Errorf("failed to open file: %w", err))
 	}
-	defer file.Close()
+	// Ensure proper resource cleanup with explicit defer
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			// Log the close error but don't override the main error
+			// Note: We can't use Logger here as it might cause circular dependency
+		}
+	}()
+
+	// Set default chunk size if not specified
+	chunkSize := options.ChunkSize
+	if chunkSize <= 0 {
+		chunkSize = 1000 // Default chunk size for processing
+	}
 
 	var allLogs []modelsv1.LogEntry
+	var skippedLines int
 	scanner := bufio.NewScanner(file)
 
 	// Increase buffer size for large log lines
 	buf := make([]byte, 0, 64*1024)
 	scanner.Buffer(buf, 1024*1024)
 
-	// Regex patterns for parsing different log formats
-	logRegex := regexp.MustCompile(`(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})?)\s+(\w+)\s+(.+)`)
+	// Process logs in chunks for better memory management
+	var currentChunk []string
+	lineCount := 0
 
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
@@ -138,50 +153,108 @@ func ReadAndFilterLogs(filename string, filter func(modelsv1.LogEntry) bool) ([]
 			continue
 		}
 
-		entry := ParseLogLine(line, logRegex)
-		if entry.Timestamp != "" && filter(entry) {
-			allLogs = append(allLogs, entry)
+		currentChunk = append(currentChunk, line)
+		lineCount++
+
+		// Process chunk when it reaches the specified size
+		if len(currentChunk) >= chunkSize {
+			processedLogs, skipped := processLogChunk(currentChunk, filter)
+			allLogs = append(allLogs, processedLogs...)
+			skippedLines += skipped
+
+			// Clear the chunk to free memory
+			currentChunk = currentChunk[:0]
+
+			// Early termination if we have enough results and it's enabled
+			if options.EnableEarlyTermination && options.MaxResults > 0 && len(allLogs) >= options.MaxResults {
+				// Truncate to exact max results
+				if len(allLogs) > options.MaxResults {
+					allLogs = allLogs[:options.MaxResults]
+				}
+				break
+			}
+		}
+	}
+
+	// Process remaining lines in the final chunk
+	if len(currentChunk) > 0 {
+		processedLogs, skipped := processLogChunk(currentChunk, filter)
+		allLogs = append(allLogs, processedLogs...)
+		skippedLines += skipped
+
+		// Apply max results limit if early termination is enabled
+		if options.EnableEarlyTermination && options.MaxResults > 0 && len(allLogs) > options.MaxResults {
+			allLogs = allLogs[:options.MaxResults]
 		}
 	}
 
 	if err := scanner.Err(); err != nil {
-		return nil, 0, err
+		return nil, 0, NewLogFileReadError(filename, fmt.Errorf("error reading file: %w", err))
+	}
+
+	// Log information about skipped lines if any (but don't fail the operation)
+	if skippedLines > 0 {
+		// Note: We can't use Logger here as it might cause circular dependency
+		// The caller should handle logging if needed
 	}
 
 	return allLogs, len(allLogs), nil
 }
 
-// ParseLogLine parses a single log line into LogEntry struct
-func ParseLogLine(line string, regex *regexp.Regexp) modelsv1.LogEntry {
-	matches := regex.FindStringSubmatch(line)
-	if len(matches) < 4 {
-		return modelsv1.LogEntry{
-			Timestamp: time.Now().Format(time.RFC3339),
-			Level:     "UNKNOWN",
-			Message:   line,
-			Extra:     make(map[string]string),
+// processLogChunk processes a chunk of log lines and returns filtered results
+func processLogChunk(lines []string, filter func(modelsv1.LogEntry) bool) ([]modelsv1.LogEntry, int) {
+	var logs []modelsv1.LogEntry
+	var skippedLines int
+
+	for _, line := range lines {
+		entry, err := ParseLogLine(line)
+		if err != nil {
+			// Skip malformed JSON entries and continue processing gracefully
+			skippedLines++
+			continue
+		}
+		
+		// Apply filter if provided, otherwise include all entries
+		if filter == nil || (entry.Timestamp != "" && filter(entry)) {
+			logs = append(logs, entry)
 		}
 	}
 
+	return logs, skippedLines
+}
+
+// ParseLogLine parses a single JSON log line into LogEntry struct
+func ParseLogLine(line string) (modelsv1.LogEntry, error) {
+	// First try to parse as JSON
+	var jsonEntry struct {
+		Timestamp string `json:"timestamp"`
+		LogID     string `json:"log_id"`
+		Level     string `json:"level"`
+		Message   string `json:"message"`
+		File      string `json:"file"`
+		Line      int    `json:"line"`
+		Function  string `json:"function"`
+	}
+
+	if err := json.Unmarshal([]byte(line), &jsonEntry); err != nil {
+		return modelsv1.LogEntry{}, fmt.Errorf("failed to parse JSON log line: %w", err)
+	}
+
+	// Create LogEntry with all JSON fields properly mapped
 	entry := modelsv1.LogEntry{
-		Timestamp: matches[1],
-		Level:     matches[2],
-		Message:   matches[3],
+		Timestamp: jsonEntry.Timestamp,
+		LogID:     jsonEntry.LogID,
+		Level:     jsonEntry.Level,
+		Message:   jsonEntry.Message,
+		File:      jsonEntry.File,
+		Line:      jsonEntry.Line,
+		Function:  jsonEntry.Function,
 		Extra:     make(map[string]string),
 	}
 
-	// Parse additional fields from message
-	message := matches[3]
+	// Parse HTTP request details from message field for backward compatibility
+	message := jsonEntry.Message
 	
-	// Extract LogID - try multiple patterns
-	if logIDMatch := regexp.MustCompile(`LogID:\s*([A-Za-z0-9\-_]+)`).FindStringSubmatch(message); len(logIDMatch) > 1 {
-		entry.LogID = logIDMatch[1]
-	} else if logIDMatch := regexp.MustCompile(`logid[:\s]+([A-Za-z0-9\-_]+)`).FindStringSubmatch(strings.ToLower(message)); len(logIDMatch) > 1 {
-		entry.LogID = logIDMatch[1]
-	} else if logIDMatch := regexp.MustCompile(`log_id[:\s]+([A-Za-z0-9\-_]+)`).FindStringSubmatch(strings.ToLower(message)); len(logIDMatch) > 1 {
-		entry.LogID = logIDMatch[1]
-	}
-
 	// Extract HTTP method and path
 	if httpMatch := regexp.MustCompile(`(GET|POST|PUT|DELETE|PATCH|HEAD|OPTIONS)\s+([^\s\|]+)`).FindStringSubmatch(message); len(httpMatch) > 2 {
 		entry.Method = httpMatch[1]
@@ -210,7 +283,7 @@ func ParseLogLine(line string, regex *regexp.Regexp) modelsv1.LogEntry {
 		entry.UserAgent = strings.TrimSpace(uaMatch[1])
 	}
 
-	return entry
+	return entry, nil
 }
 
 // GetLogDirectory returns the log directory path
@@ -266,4 +339,61 @@ func GetLast3Days() []string {
 	}
 	
 	return dates
+}
+
+// GetAvailableLogFiles scans the log directory and returns all available log files
+// sorted by date for efficient processing (newest first)
+func GetAvailableLogFiles() ([]string, error) {
+	logDir := GetLogDirectory()
+	
+	// Check if log directory exists
+	if _, err := os.Stat(logDir); os.IsNotExist(err) {
+		return nil, NewLogFileReadError(logDir, fmt.Errorf("log directory does not exist"))
+	}
+	
+	// Read all files in the log directory
+	entries, err := os.ReadDir(logDir)
+	if err != nil {
+		return nil, NewLogFileReadError(logDir, fmt.Errorf("failed to read log directory: %w", err))
+	}
+	
+	var logFiles []string
+	logPattern := regexp.MustCompile(`^app-(\d{4}-\d{2}-\d{2})\.log$`)
+	
+	// Filter for log files matching the expected pattern
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		
+		filename := entry.Name()
+		if logPattern.MatchString(filename) {
+			fullPath := filepath.Join(logDir, filename)
+			// Verify the file is readable before adding to the list
+			if _, err := os.Stat(fullPath); err == nil {
+				logFiles = append(logFiles, fullPath)
+			}
+		}
+	}
+	
+	// Sort log files by date (newest first) for efficient processing
+	sort.Slice(logFiles, func(i, j int) bool {
+		// Extract dates from filenames for comparison
+		dateI := extractDateFromLogFile(logFiles[i])
+		dateJ := extractDateFromLogFile(logFiles[j])
+		return dateI > dateJ // Newest first
+	})
+	
+	return logFiles, nil
+}
+
+// extractDateFromLogFile extracts the date string from a log file path
+func extractDateFromLogFile(filePath string) string {
+	filename := filepath.Base(filePath)
+	logPattern := regexp.MustCompile(`^app-(\d{4}-\d{2}-\d{2})\.log$`)
+	matches := logPattern.FindStringSubmatch(filename)
+	if len(matches) > 1 {
+		return matches[1]
+	}
+	return ""
 }
