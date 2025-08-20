@@ -7,12 +7,12 @@ services:
     restart: unless-stopped
     env_file:
       - .env
-    # Remove external port exposure for security
     expose:
-      - "8080"
+      - "8000"
+    volumes:
+      - ./backend/logs:/app/logs
     depends_on:
       - postgres
-      - redis
     networks:
       - posteaze
 
@@ -20,7 +20,6 @@ services:
     build: ./frontend
     container_name: posteaze-frontend
     restart: unless-stopped
-    # Remove external port exposure
     expose:
       - "80"
     depends_on:
@@ -29,26 +28,16 @@ services:
       - posteaze
 
   postgres:
-    image: postgres:16
+    image: postgres:15-alpine
     container_name: posteaze-postgres
     restart: unless-stopped
     env_file:
       - .env
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init-db:/docker-entrypoint-initdb.d  # For initialization scripts
+      - ./init-db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"  # Exposed for team development access
-    networks:
-      - posteaze
-
-  redis:
-    image: redis:7
-    container_name: posteaze-redis
-    restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}  # Password protection
-    ports:
-      - "6379:6379"  # Exposed for team development access
     networks:
       - posteaze
 

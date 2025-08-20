@@ -1,7 +1,11 @@
-FROM golang:1.22-alpine
+FROM golang:1.23-alpine
 
-# Install git (sometimes needed for go packages)
-RUN apk add --no-cache git
+# Install git, curl, and migration tool
+RUN apk add --no-cache git curl
+RUN go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest
+
+# Install swag CLI
+RUN go install github.com/swaggo/swag/cmd/swag@latest
 
 # Set working directory
 WORKDIR /app
@@ -10,12 +14,15 @@ WORKDIR /app
 COPY go.mod go.sum ./
 COPY vendor/ ./vendor/
 
-# Copy the rest of the source code
+# Copy rest of the source code
 COPY . .
 
-# Build with vendor mode
+# Create logs directory with safe permissions
+RUN chmod 755 /app/logs
+
+# Build the application
 RUN go build -mod=vendor -o main .
 
-EXPOSE 8080
+EXPOSE 8000
 
 CMD ["./main"]

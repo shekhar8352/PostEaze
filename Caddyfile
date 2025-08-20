@@ -2,22 +2,21 @@
 dev.posteaze.in {
     # Serve frontend for root and static assets
     root * /usr/share/nginx/html
-    
+
+    handle /* {
+        reverse_proxy posteaze-frontend:80
+    }
+
     # Handle API requests - proxy to backend
     handle /api/* {
-        reverse_proxy posteaze-backend:8080
+        reverse_proxy posteaze-backend:8000
     }
-    
+
     # Handle WebSocket connections if needed
     handle /ws/* {
         reverse_proxy posteaze-backend:8080
     }
-    
-    # Serve frontend for all other routes (SPA routing)
-    handle /* {
-        reverse_proxy posteaze-frontend:80
-    }
-    
+
     # Development-specific headers (less restrictive)
     header {
         # Enable HSTS but shorter duration for dev
@@ -31,10 +30,10 @@ dev.posteaze.in {
         Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
         Access-Control-Allow-Headers "Authorization, Content-Type"
     }
-    
+
     # Enable compression
     encode gzip
-    
+
     # Development logging (more verbose)
     log {
         output file /data/dev-access.log
