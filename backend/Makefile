@@ -21,6 +21,47 @@ test: ## Run all tests
 	@echo "Running all tests..."
 	@./scripts/test.sh --type all
 
+# Simplified test runner commands (new)
+test-simple: ## Run all tests using simplified test runner
+	@echo "Running all tests with simplified runner..."
+	@cd tests && go run test.go
+
+test-simple-unit: ## Run unit tests using simplified test runner
+	@echo "Running unit tests with simplified runner..."
+	@cd tests && go run test.go -type=unit
+
+test-simple-integration: ## Run integration tests using simplified test runner
+	@echo "Running integration tests with simplified runner..."
+	@cd tests && go run test.go -type=integration
+
+test-simple-benchmark: ## Run benchmark tests using simplified test runner
+	@echo "Running benchmark tests with simplified runner..."
+	@cd tests && go run test.go -type=benchmark
+
+test-simple-coverage: ## Run all tests with coverage using simplified test runner
+	@echo "Running tests with coverage using simplified runner..."
+	@cd tests && go run test.go -coverage
+
+test-simple-verbose: ## Run all tests with verbose output using simplified test runner
+	@echo "Running tests with verbose output using simplified runner..."
+	@cd tests && go run test.go -verbose
+
+test-simple-api: ## Run API tests using simplified test runner
+	@echo "Running API tests with simplified runner..."
+	@cd tests && go run test.go -type=unit -package=api
+
+test-simple-business: ## Run business logic tests using simplified test runner
+	@echo "Running business logic tests with simplified runner..."
+	@cd tests && go run test.go -type=unit -package=business
+
+test-simple-models: ## Run model tests using simplified test runner
+	@echo "Running model tests with simplified runner..."
+	@cd tests && go run test.go -type=unit -package=models
+
+test-simple-utils: ## Run utility tests using simplified test runner
+	@echo "Running utility tests with simplified runner..."
+	@cd tests && go run test.go -type=unit -package=utils
+
 test-unit: ## Run unit tests only
 	@echo "Running unit tests..."
 	@./scripts/test.sh --type unit
@@ -242,7 +283,7 @@ security-test: ## Run security tests
 # Test data management
 test-fixtures: ## Generate test fixtures
 	@echo "Generating test fixtures..."
-	@go run tests/testutils/fixtures.go
+	@go run tests/helpers/fixtures.go
 
 # Continuous testing
 test-watch: ## Run tests in watch mode (requires entr)
