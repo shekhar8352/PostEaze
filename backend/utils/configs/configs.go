@@ -1,6 +1,8 @@
 package configs
 
 import (
+	"fmt"
+	
 	"github.com/shekhar8352/PostEaze/constants"
 	configs "github.com/sinhashubham95/go-config-client"
 )
@@ -22,6 +24,17 @@ func InitDev(directory string, configNames ...string) (err error) {
 
 // InitRelease is used to initialise configs for release mode.
 func InitRelease(env, region string, configNames ...string) (err error) {
+	// Validate required parameters
+	if env == "" {
+		return fmt.Errorf("environment cannot be empty")
+	}
+	if region == "" {
+		return fmt.Errorf("region cannot be empty")
+	}
+	if len(configNames) == 0 {
+		return fmt.Errorf("at least one config name must be provided")
+	}
+	
 	client, err = configs.New(configs.Options{
 		Provider: configs.AWSAppConfig,
 		Params: map[string]any{
