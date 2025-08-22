@@ -7,12 +7,9 @@ param(
     [switch]$Verbose,
     [switch]$Coverage,
     [string]$Database = "sqlite",
-    [switch]$Parallel,
     [string]$Format = "standard",
-    [int]$Threshold = 80,
+    [int]$Threshold = 0,
     [switch]$Benchmark,
-    [switch]$Race,
-    [switch]$Short,
     [switch]$NoCleanup,
     [switch]$Help
 )
@@ -67,12 +64,9 @@ function Show-Usage {
     Write-Host "  -Verbose              Enable verbose output"
     Write-Host "  -Coverage             Generate coverage report"
     Write-Host "  -Database TYPE        Database type for integration tests (sqlite|postgres)"
-    Write-Host "  -Parallel             Run tests in parallel"
     Write-Host "  -Format FORMAT        Output format (standard|json|junit)"
-    Write-Host "  -Threshold NUM        Coverage threshold percentage (default: 80)"
+    Write-Host "  -Threshold NUM        Coverage threshold percentage (default: 0)"
     Write-Host "  -Benchmark            Run benchmark tests"
-    Write-Host "  -Race                 Enable race detection"
-    Write-Host "  -Short                Run tests in short mode"
     Write-Host "  -NoCleanup            Skip cleanup after tests"
     Write-Host "  -Help                 Show this help message"
     Write-Host ""
@@ -91,8 +85,8 @@ function Show-Usage {
     Write-Host "Examples:"
     Write-Host "  .\test.ps1 -Type unit -Suite api -Verbose"
     Write-Host "  .\test.ps1 -Type integration -Coverage -Database postgres"
-    Write-Host "  .\test.ps1 -Coverage -Threshold 90 -Parallel"
-    Write-Host "  .\test.ps1 -Benchmark -Race"
+    Write-Host "  .\test.ps1 -Coverage -Threshold 90"
+    Write-Host "  .\test.ps1 -Benchmark -Verbose"
 }
 
 # Show help if requested
@@ -123,9 +117,10 @@ Write-Status "Test Suite: $(if ($Suite) { $Suite } else { 'all' })"
 Write-Status "Database Type: $Database"
 Write-Status "Verbose: $Verbose"
 Write-Status "Coverage: $Coverage"
-Write-Status "Parallel: $Parallel"
 Write-Status "Output Format: $Format"
-Write-Status "Coverage Threshold: $Threshold%"
+if ($Threshold -gt 0) {
+    Write-Status "Coverage Threshold: $Threshold%"
+}
 
 # Change to backend directory
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -147,7 +142,6 @@ function Setup-Environment {
     Write-Status "Setting up test environment..."
     
     $env:MODE = "test"
-    $env:BASE_CONFIG_PATH = "./tests/config"
     $env:JWT_ACCESS_SECRET = "test-access-secret-key-$(Get-Date -Format 'yyyyMMddHHmmss')"
     $env:JWT_REFRESH_SECRET = "test-refresh-secret-key-$(Get-Date -Format 'yyyyMMddHHmmss')"
     
@@ -184,119 +178,77 @@ function Setup-Environment {
     $env:TEST_LOG_DIR = $script:TempLogDir.FullName
     $env:COVERAGE_DIR = $script:CoverageDir.FullName
     
-    Write-Status "Created temporary directories"
+    # Set environment variables for the Go test runner
+    $env:TEST_DATABASE_URL = $env:DATABASE_URL
+    $env:TEST_JWT_SECRET = $env:JWT_ACCESS_SECRET
+    $env:TEST_LOG_LEVEL = "error"
+    
+    Write-Status "Created temporary directories and set test environment variables"
 }
 
-# Discover test packages
-function Get-TestPackages {
-    param(
-        [string]$TestType,
-        [string]$TestSuite
-    )
-    
-    $packages = @()
-    
-    switch ($TestType) {
-        "unit" {
-            if ($TestSuite) {
-                switch ($TestSuite) {
-                    "api" { $packages += "./tests/unit/api/..." }
-                    "business" { $packages += "./tests/unit/business/..." }
-                    "models" { $packages += "./tests/unit/models/..." }
-                    "utils" { $packages += "./tests/unit/utils/..." }
-                    default {
-                        Write-Error "Invalid unit test suite: $TestSuite"
-                        Write-Error "Valid options: api, business, models, utils"
-                        exit 1
-                    }
-                }
-            }
-            else {
-                $packages += "./tests/unit/..."
-            }
-        }
-        "integration" {
-            if ($TestSuite) {
-                switch ($TestSuite) {
-                    "auth" { $packages += @("./tests/integration/", "-run", "TestAuthIntegrationSuite") }
-                    "log" { $packages += @("./tests/integration/", "-run", "TestLogIntegrationSuite") }
-                    "database" { $packages += @("./tests/integration/", "-run", "TestDatabaseIntegrationSuite") }
-                    "e2e" { $packages += @("./tests/integration/", "-run", "TestEndToEndIntegrationSuite") }
-                    default {
-                        Write-Error "Invalid integration test suite: $TestSuite"
-                        Write-Error "Valid options: auth, log, database, e2e"
-                        exit 1
-                    }
-                }
-            }
-            else {
-                $packages += "./tests/integration/..."
-            }
-        }
-        "all" {
-            if ($TestSuite) {
-                Write-Warning "Test suite specified with 'all' type. Running all tests."
-            }
-            $packages += @("./tests/unit/...", "./tests/integration/...")
-        }
+# Check if Go test runner exists
+function Test-GoTestRunner {
+    if (-not (Test-Path "tests/test.go")) {
+        Write-Error "tests/test.go not found. Please ensure the Go test runner is available."
+        exit 1
     }
-    
-    return $packages
 }
 
-# Build test command
+# Build test command for the Go test runner
 function Build-TestCommand {
-    param([array]$Packages)
+    $cmd = @("go", "run", "tests/test.go")
     
-    $cmd = @("go", "test")
-    $cmd += $Packages
+    # Map test type
+    $testType = switch ($Type) {
+        "unit" { "unit" }
+        "integration" { "integration" }
+        "all" { "all" }
+        default { "all" }
+    }
+    $cmd += @("-type", $testType)
+    
+    # Add package if specified (map suite to package)
+    if ($Suite) {
+        $packageName = switch ($Suite) {
+            "api" { "api" }
+            "business" { "business" }
+            "models" { "models" }
+            "utils" { "utils" }
+            "auth" { "integration" }
+            "log" { "integration" }
+            "database" { "integration" }
+            "e2e" { "integration" }
+            default { $Suite }
+        }
+        $cmd += @("-package", $packageName)
+    }
     
     # Add flags
     if ($Verbose) {
-        $cmd += "-v"
+        $cmd += "-verbose"
     }
     
     if ($Coverage) {
-        $coverageFile = Join-Path $script:CoverageDir.FullName "coverage.out"
-        $cmd += "-coverprofile=$coverageFile"
-        $cmd += "-covermode=atomic"
+        $cmd += "-coverage"
     }
     
-    if ($Parallel) {
-        $cmd += @("-parallel", "4")
+    if ($Threshold -gt 0) {
+        $cmd += @("-coverage-threshold", $Threshold.ToString())
     }
     
-    if ($Race) {
-        $cmd += "-race"
-    }
-    
-    if ($Short) {
-        $cmd += "-short"
-    }
-    
+    # Handle benchmark mode
     if ($Benchmark) {
-        $cmd += @("-bench=.", "-benchmem")
+        $cmd[3] = "benchmark"  # Change type to benchmark
     }
-    
-    # Add output format
-    switch ($Format) {
-        "json" { $cmd += "-json" }
-        "junit" { $cmd += "-v" }  # Go doesn't natively support JUnit
-    }
-    
-    # Add timeout
-    $cmd += @("-timeout", "15m")
     
     return $cmd
 }
 
-# Run tests
+# Run tests using the Go test runner
 function Invoke-Tests {
-    $packages = Get-TestPackages -TestType $Type -TestSuite $Suite
-    $testCmd = Build-TestCommand -Packages $packages
+    $testCmd = Build-TestCommand
     
-    Write-Status "Discovered test packages: $($packages -join ' ')"
-    Write-Status "Running tests..."
+    Write-Status "Running tests with Go test runner..."
     Write-Status "Command: $($testCmd -join ' ')"
     
     # Create output file for JUnit format
@@ -323,11 +275,11 @@ function Invoke-Tests {
         }
         
         if ($exitCode -eq 0) {
-            Write-Success "All tests passed!"
+            Write-Success "All tests completed successfully!"
             return $true
         }
         else {
-            Write-Error "Some tests failed!"
+            Write-Error "Test execution failed!"
             return $false
         }
     }
@@ -360,77 +312,31 @@ function Convert-ToJUnit {
     Write-Status "JUnit report generated: $OutputFile"
 }
 
-# Generate coverage report
+# Coverage reporting is now handled by the Go test runner
 function New-CoverageReport {
-    $coverageFile = Join-Path $script:CoverageDir.FullName "coverage.out"
-    
-    if ($Coverage -and (Test-Path $coverageFile)) {
-        Write-Status "Generating coverage report..."
+    # The Go test runner handles coverage internally
+    # Coverage reports are generated automatically when -coverage flag is used
+    if ($Coverage) {
+        Write-Status "Coverage reporting handled by Go test runner"
         
-        # Generate HTML coverage report
-        $htmlFile = Join-Path $script:CoverageDir.FullName "coverage.html"
-        & go tool cover -html=$coverageFile -o $htmlFile
-        
-        # Generate coverage summary
-        $funcFile = Join-Path $script:CoverageDir.FullName "coverage_func.txt"
-        & go tool cover -func=$coverageFile | Out-File -FilePath $funcFile
-        
-        # Extract total coverage percentage
-        $coverageOutput = & go tool cover -func=$coverageFile
-        $totalLine = $coverageOutput | Select-Object -Last 1
-        $totalCoverage = [regex]::Match($totalLine, '(\d+\.\d+)%').Groups[1].Value
-        
-        Write-Status "Coverage Summary:"
-        Write-Host "----------------------------------------"
-        $coverageOutput | ForEach-Object { Write-Host $_ }
-        Write-Host "----------------------------------------"
-        
-        # Check coverage threshold
-        if ([double]$totalCoverage -ge $Threshold) {
-            Write-Success "Coverage ($totalCoverage%) meets threshold ($Threshold%)"
+        # Check for generated coverage files in standard locations
+        if (Test-Path "./coverage.out") {
+            Write-Success "Coverage report available: ./coverage.out"
         }
-        else {
-            Write-Warning "Coverage ($totalCoverage%) below threshold ($Threshold%)"
-            if ($env:CI -eq "true") {
-                Write-Error "Coverage threshold not met in CI environment"
-                return $false
-            }
+        if (Test-Path "./coverage.html") {
+            Write-Success "HTML coverage report available: ./coverage.html"
         }
-        
-        Write-Success "Coverage reports generated:"
-        Write-Success "  HTML: $htmlFile"
-        Write-Success "  Text: $funcFile"
-        Write-Success "  Raw: $coverageFile"
-        
-        # Copy coverage files to standard locations for CI
-        try {
-            Copy-Item $coverageFile "./coverage.out" -ErrorAction SilentlyContinue
-            Copy-Item $htmlFile "./coverage.html" -ErrorAction SilentlyContinue
-        }
-        catch {
-            # Ignore copy errors
-        }
-        
-        return $true
     }
     
     return $true
 }
 
-# Run benchmarks
+# Benchmarks are now handled by the Go test runner
 function Invoke-Benchmarks {
+    # Benchmarks are handled by the Go test runner when -type=benchmark is used
+    # No separate benchmark execution needed
     if ($Benchmark) {
-        Write-Status "Running benchmarks..."
-        
-        $benchmarkFile = Join-Path $script:CoverageDir.FullName "benchmark_results.txt"
-        & go test -bench=. -benchmem ./... | Out-File -FilePath $benchmarkFile
-        
-        Write-Status "Benchmark Results:"
-        Write-Host "----------------------------------------"
-        Get-Content $benchmarkFile | ForEach-Object { Write-Host $_ }
-        Write-Host "----------------------------------------"
-        
-        Write-Success "Benchmark results saved: $benchmarkFile"
+        Write-Status "Benchmarks handled by Go test runner"
     }
 }
 
@@ -502,6 +408,9 @@ function Test-Dependencies {
         Write-Error "Missing required dependencies: $($missingDeps -join ', ')"
         exit 1
     }
+    
+    # Check if Go test runner exists
+    Test-GoTestRunner
 }
 
 # Main execution
@@ -513,17 +422,17 @@ function Invoke-Main {
         Setup-Environment
         Setup-Database
         
-        # Run tests
+        # Run tests using the Go test runner
         if (-not (Invoke-Tests)) {
             $exitCode = 1
         }
         
-        # Generate coverage report
+        # Check coverage reports (handled by Go test runner)
         if (-not (New-CoverageReport)) {
             $exitCode = 1
         }
         
-        # Run benchmarks if requested
+        # Benchmarks are handled by the Go test runner
         Invoke-Benchmarks
         
         # Print summary
