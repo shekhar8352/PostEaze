@@ -13,6 +13,7 @@
 /*.test
 
 # Editor/IDE files
+.kiro/
 .vscode/
 .idea/
 *.swp
