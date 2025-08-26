@@ -44,7 +44,7 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
 
   const handleRegister = async (values: RegisterFormData) => {
     try {
-      const result = await register.mutateAsync(values);
+      await register.mutateAsync(values);
       
       notifications.show({
         title: 'Registration Initiated!',
