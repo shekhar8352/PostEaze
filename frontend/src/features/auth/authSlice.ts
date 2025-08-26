@@ -1,5 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { signupUser } from './thunks';
+import { createSlice } from "@reduxjs/toolkit";
 
 interface AuthState {
   loading: boolean;
@@ -14,24 +13,10 @@ const initialState: AuthState = {
 };
 
 const authSlice = createSlice({
-  name: 'auth',
+  name: "auth",
   initialState,
   reducers: {},
-  extraReducers: (builder) => {
-    builder
-      .addCase(signupUser.pending, (state) => {
-        state.loading = true;
-        state.error = null;
-      })
-      .addCase(signupUser.fulfilled, (state, action) => {
-        state.loading = false;
-        state.user = action.payload;
-      })
-      .addCase(signupUser.rejected, (state, action) => {
-        state.loading = false;
-        state.error = action.error.message || 'Signup failed';
-      });
-  },
+  extraReducers: () => {},
 });
 
 export default authSlice.reducer;
