@@ -13,16 +13,28 @@ export interface User {
 // Auth request types
 export interface LoginRequest {
   email: string;
-  password: string;
+  password?: string;
   rememberMe?: boolean;
+  // Firebase fields (only for verified users)
+  firebase_uid: string; // Required - only verified users reach backend
+  firebase_token: string; // Required - only verified users reach backend
+  display_name?: string;
+  email_verified: true; // Always true - only verified users reach backend
+  provider: 'email' | 'google.com' | 'facebook.com';
 }
 
 export interface RegisterRequest {
   name: string;
   email: string;
-  password: string;
-  confirmPassword: string;
+  password?: string;
+  confirmPassword?: string;
   terms: boolean;
+  // Firebase fields (only for verified users)
+  firebase_uid: string; // Required - only verified users reach backend
+  firebase_token: string; // Required - only verified users reach backend
+  display_name: string; // Required for backend user creation
+  email_verified: true; // Always true - only verified users reach backend
+  provider: 'email' | 'google.com' | 'facebook.com';
 }
 
 export interface ForgotPasswordRequest {
@@ -68,7 +80,6 @@ export interface AuthState {
 export interface LoginFormData {
   email: string;
   password: string;
-  rememberMe?: boolean;
 }
 
 export interface RegisterFormData {
@@ -76,11 +87,18 @@ export interface RegisterFormData {
   email: string;
   password: string;
   confirmPassword: string;
-  terms: boolean;
 }
 
 export interface ForgotPasswordFormData {
   email: string;
+}
+
+export interface EmailVerificationState {
+  isEmailSent: boolean;
+  email: string;
+  isResending: boolean;
+  canResend: boolean;
+  countdown: number;
 }
 
 export interface ResetPasswordFormData {

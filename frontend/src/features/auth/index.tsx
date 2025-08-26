@@ -1,2 +1,1 @@
-export { default as authRoutes } from './authRoutes';
-export * from './thunks';
+export { default as authRoutes } from './authRoutes';``
