@@ -11,174 +11,6 @@ import (
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
 
-func Signup(ctx context.Context, params modelsv1.SignupParams) (map[string]interface{}, error) {
-	// Note: This function is kept for backward compatibility
-	// New users should use Firebase authentication
-	
-	hashedPassword, err := utils.HashPassword(params.Password)
-	if err != nil {
-		return nil, err
-	}
-
-	user := &modelsv1.User{
-		Name:      params.Name,
-		Email:     params.Email,
-		Platforms: []string{"email"}, // Traditional email signup
-	}
-	
-	// Create legacy user entity for backward compatibility
-	legacyUser := &entities.User{
-		Name:     user.Name,
-		Email:    user.Email,
-		Password: hashedPassword,
-		UserType: string(params.UserType),
-	}
-	
-	// start transaction
-	tx, err := database.GetTx(ctx, nil)
-	if err != nil {
-		return nil, err
-	}
-	
-	if params.UserType == modelsv1.UserTypeTeam {
-		// create user
-		userCreated, err := repositories.CreateUser(ctx, tx, *legacyUser)
-		if err != nil {
-			database.RollbackTx(tx)
-			return nil, err
-		}
-		user.ID = userCreated.ID
-		user.CreatedAt = userCreated.CreatedAt
-		user.UpdatedAt = userCreated.UpdatedAt
-
-		// create team
-		teamID, err := repositories.SaveTeam(ctx, tx, params.TeamName, userCreated.ID)
-		if err != nil {
-			database.RollbackTx(tx)
-			return nil, err
-		}
-
-		// add user to its team
-		err = repositories.AddListOfUsersToTeam(ctx, tx, teamID, []string{userCreated.ID}, string(modelsv1.RoleAdmin))
-		if err != nil {
-			database.RollbackTx(tx)
-			return nil, err
-		}
-	} else {
-		userCreated, err := repositories.CreateUser(ctx, tx, *legacyUser)
-		if err != nil {
-			database.RollbackTx(tx)
-			return nil, err
-		}
-		user.ID = userCreated.ID
-		user.CreatedAt = userCreated.CreatedAt
-		user.UpdatedAt = userCreated.UpdatedAt
-	}
-	
-	err = database.CommitTx(tx)
-	if err != nil {
-		return nil, err
-	}
-
-	accessToken, err := utils.GenerateAccessToken(user.ID, string(params.UserType))
-	if err != nil {
-		return nil, err
-	}
-
-	refreshToken, err := utils.GenerateRefreshToken(user.ID)
-	if err != nil {
-		return nil, err
-	}
-
-	err = repositories.InsertRefreshTokenOfUser(ctx, user.ID, refreshToken, utils.GetRefreshTokenExpiry())
-	if err != nil {
-		return nil, err
-	}
-
-	return map[string]interface{}{
-		"user":          user,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	}, nil
-}
-
-func Login(ctx context.Context, params modelsv1.LoginParams) (map[string]interface{}, error) {
-	// Note: This function is kept for backward compatibility with password-based authentication
-	utils.Logger.Info(ctx, "Attempting to login user with email: %s", params.Email)
-	user, err := repositories.GetUserByEmail(ctx, params.Email)
-	if err != nil {
-		return nil, err
-	}
-	if !utils.CheckPasswordHash(params.Password, user.Password) {
-		utils.Logger.Error(ctx, "Error validating password for user with email: %s", params.Email)
-		return nil, errors.New("invalid credentials")
-	}
-
-	accessToken, err := utils.GenerateAccessToken(user.ID, user.UserType)
-	if err != nil {
-		utils.Logger.Error(ctx, "Error generating access token for user with email: %s", params.Email)
-		return nil, err
-	}
-	refreshToken, err := utils.GenerateRefreshToken(user.ID)
-	if err != nil {
-		utils.Logger.Error(ctx, "Error generating refresh token for user with email: %s", params.Email)
-		return nil, err
-	}
-
-	err = repositories.InsertRefreshTokenOfUser(ctx, user.ID, refreshToken, utils.GetRefreshTokenExpiry())
-	if err != nil {
-		utils.Logger.Error(ctx, "Error inserting refresh token for user with ID : %s", user.ID)
-	}
-
-	userDetail := &modelsv1.User{
-		ID:        user.ID,
-		Name:      user.Name,
-		Email:     user.Email,
-		Platforms: []string{"email"}, // Legacy users use email platform
-		CreatedAt: user.CreatedAt,
-		UpdatedAt: user.UpdatedAt,
-	}
-
-	utils.Logger.Info(ctx, "Logged in user successfully: %s", user)
-	return map[string]interface{}{
-		"user":          userDetail,
-		"access_token":  accessToken,
-		"refresh_token": refreshToken,
-	}, nil
-}
-
-func RefreshToken(ctx context.Context, token string) (map[string]string, error) {
-	user, err := repositories.GetUserbyToken(ctx, token)
-	if err != nil {
-		return nil, err
-	}
-	
-	// For Firebase users, use "individual" as default user type
-	userType := "individual"
-	if user.UserType != "" {
-		userType = user.UserType
-	}
-	
-	newAccess, err := utils.GenerateAccessToken(user.ID, userType)
-	if err != nil {
-		return nil, err
-	}
-
-	return map[string]string{
-		"access_token": newAccess,
-	}, nil
-}
-
-func Logout(ctx context.Context, refreshToken string) error {
-	user, err := repositories.GetUserbyToken(ctx, refreshToken)
-	if err != nil {
-		return err
-	}
-	repositories.RevokeTokenForUser(ctx, user.ID)
-
-	return err
-}
-
 func AuthenticateWithFirebase(ctx context.Context, params modelsv1.FirebaseAuthParams) (map[string]interface{}, error) {
 	// Validate Firebase token
 	firebaseService := utils.GetFirebaseService()
@@ -319,4 +151,36 @@ func authenticateExistingUser(ctx context.Context, existingUser *entities.User, 
 		"access_token":  accessToken,
 		"refresh_token": refreshToken,
 	}, nil
+}
+
+func RefreshToken(ctx context.Context, token string) (map[string]string, error) {
+	user, err := repositories.GetUserbyToken(ctx, token)
+	if err != nil {
+		return nil, err
+	}
+	
+	// For Firebase users, use "individual" as default user type
+	userType := "individual"
+	if user.UserType != "" {
+		userType = user.UserType
+	}
+	
+	newAccess, err := utils.GenerateAccessToken(user.ID, userType)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]string{
+		"access_token": newAccess,
+	}, nil
+}
+
+func Logout(ctx context.Context, refreshToken string) error {
+	user, err := repositories.GetUserbyToken(ctx, refreshToken)
+	if err != nil {
+		return err
+	}
+	repositories.RevokeTokenForUser(ctx, user.ID)
+
+	return err
 }

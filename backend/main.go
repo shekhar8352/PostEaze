@@ -55,7 +55,6 @@ func initDatabase(ctx context.Context) {
 		return
 	}
 	url := env.ApplyEnvironmentToString(urlString)
-	log.Println("database url is ", url)
 	err = sql.Init(ctx, sql.Config{
 		DriverName: driverName,
 		URL:        url,
