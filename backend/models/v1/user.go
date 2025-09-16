@@ -12,6 +12,12 @@ type SignupParams struct {
 	TeamName string   `json:"team_name" binding:"required_if=UserType team"`
 }
 
+type FirebaseAuthParams struct {
+	LocalID       string `json:"local_id" binding:"required"`
+	FirebaseToken string `json:"firebase_token" binding:"required"`
+	Platform      string `json:"platform" binding:"required,oneof=email google facebook microsoft"`
+}
+
 type LoginParams struct {
 	Email    string `json:"email" binding:"required,email"`
 	Password string `json:"password" binding:"required"`
@@ -38,10 +44,10 @@ const (
 
 type User struct {
 	ID        string    `json:"id"`
+	FirebaseID string    `json:"firebase_id"`
 	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
-	UserType  UserType  `json:"user_type"`
+	Email     string    `json:"email,omitempty"`
+	Platforms []string  `json:"platforms"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 

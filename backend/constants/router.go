@@ -4,6 +4,7 @@ const (
 	ApiRoute     = "/api"
 	V1Route      = "/v1"
 	AuthRoute    = "/auth"
+	Authenticate = "/authenticate"
 	SignUpRoute  = "/signup"
 	LogInRoute   = "/login"
 	RefreshRoute = "/refresh"
