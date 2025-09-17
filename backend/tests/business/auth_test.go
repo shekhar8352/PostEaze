@@ -260,14 +260,14 @@ func TestSignupParams_WithFixtures(t *testing.T) {
 	// Use test fixtures for consistent test data
 	testUser := helpers.CreateUser(func(u *modelsv1.User) {
 		u.Email = "signup.test@example.com"
-		u.UserType = modelsv1.UserTypeIndividual
+		u.Platforms = []string{"email"}
 	})
 	
 	params := modelsv1.SignupParams{
 		Name:     testUser.Name,
 		Email:    testUser.Email,
 		Password: "testpassword123",
-		UserType: testUser.UserType,
+		UserType: modelsv1.UserTypeIndividual, // Still used in SignupParams for backward compatibility
 	}
 	
 	// Verify parameter structure
@@ -288,9 +288,7 @@ func TestSignupParams_WithFixtures(t *testing.T) {
 	if testUser.Email != params.Email {
 		t.Errorf("expected email %s, got %s", testUser.Email, params.Email)
 	}
-	if testUser.UserType != params.UserType {
-		t.Errorf("expected user type %s, got %s", testUser.UserType, params.UserType)
-	}
+	// Note: UserType is no longer part of User model, only SignupParams for backward compatibility
 }
 
 // TestLoginParams_WithFixtures tests login parameter creation with test fixtures

@@ -4,17 +4,10 @@ import (
 	"time"
 )
 
-type SignupParams struct {
-	Name     string   `json:"name" binding:"required,min=2"`
-	Email    string   `json:"email" binding:"required,email"`
-	Password string   `json:"password" binding:"required,min=8"`
-	UserType UserType `json:"user_type" binding:"required,oneof=individual team"`
-	TeamName string   `json:"team_name" binding:"required_if=UserType team"`
-}
-
-type LoginParams struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
+type FirebaseAuthParams struct {
+	LocalID       string `json:"local_id" binding:"required"`
+	FirebaseToken string `json:"firebase_token" binding:"required"`
+	Platform      string `json:"platform" binding:"required,oneof=email google facebook microsoft"`
 }
 
 type RefreshTokenParams struct {
@@ -38,10 +31,10 @@ const (
 
 type User struct {
 	ID        string    `json:"id"`
+	FirebaseID string    `json:"firebase_id"`
 	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Password  string    `json:"-"`
-	UserType  UserType  `json:"user_type"`
+	Email     string    `json:"email,omitempty"`
+	Platforms []string  `json:"platforms"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 

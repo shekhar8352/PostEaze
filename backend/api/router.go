@@ -65,8 +65,7 @@ func Init() error {
 func addV1UserAuthRoutes(v1 *gin.RouterGroup) {
 	authv1 := v1.Group(constants.AuthRoute)
 
-	authv1.POST(constants.SignUpRoute, apiv1.SignupHandler)
-	authv1.POST(constants.LogInRoute, apiv1.LoginHandler)
+	authv1.POST(constants.Authenticate, apiv1.AuthenticateWithFirebaseHandler)
 	authv1.POST(constants.RefreshRoute, middleware.AuthMiddleware(), apiv1.RefreshTokenHandler)
 	authv1.POST(constants.LogOutRoute, middleware.AuthMiddleware(), apiv1.LogoutHandler)
 }

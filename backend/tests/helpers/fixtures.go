@@ -14,8 +14,7 @@ var (
 			ID:        "user-1",
 			Name:      "John Doe",
 			Email:     "john.doe@example.com",
-			Password:  "$2a$10$hashedpassword1", // bcrypt hash of "password123"
-			UserType:  modelsv1.UserTypeIndividual,
+			Platforms: []string{"email"},
 			CreatedAt: time.Now().Add(-24 * time.Hour),
 			UpdatedAt: time.Now().Add(-24 * time.Hour),
 		},
@@ -23,8 +22,7 @@ var (
 			ID:        "user-2",
 			Name:      "Jane Smith",
 			Email:     "jane.smith@example.com",
-			Password:  "$2a$10$hashedpassword2", // bcrypt hash of "password456"
-			UserType:  modelsv1.UserTypeTeam,
+			Platforms: []string{"google"},
 			CreatedAt: time.Now().Add(-12 * time.Hour),
 			UpdatedAt: time.Now().Add(-12 * time.Hour),
 		},
@@ -32,8 +30,7 @@ var (
 			ID:        "user-3",
 			Name:      "Bob Wilson",
 			Email:     "bob.wilson@example.com",
-			Password:  "$2a$10$hashedpassword3", // bcrypt hash of "password789"
-			UserType:  modelsv1.UserTypeIndividual,
+			Platforms: []string{"facebook", "google"},
 			CreatedAt: time.Now().Add(-6 * time.Hour),
 			UpdatedAt: time.Now().Add(-6 * time.Hour),
 		},
@@ -176,8 +173,7 @@ func CreateUser(overrides ...func(*modelsv1.User)) modelsv1.User {
 		ID:        "test-user-" + generateID(),
 		Name:      "Test User",
 		Email:     "test@example.com",
-		Password:  "$2a$10$hashedpassword", // bcrypt hash of "testpassword"
-		UserType:  modelsv1.UserTypeIndividual,
+		Platforms: []string{"email"},
 		CreatedAt: now,
 		UpdatedAt: now,
 	}

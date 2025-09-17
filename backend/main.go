@@ -8,6 +8,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/shekhar8352/PostEaze/api"
 	"github.com/shekhar8352/PostEaze/constants"
+	"github.com/shekhar8352/PostEaze/utils"
 	"github.com/shekhar8352/PostEaze/utils/configs"
 	sql "github.com/shekhar8352/PostEaze/utils/database"
 	"github.com/shekhar8352/PostEaze/utils/env"
@@ -21,6 +22,7 @@ func main() {
 	initEnv()
 	initConfigs(ctx)
 	initDatabase(ctx)
+	initFirebase(ctx)
 	initRouter(ctx)
 	initHttp(ctx)
 }
@@ -76,6 +78,13 @@ func initHttp(ctx context.Context) {
 			configs.Get().GetMapD(constants.APIConfig, constants.APIGetCatsFactConfigKey, nil)),
 	)
 
+}
+
+func initFirebase(ctx context.Context) {
+	err := utils.InitializeFirebase(ctx)
+	if err != nil {
+		log.Fatal(ctx, " error in initialising Firebase ", err)
+	}
 }
 
 func initRouter(ctx context.Context) {
