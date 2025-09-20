@@ -75,3 +75,9 @@ func addV1LogRoutes(v1 *gin.RouterGroup) {
 	logv1.GET(constants.LogByDate, apiv1.GetLogsByDate)
 	logv1.GET(constants.LogById, apiv1.GetLogByIDHandler)
 }
+
+func addV1UserRoutes(v1 *gin.RouterGroup) {
+	userv1 := v1.Group(constants.UserRoute)
+	userv1.GET(constants.GetUserById, apiv1.GetUserByIdHandler)
+	userv1.PUT(constants.UpdateUser, apiv1.UpdateUserHandler)
+}
