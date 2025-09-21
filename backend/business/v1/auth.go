@@ -30,7 +30,7 @@ func AuthenticateWithFirebase(ctx context.Context, params modelsv1.FirebaseAuthP
 		return nil, errors.New("email is required for this platform")
 	}
 
-	// 🔥 Check if user exists by firebase_id instead of local ID
+	// Check if user exists by firebase_id instead of local ID
 	existingUser, err := repositories.GetUserByFirebaseID(ctx, firebaseUser.UID)
 	if err != nil {
 		if errors.Is(err, database.ErrNoRecords) {

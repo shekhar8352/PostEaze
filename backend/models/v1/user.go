@@ -75,3 +75,7 @@ type ErrorResponse struct {
     Msg    string `json:"msg"`
 }
 
+type UpdateUserParams struct {
+	ID string `json:"id"`
+	Email string `json:"email"`
+}
