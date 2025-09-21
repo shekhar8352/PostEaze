@@ -15,7 +15,7 @@ func AuthenticateWithFirebase(ctx context.Context, params modelsv1.FirebaseAuthP
 	// Validate Firebase token
 	firebaseService := utils.GetFirebaseService()
 	if firebaseService == nil {
-		return nil, errors.New("Firebase service not initialized")
+		return nil, errors.New("firebase service not initialized")
 	}
 
 	firebaseUser, err := firebaseService.ValidateToken(ctx, params.FirebaseToken)

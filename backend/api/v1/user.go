@@ -10,6 +10,17 @@ import (
 	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 )
 
+// GetUserByIdHandler gdoc
+// @Summary      Get user by ID
+// @Description  Get user details by ID
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        user_id  path      string  true  "User ID"
+// @Security     ApiKeyAuth
+// @Success      200 {object} modelsv1.User
+// @Failure      500 {object} modelsv1.ErrorResponse
+// @Router       /users/{user_id} [get]
 func GetUserByIdHandler(c *gin.Context) {
 	userID := c.Param("user_id")
 	user, err := businessv1.GetUserById(c.Request.Context(), userID)
@@ -23,6 +34,17 @@ func GetUserByIdHandler(c *gin.Context) {
 	utils.SendSuccess(c, user, "User fetched successfully")
 }
 
+// UpdateUserHandler gdoc
+// @Summary      Update user
+// @Description  Update user details
+// @Tags         Users
+// @Accept       json
+// @Produce      json
+// @Param        request body modelsv1.UpdateUserParams true "Update user data"
+// @Security     ApiKeyAuth
+// @Success      200 {object} modelsv1.User
+// @Failure      500 {object} modelsv1.ErrorResponse
+// @Router       /users/{user_id} [patch]
 func UpdateUserHandler(c *gin.Context) {
 	var body modelsv1.UpdateUserParams
 	if err := c.ShouldBindJSON(&body); err != nil {

@@ -52,6 +52,7 @@ func Init() error {
 	{
 		addV1UserAuthRoutes(v1)
 		addV1LogRoutes(v1)
+		addV1UserRoutes(v1)
 	}
 
 	// Swagger endpoint

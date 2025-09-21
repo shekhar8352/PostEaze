@@ -12,7 +12,12 @@ import (
 )
 
 func GetUserById(ctx context.Context, userID string) (*entities.User, error) {
-	return repositories.GetUserByID(ctx, userID)
+	user, err := repositories.GetUserByID(ctx, userID)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error fetching user by ID: %v", err)
+		return nil, err
+	}
+	return user, nil
 }
 
 func UpdateUser(ctx context.Context, body modelsv1.UpdateUserParams) (*entities.User, error) {
