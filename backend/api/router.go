@@ -47,7 +47,7 @@ func Init() error {
 			"status": "ok",
 		})
 	})
-	
+
 	v1 := api.Group(constants.V1Route)
 	{
 		addV1UserAuthRoutes(v1)
@@ -81,4 +81,12 @@ func addV1UserRoutes(v1 *gin.RouterGroup) {
 	userv1 := v1.Group(constants.UserRoute)
 	userv1.GET(constants.GetUserById, apiv1.GetUserByIdHandler)
 	userv1.PUT(constants.UpdateUser, apiv1.UpdateUserHandler)
+}
+
+func addV1TeamRoutes(v1 *gin.RouterGroup) {
+	teamv1 := v1.Group(constants.TeamRoute)
+	teamv1.GET(constants.GetAllTeams, apiv1.GetAllTeamsHandler)
+	teamv1.GET(constants.GetTeamById, apiv1.GetTeamByIDHandler)
+	teamv1.POST(constants.CreateTeam, apiv1.CreateTeamHandler)
+	teamv1.PUT(constants.UpdateTeam, apiv1.UpdateTeamHandler)
 }
