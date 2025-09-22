@@ -108,3 +108,15 @@ func UpdateUserPlatforms(ctx context.Context, userID string, platforms []string)
 	}
 	return database.Get().QueryRaw(ctx, &data, entities.UpdateUserPlatforms)
 }
+
+func UpdateUser(ctx context.Context, userID string, email string) error {
+	data := entities.User{
+		ID:    userID,
+		Email: email,
+	}
+	err := database.Get().QueryRaw(ctx, &data, entities.UpdateUser)
+	if err != nil {
+		return err
+	}
+	return nil
+}

@@ -16,6 +16,7 @@ const (
 	GetUserByID
 	GetUserByFirebaseID
 	UpdateUserPlatforms
+	UpdateUser
 	RevokeTokens
 )
 
@@ -61,6 +62,9 @@ func (o *User) GetQuery(code int) string {
 	case UpdateUserPlatforms:
 		return `UPDATE users SET platforms = $2, updated_at = NOW() 
 		        WHERE id = $1 RETURNING updated_at;`
+	case UpdateUser:
+		return `UPDATE users SET email = $2, updated_at = NOW() 
+		        WHERE id = $1 RETURNING updated_at;`
 	case RevokeTokens:
 		return `UPDATE refresh_tokens SET revoked = TRUE, updated_at = NOW() 
 		        WHERE user_id = $1;`
@@ -86,6 +90,8 @@ func (o *User) GetQueryValues(code int) []any {
 		return []any{o.FirebaseID}
 	case UpdateUserPlatforms:
 		return []any{pq.Array(o.Platforms), o.ID}
+	case UpdateUser:
+		return []any{o.ID, o.Email}
 	case RevokeTokens:
 		return []any{o.ID}
 	}
@@ -130,8 +136,11 @@ func (o *User) BindRawRow(code int, row database.Scanner) error {
 
 	case UpdateUserPlatforms:
 		return row.Scan(&o.UpdatedAt)
-	}
 
+	case UpdateUser:
+		return row.Scan(&o.UpdatedAt)
+
+	}
 	return nil
 }
 

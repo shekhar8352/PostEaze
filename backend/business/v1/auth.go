@@ -15,7 +15,7 @@ func AuthenticateWithFirebase(ctx context.Context, params modelsv1.FirebaseAuthP
 	// Validate Firebase token
 	firebaseService := utils.GetFirebaseService()
 	if firebaseService == nil {
-		return nil, errors.New("Firebase service not initialized")
+		return nil, errors.New("firebase service not initialized")
 	}
 
 	firebaseUser, err := firebaseService.ValidateToken(ctx, params.FirebaseToken)
@@ -30,7 +30,7 @@ func AuthenticateWithFirebase(ctx context.Context, params modelsv1.FirebaseAuthP
 		return nil, errors.New("email is required for this platform")
 	}
 
-	// 🔥 Check if user exists by firebase_id instead of local ID
+	// Check if user exists by firebase_id instead of local ID
 	existingUser, err := repositories.GetUserByFirebaseID(ctx, firebaseUser.UID)
 	if err != nil {
 		if errors.Is(err, database.ErrNoRecords) {
