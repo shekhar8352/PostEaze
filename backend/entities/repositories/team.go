@@ -7,14 +7,13 @@ import (
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
 
-func SaveTeam(ctx context.Context, tx database.Database, teamName string, ownerID string) (string, error) {
-
+func CreateTeam(ctx context.Context, tx database.Database, teamName string, ownerID string) (*entities.Team, error) { 
 	data := entities.Team{
 		Name:    teamName,
 		OwnerID: ownerID,
 	}
 	err := tx.QueryRaw(ctx, &data, entities.CreateTeam)
-	return data.ID, err
+	return &data, err
 }
 
 func AddListOfUsersToTeam(ctx context.Context, tx database.Database, teamID string, members []string, role string) error {

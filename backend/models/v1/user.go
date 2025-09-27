@@ -14,14 +14,6 @@ type RefreshTokenParams struct {
 	RefreshToken string `json:"refresh_token" binding:"required"`
 }
 
-type Role string
-
-const (
-	RoleAdmin   Role = "admin"
-	RoleEditor  Role = "editor"
-	RoleCreator Role = "creator"
-)
-
 type UserType string
 
 const (
@@ -39,40 +31,6 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	Memberships []TeamMember `json:"memberships,omitempty"`
-}
-
-type Team struct {
-	ID        string       `json:"id"`
-	Name      string       `json:"name"`
-	OwnerID   string       `json:"owner_id"`
-	Owner     User         `json:"owner"`
-	Members   []TeamMember `json:"members"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt time.Time    `json:"updated_at"`
-}
-
-type TeamMember struct {
-	ID     string `json:"id"`
-	TeamID string `json:"team_id"`
-	UserID string `json:"user_id"`
-
-	// Only keep Role here if users can have different roles across teams
-	Role      Role      `json:"role"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
-// SuccessResponse is the standard success payload
-type SuccessResponse struct {
-    Status string      `json:"status"`
-    Msg    string      `json:"msg"`
-    Data   interface{} `json:"data,omitempty"`
-}
-
-// ErrorResponse is the standard error payload
-type ErrorResponse struct {
-    Status string `json:"status"`
-    Msg    string `json:"msg"`
 }
 
 type UpdateUserParams struct {

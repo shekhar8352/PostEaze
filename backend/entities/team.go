@@ -34,7 +34,7 @@ type TeamMember struct {
 func (o *Team) GetQuery(code int) string {
 	switch code {
 	case CreateTeam:
-		return `INSERT INTO teams (name , owner_id ) VALUES ( $1 , $2) RETURNING id;`
+		return `INSERT INTO teams (name , owner_id ) VALUES ( $1 , $2) RETURNING id, created_at, updated_at;;`
 	case AddUsersToTeam:
 		baseQuery := `INSERT INTO team_members (team_id, user_id, role) VALUES `
 		valueStrings := make([]string, 0, len(o.Members))
@@ -56,7 +56,7 @@ func (o *Team) GetQuery(code int) string {
 func (o *Team) GetQueryValues(code int) []any {
 	switch code {
 	case CreateTeam:
-		return []interface{}{o.Name, o.OwnerID}
+		return []interface{}{o.Name, o.OwnerID, }
 	case AddUsersToTeam:
 		args := make([]interface{}, 0, len(o.Members)*3)
 		for _, member := range o.Members {
@@ -86,7 +86,7 @@ func (o *Team) GetNextRaw() database.RawEntity {
 func (o *Team) BindRawRow(code int, row database.Scanner) error {
 	switch code {
 	case CreateTeam:
-		row.Scan(&o.ID)
+		row.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
 	}
 	return nil
 }
