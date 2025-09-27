@@ -56,7 +56,7 @@ func (o *Team) GetQuery(code int) string {
 func (o *Team) GetQueryValues(code int) []any {
 	switch code {
 	case CreateTeam:
-		return []interface{}{o.Name, o.OwnerID, }
+		return []any{o.Name, o.OwnerID}
 	case AddUsersToTeam:
 		args := make([]interface{}, 0, len(o.Members)*3)
 		for _, member := range o.Members {

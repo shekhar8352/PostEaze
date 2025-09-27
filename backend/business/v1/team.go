@@ -24,5 +24,11 @@ func CreateTeam(ctx context.Context, body modelsv1.Team) (*entities.Team, error)
 		return nil, err
 	}
 
+	err = database.CommitTx(tx)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error committing transaction: %v", err)
+		return nil, err
+	}
+
 	return team, nil
 }
