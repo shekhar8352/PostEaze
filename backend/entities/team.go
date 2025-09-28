@@ -13,6 +13,7 @@ const (
 	CreateTeam = iota
 	AddUsersToTeam
 	GetAllTeams
+	GetTeamByID
 )
 
 type Team struct {
@@ -49,6 +50,8 @@ func (o *Team) GetQuery(code int) string {
 
 		placeholderString := strings.Join(valueStrings, ", ")
 		return baseQuery + placeholderString + ";"
+	case GetTeamByID:
+		return `SELECT id, name, owner_id, created_at, updated_at FROM teams WHERE id = $1;`
 	}
 	return constants.Empty
 }
@@ -65,6 +68,8 @@ func (o *Team) GetQueryValues(code int) []any {
 		return args
 	case GetAllTeams:
 		return []any{}
+	case GetTeamByID:
+			return []any{o.ID}
 	}
 	return nil
 }
@@ -93,6 +98,8 @@ func (o *Team) BindRawRow(code int, row database.Scanner) error {
 	case CreateTeam:
 		return row.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
 	case GetAllTeams:
+		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
+	case GetTeamByID:
 		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
 	}
 	return nil

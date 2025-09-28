@@ -60,3 +60,26 @@ func GetAllTeamsHandler(c *gin.Context) {
 	utils.Logger.Info(c.Request.Context(), "Teams fetched successfully")
 	utils.SendSuccess(c, teams, "Teams fetched successfully")
 }
+
+// GetTeamByIDHandler godoc
+// @Summary      Get team by ID
+// @Description  Get team details by ID
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Param        team_id path      string  true  "Team ID"
+// @Success      200 {object} modelsv1.Team
+// @Failure      500 {object} modelsv1.ErrorResponse
+// @Router       /teams/{team_id} [get]
+func GetTeamByIDHandler(c *gin.Context) {
+	teamID := c.Param("team_id")
+	team, err := businessv1.GetTeamByID(c.Request.Context(), teamID)
+	if err != nil {
+		utils.Logger.Error(c.Request.Context(), "Error fetching team by ID: %v", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Logger.Info(c.Request.Context(), "Team fetched successfully")
+	utils.SendSuccess(c, team, "Team fetched successfully")
+}

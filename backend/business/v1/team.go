@@ -41,3 +41,12 @@ func GetAllTeams(ctx context.Context) ([]*entities.Team, error) {
 	}
 	return teams, nil
 }
+
+func GetTeamByID(ctx context.Context, teamID string) (*entities.Team, error) {
+	team, err := repositories.GetTeamByID(ctx, teamID)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error fetching team by ID: %v", err)
+		return nil, err
+	}
+	return team, nil
+}

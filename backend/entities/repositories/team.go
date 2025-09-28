@@ -42,3 +42,11 @@ func GetAllTeams(ctx context.Context) ([]*entities.Team, error) {
 
     return teams, nil
 }
+
+func GetTeamByID(ctx context.Context, teamID string) (*entities.Team, error) {
+	data := entities.Team{
+		ID: teamID,
+	}
+	err := database.Get().QueryRaw(ctx, &data, entities.GetTeamByID)
+	return &data, err
+}
