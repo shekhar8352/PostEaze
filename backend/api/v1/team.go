@@ -10,6 +10,17 @@ import (
 	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 )
 
+// CreateTeamHandler gdoc
+// @Summary      Create team
+// @Description  Create a team with name and owner ID
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Param        team body modelsv1.Team true "Team details"
+// @Success      200 {object} modelsv1.Team
+// @Failure      400 {object} modelsv1.ErrorResponse
+// @Failure      500 {object} modelsv1.ErrorResponse
+// @Router       /teams [post]
 func CreateTeamHandler(c *gin.Context) {
 	var team modelsv1.Team
 	if err := c.ShouldBindJSON(&team); err != nil {
@@ -27,4 +38,25 @@ func CreateTeamHandler(c *gin.Context) {
 
 	utils.Logger.Info(c.Request.Context(), "Team created successfully")
 	utils.SendSuccess(c, createdTeam, "Team created successfully")
+}
+
+// GetAllTeamsHandler godoc
+// @Summary      Get all teams
+// @Description  Get a list of all teams
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Success      200 {array} modelsv1.Team
+// @Failure      500 {object} modelsv1.ErrorResponse
+// @Router       /teams/all [get]
+func GetAllTeamsHandler(c *gin.Context) {
+	teams, err := businessv1.GetAllTeams(c.Request.Context())
+	if err != nil {
+		utils.Logger.Error(c.Request.Context(), "Error fetching teams: %v", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Logger.Info(c.Request.Context(), "Teams fetched successfully")
+	utils.SendSuccess(c, teams, "Teams fetched successfully")
 }

@@ -32,3 +32,12 @@ func CreateTeam(ctx context.Context, body modelsv1.Team) (*entities.Team, error)
 
 	return team, nil
 }
+
+func GetAllTeams(ctx context.Context) ([]*entities.Team, error) {
+	teams, err := repositories.GetAllTeams(ctx)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error fetching teams: %v", err)
+		return nil, err
+	}
+	return teams, nil
+}

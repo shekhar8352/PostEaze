@@ -25,5 +25,20 @@ func AddListOfUsersToTeam(ctx context.Context, tx database.Database, teamID stri
 	}
 	err := tx.QueryRaw(ctx, &data, entities.AddUsersToTeam)
 	return err
+}
 
+func GetAllTeams(ctx context.Context) ([]*entities.Team, error) {
+    rows, err := database.Get().QueryMultiRaw(ctx, &entities.Team{}, entities.GetAllTeams)
+    if err != nil {
+        return nil, err
+    }
+
+    teams := make([]*entities.Team, 0, len(rows))
+    for _, row := range rows {
+        if team, ok := row.(*entities.Team); ok {
+            teams = append(teams, team)
+        }
+    }
+
+    return teams, nil
 }

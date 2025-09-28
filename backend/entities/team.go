@@ -12,6 +12,7 @@ import (
 const (
 	CreateTeam = iota
 	AddUsersToTeam
+	GetAllTeams
 )
 
 type Team struct {
@@ -34,7 +35,7 @@ type TeamMember struct {
 func (o *Team) GetQuery(code int) string {
 	switch code {
 	case CreateTeam:
-		return `INSERT INTO teams (name , owner_id ) VALUES ( $1 , $2) RETURNING id, created_at, updated_at;;`
+		return `INSERT INTO teams (name , owner_id ) VALUES ($1, $2) RETURNING id, created_at, updated_at;`
 	case AddUsersToTeam:
 		baseQuery := `INSERT INTO team_members (team_id, user_id, role) VALUES `
 		valueStrings := make([]string, 0, len(o.Members))
@@ -48,7 +49,6 @@ func (o *Team) GetQuery(code int) string {
 
 		placeholderString := strings.Join(valueStrings, ", ")
 		return baseQuery + placeholderString + ";"
-
 	}
 	return constants.Empty
 }
@@ -63,15 +63,20 @@ func (o *Team) GetQueryValues(code int) []any {
 			args = append(args, o.ID, member.UserID, member.Role)
 		}
 		return args
+	case GetAllTeams:
+		return []any{}
 	}
 	return nil
 }
 
 func (o *Team) GetMultiQuery(code int) string {
-	switch code {
-	}
-	return constants.Empty
+    switch code {
+    case GetAllTeams:
+        return `SELECT id, name, owner_id, created_at, updated_at FROM teams;`
+    }
+    return constants.Empty
 }
+
 
 func (o *Team) GetMultiQueryValues(code int) []any {
 	switch code {
@@ -86,7 +91,9 @@ func (o *Team) GetNextRaw() database.RawEntity {
 func (o *Team) BindRawRow(code int, row database.Scanner) error {
 	switch code {
 	case CreateTeam:
-		row.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
+		return row.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
+	case GetAllTeams:
+		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
 	}
 	return nil
 }

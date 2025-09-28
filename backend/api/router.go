@@ -87,7 +87,7 @@ func addV1UserRoutes(v1 *gin.RouterGroup) {
 func addV1TeamRoutes(v1 *gin.RouterGroup) {
 	teamv1 := v1.Group(constants.TeamRoute)
 	teamv1.POST(constants.CreateTeam, apiv1.CreateTeamHandler)
-	// teamv1.GET(constants.GetAllTeams, apiv1.GetAllTeamsHandler)
+	teamv1.GET(constants.GetAllTeams, apiv1.GetAllTeamsHandler)
 	// teamv1.GET(constants.GetTeamById, apiv1.GetTeamByIDHandler)
 	// teamv1.PUT(constants.UpdateTeam, apiv1.UpdateTeamHandler)
 }
