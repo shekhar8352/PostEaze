@@ -12,6 +12,9 @@ import (
 const (
 	CreateTeam = iota
 	AddUsersToTeam
+	GetAllTeams
+	GetTeamByID
+	GetTeamByOwnerID
 )
 
 type Team struct {
@@ -34,7 +37,7 @@ type TeamMember struct {
 func (o *Team) GetQuery(code int) string {
 	switch code {
 	case CreateTeam:
-		return `INSERT INTO teams (name , owner_id ) VALUES ( $1 , $2) RETURNING id;`
+		return `INSERT INTO teams (name , owner_id ) VALUES ($1, $2) RETURNING id, created_at, updated_at;`
 	case AddUsersToTeam:
 		baseQuery := `INSERT INTO team_members (team_id, user_id, role) VALUES `
 		valueStrings := make([]string, 0, len(o.Members))
@@ -48,7 +51,8 @@ func (o *Team) GetQuery(code int) string {
 
 		placeholderString := strings.Join(valueStrings, ", ")
 		return baseQuery + placeholderString + ";"
-
+	case GetTeamByID:
+		return `SELECT id, name, owner_id, created_at, updated_at FROM teams WHERE id = $1;`
 	}
 	return constants.Empty
 }
@@ -56,25 +60,36 @@ func (o *Team) GetQuery(code int) string {
 func (o *Team) GetQueryValues(code int) []any {
 	switch code {
 	case CreateTeam:
-		return []interface{}{o.Name, o.OwnerID}
+		return []any{o.Name, o.OwnerID}
 	case AddUsersToTeam:
 		args := make([]interface{}, 0, len(o.Members)*3)
 		for _, member := range o.Members {
 			args = append(args, o.ID, member.UserID, member.Role)
 		}
 		return args
+	case GetTeamByID:
+		return []any{o.ID}
 	}
 	return nil
 }
 
 func (o *Team) GetMultiQuery(code int) string {
-	switch code {
-	}
-	return constants.Empty
+    switch code {
+    case GetAllTeams:
+        return `SELECT id, name, owner_id, created_at, updated_at FROM teams;`
+	case GetTeamByOwnerID:
+		return `SELECT id, name, owner_id, created_at, updated_at FROM teams WHERE owner_id = $1;`
+    }
+    return constants.Empty
 }
+
 
 func (o *Team) GetMultiQueryValues(code int) []any {
 	switch code {
+	case GetAllTeams:
+		return []any{}
+	case GetTeamByOwnerID:
+		return []any{o.OwnerID}
 	}
 	return nil
 }
@@ -86,7 +101,13 @@ func (o *Team) GetNextRaw() database.RawEntity {
 func (o *Team) BindRawRow(code int, row database.Scanner) error {
 	switch code {
 	case CreateTeam:
-		row.Scan(&o.ID)
+		return row.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
+	case GetAllTeams:
+		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
+	case GetTeamByID:
+		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
+	case GetTeamByOwnerID:
+		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
 	}
 	return nil
 }

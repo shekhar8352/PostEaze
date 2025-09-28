@@ -1,8 +1,8 @@
 package constants
 
 const (
-	ApiRoute     = "/api"
-	V1Route      = "/v1"
+	ApiRoute = "/api"
+	V1Route  = "/v1"
 
 	AuthRoute    = "/auth"
 	Authenticate = "/authenticate"
@@ -10,10 +10,17 @@ const (
 	LogOutRoute  = "/logout"
 	LogRoute     = "/log"
 
-	LogById      = "/byId/:log_id"
-	LogByDate    = "/byDate/:date"
+	LogById   = "/byId/:log_id"
+	LogByDate = "/byDate/:date"
 
-	UserRoute    = "/user"
-	GetUserById  = "/:user_id"
-	UpdateUser   = "/:user_id"
+	UserRoute   = "/user"
+	GetUserById = "/:user_id"
+	UpdateUser  = "/:user_id"
+
+	TeamRoute   = "/team"
+	GetAllTeams = "/all"
+	GetTeamById = "/:team_id"
+	GetTeamByOwnerID = "/owner/:owner_id"
+	CreateTeam  = "/create"
+	UpdateTeam  = "/:team_id"
 )
