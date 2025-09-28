@@ -83,3 +83,16 @@ func GetTeamByIDHandler(c *gin.Context) {
 	utils.Logger.Info(c.Request.Context(), "Team fetched successfully")
 	utils.SendSuccess(c, team, "Team fetched successfully")
 }
+
+func GetTeamByOwnerIDHandler(c *gin.Context) {
+	ownerID := c.Param("owner_id")
+	team, err := businessv1.GetTeamByOwnerID(c.Request.Context(), ownerID)
+	if err != nil {
+		utils.Logger.Error(c.Request.Context(), "Error fetching team by owner ID: %v", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Logger.Info(c.Request.Context(), "Team fetched successfully")
+	utils.SendSuccess(c, team, "Team fetched successfully")
+}

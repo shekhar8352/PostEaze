@@ -14,6 +14,7 @@ const (
 	AddUsersToTeam
 	GetAllTeams
 	GetTeamByID
+	GetTeamByOwnerID
 )
 
 type Team struct {
@@ -66,10 +67,8 @@ func (o *Team) GetQueryValues(code int) []any {
 			args = append(args, o.ID, member.UserID, member.Role)
 		}
 		return args
-	case GetAllTeams:
-		return []any{}
 	case GetTeamByID:
-			return []any{o.ID}
+		return []any{o.ID}
 	}
 	return nil
 }
@@ -78,6 +77,8 @@ func (o *Team) GetMultiQuery(code int) string {
     switch code {
     case GetAllTeams:
         return `SELECT id, name, owner_id, created_at, updated_at FROM teams;`
+	case GetTeamByOwnerID:
+		return `SELECT id, name, owner_id, created_at, updated_at FROM teams WHERE owner_id = $1;`
     }
     return constants.Empty
 }
@@ -85,6 +86,10 @@ func (o *Team) GetMultiQuery(code int) string {
 
 func (o *Team) GetMultiQueryValues(code int) []any {
 	switch code {
+	case GetAllTeams:
+		return []any{}
+	case GetTeamByOwnerID:
+		return []any{o.OwnerID}
 	}
 	return nil
 }
@@ -100,6 +105,8 @@ func (o *Team) BindRawRow(code int, row database.Scanner) error {
 	case GetAllTeams:
 		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
 	case GetTeamByID:
+		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
+	case GetTeamByOwnerID:
 		return row.Scan(&o.ID, &o.Name, &o.OwnerID, &o.CreatedAt, &o.UpdatedAt)
 	}
 	return nil

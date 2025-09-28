@@ -20,6 +20,7 @@ const (
 	TeamRoute   = "/team"
 	GetAllTeams = "/all"
 	GetTeamById = "/:team_id"
+	GetTeamByOwnerID = "/owner/:owner_id"
 	CreateTeam  = "/create"
 	UpdateTeam  = "/:team_id"
 )

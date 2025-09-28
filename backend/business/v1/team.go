@@ -50,3 +50,12 @@ func GetTeamByID(ctx context.Context, teamID string) (*entities.Team, error) {
 	}
 	return team, nil
 }
+
+func GetTeamByOwnerID(ctx context.Context, ownerID string) ([]*entities.Team, error) {
+	team, err := repositories.GetTeamByOwnerID(ctx, ownerID)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error fetching team by owner ID: %v", err)
+		return nil, err
+	}
+	return team, nil
+}

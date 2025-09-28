@@ -50,3 +50,23 @@ func GetTeamByID(ctx context.Context, teamID string) (*entities.Team, error) {
 	err := database.Get().QueryRaw(ctx, &data, entities.GetTeamByID)
 	return &data, err
 }
+
+func GetTeamByOwnerID(ctx context.Context, ownerID string) ([]*entities.Team, error) {
+	data := entities.Team{
+		OwnerID: ownerID,
+	}
+
+    rows, err := database.Get().QueryMultiRaw(ctx, &data, entities.GetTeamByOwnerID)
+    if err != nil {
+        return nil, err
+    }
+
+    teams := make([]*entities.Team, 0, len(rows))
+    for _, row := range rows {
+        if team, ok := row.(*entities.Team); ok {
+            teams = append(teams, team)
+        }
+    }
+
+    return teams, nil
+}
