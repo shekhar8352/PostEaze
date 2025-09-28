@@ -5,7 +5,7 @@ import (
 )
 
 type FirebaseAuthParams struct {
-	LocalID       string `json:"local_id" binding:"required"`
+	FirebaseID       string `json:"firebase_id" binding:"required"`
 	FirebaseToken string `json:"firebase_token" binding:"required"`
 	Platform      string `json:"platform" binding:"required,oneof=email google facebook microsoft"`
 }
