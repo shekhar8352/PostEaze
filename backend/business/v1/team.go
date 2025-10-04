@@ -18,7 +18,7 @@ func CreateTeam(ctx context.Context, body modelsv1.Team) (*entities.Team, error)
 		return nil, err
 	}
 
-	team, err := repositories.CreateTeam(ctx, tx, body.Name, body.OwnerID)
+	team, err := repositories.CreateTeam(ctx, tx, body)
 	if err != nil {
 		utils.Logger.Error(ctx, "Error creating team: %v", err)
 		return nil, err
