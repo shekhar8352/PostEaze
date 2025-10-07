@@ -81,3 +81,25 @@ func UpdateTeam(ctx context.Context, body modelsv1.Team, teamID string) (*entiti
 	
 	return team, nil
 }
+
+func UpdateTeamStatus(ctx context.Context, body modelsv1.Team, teamID string) error {
+	tx, err := database.GetTx(ctx, nil)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error creating team: %v", err)
+		return err
+	}
+
+	err = repositories.UpdateTeamStatus(ctx, tx, body, teamID)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error updating team: %v", err)
+		return err
+	}
+
+	err = database.CommitTx(tx)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error committing transaction: %v", err)
+		return err
+	}
+	
+	return nil
+}

@@ -3,7 +3,6 @@ package entities
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/shekhar8352/PostEaze/constants"
@@ -16,6 +15,7 @@ const (
 	GetTeamByID
 	GetTeamByOwnerID
 	UpdateTeam
+	UpdateTeamStatus
 )
 
 type Team struct {
@@ -87,6 +87,12 @@ func (o *Team) GetQuery(code int) string {
 			SET name=$1, description=$2, avatar_url=$3, visibility=$4, updated_at=NOW()
 			WHERE id=$5 
 			RETURNING updated_at, owner_id, settings, created_at, status;`
+	case UpdateTeamStatus:
+		return `
+			UPDATE teams 
+			SET status=$1, updated_at=NOW()
+			WHERE id=$2
+			RETURNING updated_at;`
 	}
 	return constants.Empty
 }
@@ -99,8 +105,9 @@ func (o *Team) GetQueryValues(code int) []any {
 	case GetTeamByID:
 		return []any{o.ID}
 	case UpdateTeam:
-		fmt.Println(o)
 		return []any{o.Name, o.Description, o.AvatarURL, o.Visibility, o.ID}
+	case UpdateTeamStatus:
+		return []any{o.Status, o.ID}
 	}
 	return nil
 }
@@ -150,6 +157,8 @@ func (o *Team) BindRawRow(code int, row database.Scanner) error {
 			&o.Status, &o.OwnerID, &o.Settings, &o.CreatedAt, &o.UpdatedAt)
 	case UpdateTeam:
 		return row.Scan(&o.UpdatedAt, &o.OwnerID, &o.Settings, &o.CreatedAt, &o.Status)
+	case UpdateTeamStatus:
+		return row.Scan(&o.UpdatedAt)
 	}
 	return nil
 }

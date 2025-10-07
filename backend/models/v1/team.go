@@ -14,6 +14,7 @@ type Team struct {
 	Visibility string       `json:"visibility"`
 	AvatarURL  string       `json:"avatar_url"`
 	OwnerID   string       `json:"owner_id"`
+	Status    string       `json:"status"`
 }
 
 type TeamMember struct {

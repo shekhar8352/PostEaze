@@ -23,4 +23,5 @@ const (
 	GetTeamByOwnerID = "/owner/:owner_id"
 	CreateTeam  = "/create"
 	UpdateTeam  = "/:team_id"
+	UpdateTeamStatus = "status/:team_id"
 )

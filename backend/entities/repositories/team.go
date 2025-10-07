@@ -75,3 +75,11 @@ func UpdateTeam (ctx context.Context, tx database.Database, body modelsv1.Team, 
 	err := tx.QueryRaw(ctx, &data, entities.UpdateTeam)
 	return &data, err
 }
+
+func UpdateTeamStatus (ctx context.Context, tx database.Database, body modelsv1.Team, teamID string) error { 
+	data := entities.Team{
+		ID: teamID,
+		Status: body.Status,
+	}
+	return tx.QueryRaw(ctx, &data, entities.UpdateTeamStatus)
+}

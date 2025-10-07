@@ -91,4 +91,5 @@ func addV1TeamRoutes(v1 *gin.RouterGroup) {
 	teamv1.GET(constants.GetTeamById, apiv1.GetTeamByIDHandler)
 	teamv1.GET(constants.GetTeamByOwnerID, apiv1.GetTeamByOwnerIDHandler)
 	teamv1.PUT(constants.UpdateTeam, apiv1.UpdateTeamHandler)
+	teamv1.PUT(constants.UpdateTeamStatus, apiv1.UpdateTeamStatusHandler)
 }
