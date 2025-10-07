@@ -59,3 +59,25 @@ func GetTeamByOwnerID(ctx context.Context, ownerID string) ([]*entities.Team, er
 	}
 	return team, nil
 }
+
+func UpdateTeam(ctx context.Context, body modelsv1.Team, teamID string) (*entities.Team, error) {
+	tx, err := database.GetTx(ctx, nil)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error creating team: %v", err)
+		return nil, err
+	}
+
+	team, err := repositories.UpdateTeam(ctx, tx, body, teamID)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error updating team: %v", err)
+		return nil, err
+	}
+
+	err = database.CommitTx(tx)
+	if err != nil {
+		utils.Logger.Error(ctx, "Error committing transaction: %v", err)
+		return nil, err
+	}
+	
+	return team, nil
+}

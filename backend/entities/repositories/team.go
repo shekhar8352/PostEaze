@@ -63,3 +63,15 @@ func GetTeamByOwnerID(ctx context.Context, ownerID string) ([]*entities.Team, er
 
     return teams, nil
 }
+
+func UpdateTeam (ctx context.Context, tx database.Database, body modelsv1.Team, teamID string) (*entities.Team, error) { 
+	data := entities.Team{
+		ID: teamID,
+		Name:    body.Name,
+		Visibility: body.Visibility,
+		Description: &body.Description,
+		AvatarURL: &body.AvatarURL,
+	}
+	err := tx.QueryRaw(ctx, &data, entities.UpdateTeam)
+	return &data, err
+}
