@@ -32,21 +32,6 @@ type Team struct {
 	UpdatedAt         time.Time       `json:"updated_at"`
 }
 
-type TeamMember struct {
-	ID           string                 `json:"id"`
-	TeamID       string                 `json:"team_id"`
-	UserID       string                 `json:"user_id"`
-	Role         string                 `json:"role"`
-	Status       string                 `json:"status"`
-	JoinedAt     time.Time              `json:"joined_at"`
-	InvitedBy    *string                `json:"invited_by,omitempty"`
-	Permissions  map[string]interface{} `json:"permissions"`
-	IsPrimary    bool                   `json:"is_primary"`
-	LastActiveAt *time.Time             `json:"last_active_at,omitempty"`
-	CreatedAt    time.Time              `json:"created_at"`
-	UpdatedAt    time.Time              `json:"updated_at"`
-}
-
 // --- Validation helpers ---
 
 func (o *Team) Validate() error {
