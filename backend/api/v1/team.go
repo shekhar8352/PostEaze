@@ -84,6 +84,16 @@ func GetTeamByIDHandler(c *gin.Context) {
 	utils.SendSuccess(c, team, "Team fetched successfully")
 }
 
+// GetTeamByOwnerIDHandler godoc
+// @Summary      Get team by owner ID
+// @Description  Get team details by owner ID
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Param        owner_id path      string  true  "Owner ID"
+// @Success      200 {object} modelsv1.Team
+// @Failure      500 {object} modelsv1.ErrorResponse
+// @Router       /teams/owner/{owner_id} [get]
 func GetTeamByOwnerIDHandler(c *gin.Context) {
 	ownerID := c.Param("owner_id")
 	team, err := businessv1.GetTeamByOwnerID(c.Request.Context(), ownerID)
@@ -95,4 +105,56 @@ func GetTeamByOwnerIDHandler(c *gin.Context) {
 
 	utils.Logger.Info(c.Request.Context(), "Team fetched successfully")
 	utils.SendSuccess(c, team, "Team fetched successfully")
+}
+
+// UpdateTeamHandler godoc
+// @Summary      Update team
+// @Description  Update team details by ID
+// @Tags         Teams
+// @Accept       json
+// @Produce      json
+// @Param        team_id  path      string  true  "Team ID"
+// @Param        team body      modelsv1.Team true "Team details"
+// @Success      200 {object} modelsv1.Team
+// @Failure      400 {object} modelsv1.ErrorResponse
+// @Failure      500 {object} modelsv1.ErrorResponse
+// @Router       /teams/{team_id} [patch]
+func UpdateTeamHandler(c *gin.Context) {
+	teamID := c.Param("team_id")
+	var team modelsv1.Team
+	if err := c.ShouldBindJSON(&team); err != nil {
+		utils.Logger.Info(c.Request.Context(), "Error binding JSON: ", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	updatedTeam, err := businessv1.UpdateTeam(c.Request.Context(), team, teamID)
+	if err != nil {
+		utils.Logger.Error(c.Request.Context(), "Error updating team: %v", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Logger.Info(c.Request.Context(), "Team updated successfully")
+	utils.SendSuccess(c, updatedTeam, "Team updated successfully")
+}
+
+func UpdateTeamStatusHandler(c *gin.Context) {
+	teamID := c.Param("team_id")
+	var team modelsv1.Team
+	if err := c.ShouldBindJSON(&team); err != nil {
+		utils.Logger.Info(c.Request.Context(), "Error binding JSON: ", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	err := businessv1.UpdateTeamStatus(c.Request.Context(), team, teamID)
+	if err != nil {
+		utils.Logger.Error(c.Request.Context(), "Error updating team: %v", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Logger.Info(c.Request.Context(), "Team updated successfully")
+	utils.SendSuccess(c, nil, "Team updated successfully")
 }

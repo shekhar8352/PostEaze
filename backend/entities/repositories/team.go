@@ -4,27 +4,20 @@ import (
 	"context"
 
 	"github.com/shekhar8352/PostEaze/entities"
+	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
 
-func CreateTeam(ctx context.Context, tx database.Database, teamName string, ownerID string) (*entities.Team, error) { 
+func CreateTeam(ctx context.Context, tx database.Database, body modelsv1.Team) (*entities.Team, error) { 
 	data := entities.Team{
-		Name:    teamName,
-		OwnerID: ownerID,
+		Name:    body.Name,
+		OwnerID: body.OwnerID,
+		Visibility: body.Visibility,
+		Description: &body.Description,
+		AvatarURL: &body.AvatarURL,
 	}
 	err := tx.QueryRaw(ctx, &data, entities.CreateTeam)
 	return &data, err
-}
-
-func AddListOfUsersToTeam(ctx context.Context, tx database.Database, teamID string, members []string, role string) error {
-	data := entities.Team{
-		ID: teamID,
-	}
-	for i := range members {
-		data.Members = append(data.Members, entities.TeamMember{UserID: members[i], Role: role})
-	}
-	err := tx.QueryRaw(ctx, &data, entities.AddUsersToTeam)
-	return err
 }
 
 func GetAllTeams(ctx context.Context) ([]*entities.Team, error) {
@@ -69,4 +62,24 @@ func GetTeamByOwnerID(ctx context.Context, ownerID string) ([]*entities.Team, er
     }
 
     return teams, nil
+}
+
+func UpdateTeam (ctx context.Context, tx database.Database, body modelsv1.Team, teamID string) (*entities.Team, error) { 
+	data := entities.Team{
+		ID: teamID,
+		Name:    body.Name,
+		Visibility: body.Visibility,
+		Description: &body.Description,
+		AvatarURL: &body.AvatarURL,
+	}
+	err := tx.QueryRaw(ctx, &data, entities.UpdateTeam)
+	return &data, err
+}
+
+func UpdateTeamStatus (ctx context.Context, tx database.Database, body modelsv1.Team, teamID string) error { 
+	data := entities.Team{
+		ID: teamID,
+		Status: body.Status,
+	}
+	return tx.QueryRaw(ctx, &data, entities.UpdateTeamStatus)
 }

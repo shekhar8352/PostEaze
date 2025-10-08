@@ -10,14 +10,20 @@ const (
 
 type Team struct {
 	Name      string       `json:"name"`
+	Description string       `json:"description"`
+	Visibility string       `json:"visibility"`
+	AvatarURL  string       `json:"avatar_url"`
 	OwnerID   string       `json:"owner_id"`
+	Status    string       `json:"status"`
 }
 
 type TeamMember struct {
-	ID     string `json:"id"`
-	TeamID string `json:"team_id"`
-	UserID string `json:"user_id"`
-
-	// Only keep Role here if users can have different roles across teams
-	Role      Role      `json:"role"`
+	ID           string                 `json:"id"`
+	TeamID       string                 `json:"team_id"`
+	UserID       string                 `json:"user_id"`
+	Role         string                 `json:"role"`
+	Status       string                 `json:"status"`
+	InvitedBy    *string                `json:"invited_by,omitempty"`
+	Permissions  map[string]interface{} `json:"permissions"`
+	IsPrimary    bool                   `json:"is_primary"`
 }
