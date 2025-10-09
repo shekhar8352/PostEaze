@@ -48,15 +48,8 @@ export const useRegister = () => {
 export const useCompleteRegistration = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({
-      email,
-      password,
-      name,
-    }: {
-      email: string;
-      password: string;
-      name: string;
-    }) => authService.completeRegistration(email, password, name),
+    mutationFn: ({ email, password }: { email: string; password: string }) =>
+      authService.completeRegistration(email, password),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
