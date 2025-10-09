@@ -21,15 +21,13 @@ import {
 interface EmailVerificationScreenProps {
   email: string;
   password: string;
-  name: string;
   onBack?: () => void;
   onVerified?: () => void;
 }
 
 export const EmailVerificationScreen = ({ 
   email, 
-  password, 
-  name, 
+  password,  
   onBack, 
   onVerified 
 }: EmailVerificationScreenProps) => {
@@ -96,7 +94,7 @@ export const EmailVerificationScreen = ({
         }
         
         // Complete the registration process
-        await completeRegistration.mutateAsync({ email, password, name });
+        await completeRegistration.mutateAsync({ email, password });
         onVerified?.();
       } else {
         if (showNotification) {

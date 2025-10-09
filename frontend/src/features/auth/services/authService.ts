@@ -104,7 +104,7 @@ class AuthService extends BaseService {
   }
 
   // Complete registration after email verification
-  async completeRegistration(email: string, password: string, name: string) {
+  async completeRegistration(email: string, password: string) {
     try {
       // Step 1: Check if email is now verified
       const isVerified = await firebaseHelper.checkEmailVerification(
