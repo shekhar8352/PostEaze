@@ -12,9 +12,9 @@ const RegisterPage = () => {
     navigate('/dashboard');
   };
 
-  const handleEmailSent = (email: string, password: string, name: string) => {
+  const handleEmailSent = (email: string, password: string,) => {
     navigate('/email-verify', { 
-      state: { email, password, name }
+      state: { email, password }
     });
   };
 
