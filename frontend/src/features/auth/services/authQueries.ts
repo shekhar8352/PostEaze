@@ -1,23 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authService } from "./authService";
-import {
-  type LoginRequest,
-  type RegisterRequest,
-  type LoginFormData,
-  type RegisterFormData,
-} from "../types";
+import { type LoginFormData, type RegisterFormData } from "../types";
 
 export const useLogin = () => {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: LoginFormData) => {
-      const loginRequest: LoginRequest = {
+      const loginRequest: { email: string; password: string } = {
         email: data.email,
         password: data.password,
-        firebase_uid: "", // Temporary - will be overwritten
-        firebase_token: "", // Temporary - will be overwritten
-        email_verified: true, // Will be verified by Firebase
-        provider: "email",
       };
 
       return authService.loginUser(loginRequest);
@@ -34,19 +25,12 @@ export const useLogin = () => {
 export const useRegister = () => {
   return useMutation({
     mutationFn: (data: RegisterFormData) => {
-      const registerRequest: RegisterRequest = {
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        confirmPassword: data.confirmPassword,
-        terms: true, // You might want to add this to your form
-        // These Firebase fields aren't used in the initial registration
-        firebase_uid: "", // Temporary - not used in registerUser
-        firebase_token: "", // Temporary - not used in registerUser
-        display_name: data.name,
-        email_verified: true, // Will be verified via email
-        provider: "email",
-      };
+      const registerRequest: { name: string; email: string; password: string } =
+        {
+          name: data.name,
+          email: data.email,
+          password: data.password,
+        };
 
       return authService.registerUser(registerRequest);
     },

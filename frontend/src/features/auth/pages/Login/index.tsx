@@ -14,7 +14,7 @@ const LoginPage = () => {
   };
 
   const handleEmailNotVerified = (email: string, password: string) => {
-    navigate('/email-verification', { 
+    navigate('/email-verify', { 
       state: { email, password, name: '' }
     });
   };

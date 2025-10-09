@@ -4,12 +4,24 @@ import (
 	"context"
 	"errors"
 
+	"github.com/lib/pq"
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/entities/repositories"
 	"github.com/shekhar8352/PostEaze/utils"
 
 	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 )
+
+func containsAny(arr pq.StringArray, values ...string) bool {
+	for _, item := range arr {
+		for _, value := range values {
+			if item == value {
+				return true
+			}
+		}
+	}
+	return false
+}
 
 func GetUserById(ctx context.Context, userID string) (*entities.User, error) {
 	user, err := repositories.GetUserByID(ctx, userID)
@@ -27,7 +39,7 @@ func UpdateUser(ctx context.Context, body modelsv1.UpdateUserParams) (*entities.
 		return nil, err
 	}
 
-	if user.Platforms.Contains("google", "email", "microsoft") {
+	if containsAny(user.Platforms, "google", "email", "microsoft") {
 		return nil, errors.New("User email cannot be updated")
 	}
 

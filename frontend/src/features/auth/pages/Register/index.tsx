@@ -13,7 +13,7 @@ const RegisterPage = () => {
   };
 
   const handleEmailSent = (email: string, password: string, name: string) => {
-    navigate('/email-verification', { 
+    navigate('/email-verify', { 
       state: { email, password, name }
     });
   };

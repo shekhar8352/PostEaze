@@ -3,6 +3,7 @@ package api
 import (
 	"os"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	apiv1 "github.com/shekhar8352/PostEaze/api/v1"
 	"github.com/shekhar8352/PostEaze/constants"
@@ -38,6 +39,14 @@ func Init() error {
 	docs.SwaggerInfo.Schemes = []string{"http", "https"}
 
 	s := gin.Default()
+
+	s.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "https://dev.posteaze.in"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
+	}))
+
 	s.Use(middleware.GinLoggingMiddleware())
 
 	api := s.Group(constants.ApiRoute)
