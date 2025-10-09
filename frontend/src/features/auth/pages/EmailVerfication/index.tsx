@@ -47,7 +47,6 @@ const EmailVerificationPage = () => {
             <EmailVerificationScreen
               email={state.email}
               password={state.password || ''}
-              name={state.name || ''}
               onBack={handleBack}
               onVerified={handleVerified}
             />
