@@ -3,7 +3,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'user' | 'moderator';
+  role: "admin" | "user" | "moderator";
   isActive: boolean;
   avatar?: string;
   createdAt: string;
@@ -12,29 +12,21 @@ export interface User {
 
 // Auth request types
 export interface LoginRequest {
-  email: string;
+  firebase_token: string;
+  firebase_id: string;
+  platform: string;
+  name?: string;
+  email?: string;
   password?: string;
-  rememberMe?: boolean;
-  // Firebase fields (only for verified users)
-  firebase_uid: string; // Required - only verified users reach backend
-  firebase_token: string; // Required - only verified users reach backend
-  display_name?: string;
-  email_verified: true; // Always true - only verified users reach backend
-  provider: 'email' | 'google.com' | 'facebook.com';
 }
 
 export interface RegisterRequest {
-  name: string;
-  email: string;
+  firebase_token: string;
+  firebase_id: string;
+  platform: string;
+  name?: string;
+  email?: string;
   password?: string;
-  confirmPassword?: string;
-  terms: boolean;
-  // Firebase fields (only for verified users)
-  firebase_uid: string; // Required - only verified users reach backend
-  firebase_token: string; // Required - only verified users reach backend
-  display_name: string; // Required for backend user creation
-  email_verified: true; // Always true - only verified users reach backend
-  provider: 'email' | 'google.com' | 'facebook.com';
 }
 
 export interface ForgotPasswordRequest {
@@ -114,7 +106,7 @@ export interface AuthError {
 }
 
 // Permission types
-export type Permission = 'read' | 'write' | 'delete' | 'admin';
+export type Permission = "read" | "write" | "delete" | "admin";
 
 export interface UserPermissions {
   userId: string;

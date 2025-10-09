@@ -19,11 +19,10 @@ var typeSQLScanner = reflect.TypeOf((*sql.Scanner)(nil)).Elem()
 // slice of any dimension.
 //
 // For example:
+//  db.Query(`SELECT * FROM t WHERE id = ANY($1)`, pq.Array([]int{235, 401}))
 //
-//	db.Query(`SELECT * FROM t WHERE id = ANY($1)`, pq.Array([]int{235, 401}))
-//
-//	var x []sql.NullInt64
-//	db.QueryRow(`SELECT ARRAY[235, 401]`).Scan(pq.Array(&x))
+//  var x []sql.NullInt64
+//  db.QueryRow(`SELECT ARRAY[235, 401]`).Scan(pq.Array(&x))
 //
 // Scanning multi-dimensional arrays is not supported.  Arrays where the lower
 // bound is not one (such as `[0:0]={1}') are not supported.
@@ -625,10 +624,6 @@ func (a Int32Array) Value() (driver.Value, error) {
 
 // StringArray represents a one-dimensional array of the PostgreSQL character types.
 type StringArray []string
-
-func (a StringArray) Contains(s string, param2 string, param3 string) bool {
-	panic("unimplemented")
-}
 
 // Scan implements the sql.Scanner interface.
 func (a *StringArray) Scan(src interface{}) error {

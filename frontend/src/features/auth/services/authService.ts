@@ -6,7 +6,7 @@ import { firebaseHelper } from "./firebaseHelper";
 
 class AuthService extends BaseService {
   constructor() {
-    super("/auth");
+    super("/v1/auth");
   }
 
   // Auth-specific methods that don't follow CRUD pattern
@@ -14,7 +14,7 @@ class AuthService extends BaseService {
     data: LoginRequest
   ): Promise<{ user: User; access_token: string; refresh_token: string }> {
     const response = await apiClient.post<ApiResponse<any>>(
-      `${this.endpoint}/login`,
+      `${this.endpoint}/authenticate`,
       data
     );
     return response.data.data;
@@ -24,7 +24,7 @@ class AuthService extends BaseService {
     data: RegisterRequest
   ): Promise<{ user: User; access_token: string; refresh_token: string }> {
     const response = await apiClient.post<ApiResponse<any>>(
-      `${this.endpoint}/register`,
+      `${this.endpoint}/authenticate`,
       data
     );
     return response.data.data;
@@ -53,23 +53,19 @@ class AuthService extends BaseService {
   }
 
   // Business logic methods
-  async loginUser(credentials: LoginRequest) {
+  async loginUser(credentials: { email: string; password: string }) {
     try {
       // Step 1: Authenticate with Firebase (throws error if not verified)
       const firebaseData = await firebaseHelper.loginWithEmail(
         credentials.email,
-        credentials?.password!
+        credentials?.password
       );
 
       // Step 2: Send to backend (only verified users reach here)
       const loginData: LoginRequest = {
-        email: credentials.email,
-        password: credentials.password,
-        firebase_uid: firebaseData.firebase_uid,
+        firebase_id: firebaseData.firebase_uid,
         firebase_token: firebaseData.firebase_token,
-        display_name: firebaseData.display_name,
-        email_verified: firebaseData.email_verified,
-        provider: firebaseData.provider,
+        platform: "email",
       };
 
       const response = await this.login(loginData);
@@ -85,7 +81,7 @@ class AuthService extends BaseService {
     }
   }
 
-  async registerUser(data: RegisterRequest) {
+  async registerUser(data: { name: string; email: string; password: string }) {
     try {
       // Step 1: Register with Firebase (sends verification email)
       const result = await firebaseHelper.registerWithEmail(
@@ -127,16 +123,9 @@ class AuthService extends BaseService {
 
       // Step 3: Send verified user data to backend
       const registerData: RegisterRequest = {
-        name: name,
-        email: email,
-        password: password,
-        confirmPassword: password,
-        terms: true,
-        firebase_uid: firebaseData.firebase_uid,
+        firebase_id: firebaseData.firebase_uid,
         firebase_token: firebaseData.firebase_token,
-        display_name: firebaseData.display_name,
-        email_verified: firebaseData.email_verified,
-        provider: firebaseData.provider,
+        platform: "email",
       };
 
       const response = await this.register(registerData);
@@ -184,12 +173,9 @@ class AuthService extends BaseService {
       const firebaseData = await firebaseHelper.loginWithGoogle();
 
       const loginData: LoginRequest = {
-        email: "", // Backend will extract from token
-        firebase_uid: firebaseData.firebase_uid,
+        firebase_id: firebaseData.firebase_uid,
         firebase_token: firebaseData.firebase_token,
-        display_name: firebaseData.display_name,
-        email_verified: firebaseData.email_verified,
-        provider: firebaseData.provider,
+        platform: "google",
       };
 
       const response = await this.login(loginData);
@@ -210,12 +196,9 @@ class AuthService extends BaseService {
       const firebaseData = await firebaseHelper.loginWithFacebook();
 
       const loginData: LoginRequest = {
-        email: "",
-        firebase_uid: firebaseData.firebase_uid,
+        firebase_id: firebaseData.firebase_uid,
         firebase_token: firebaseData.firebase_token,
-        display_name: firebaseData.display_name,
-        email_verified: firebaseData.email_verified,
-        provider: firebaseData.provider,
+        platform: "facebook",
       };
 
       const response = await this.login(loginData);
