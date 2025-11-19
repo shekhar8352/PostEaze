@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/shekhar8352/PostEaze/services"
@@ -21,10 +22,20 @@ func main() {
 		}
 	}
 
+	// Debug: Check loaded environment variables
+	smtpEmail := os.Getenv("SMTP_EMAIL")
+	smtpPass := os.Getenv("SMTP_PASSWORD")
+	fmt.Printf("DEBUG: SMTP_EMAIL='%s'\n", smtpEmail)
+	if len(smtpPass) > 4 {
+		fmt.Printf("DEBUG: SMTP_PASSWORD='...%s' (len=%d)\n", smtpPass[len(smtpPass)-4:], len(smtpPass))
+	} else {
+		fmt.Printf("DEBUG: SMTP_PASSWORD='%s' (len=%d)\n", smtpPass, len(smtpPass))
+	}
+
 	emailService := services.NewGmailEmailService()
 
 	// Test Notification Email
-	to := "dev.posteaaze@gmail.com" // Sending to self for testing
+	to := "abc@gmail.com" // Sending to self for testing
 	err := emailService.SendNotificationEmail(to, "This is a test notification from PostEaze backend.")
 	if err != nil {
 		log.Fatalf("Failed to send notification email: %v", err)
