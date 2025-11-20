@@ -39,8 +39,8 @@ func UpdateUser(ctx context.Context, body modelsv1.UpdateUserParams) (*entities.
 		return nil, err
 	}
 
-	if containsAny(user.Platforms, "google", "email", "microsoft") {
-		return nil, errors.New("User email cannot be updated")
+	if utils.ContainsAny(user.Platforms, "google", "email", "microsoft") {
+		return nil, errors.New("user email cannot be updated")
 	}
 
 	err = repositories.UpdateUser(ctx, user.ID, user.Email)

@@ -197,6 +197,10 @@ health_check() {
         failed_services+=("frontend")
     fi
 
+    if ! docker compose exec redis redis-cli ping &>/dev/null; then
+        failed_services+=("redis")
+    fi
+
     if [[ ${#failed_services[@]} -eq 0 ]]; then
         log "All health checks passed ✓"
     else
