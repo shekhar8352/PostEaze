@@ -3,6 +3,7 @@ package redis
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 	"github.com/shekhar8352/PostEaze/constants"
@@ -33,6 +34,15 @@ func Init(ctx context.Context) error {
 	// Apply environment variable substitution if needed (e.g. if host is "${REDIS_HOST}")
 	addr = env.ApplyEnvironmentToString(addr)
 	password = env.ApplyEnvironmentToString(password)
+
+	// Default to localhost:6379 if addr is just ":" (meaning host/port were empty)
+	if addr == ":" || addr == ":0" {
+		addr = "localhost:6379"
+	} else if strings.HasPrefix(addr, ":") {
+		addr = "localhost" + addr
+	} else if strings.HasSuffix(addr, ":") {
+		addr = addr + "6379"
+	}
 
 	client = redis.NewClient(&redis.Options{
 		Addr:     addr,
