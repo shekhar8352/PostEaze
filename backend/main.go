@@ -14,6 +14,7 @@ import (
 	"github.com/shekhar8352/PostEaze/utils/env"
 	"github.com/shekhar8352/PostEaze/utils/flags"
 	httpclient "github.com/shekhar8352/PostEaze/utils/http"
+	"github.com/shekhar8352/PostEaze/utils/redis"
 )
 
 func main() {
@@ -22,6 +23,7 @@ func main() {
 	initEnv()
 	initConfigs(ctx)
 	initDatabase(ctx)
+	initRedis(ctx)
 	initFirebase(ctx)
 	initRouter(ctx)
 	initHttp(ctx)
@@ -69,6 +71,13 @@ func initDatabase(ctx context.Context) {
 	})
 	if err != nil {
 		log.Fatal(ctx, " failed to initialize database ", err)
+	}
+}
+
+func initRedis(ctx context.Context) {
+	err := redis.Init(ctx)
+	if err != nil {
+		log.Fatal(ctx, " failed to initialize redis ", err)
 	}
 }
 

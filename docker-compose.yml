@@ -9,10 +9,13 @@ services:
       - .env
     expose:
       - "8000"
+    environment:
+      - REDIS_HOST=redis
     volumes:
       - ./backend/logs:/app/logs
     depends_on:
       - postgres
+      - redis
     networks:
       - posteaze
 
@@ -38,6 +41,15 @@ services:
       - ./init-db:/docker-entrypoint-initdb.d
     ports:
       - "5432:5432"  # Exposed for team development access
+    networks:
+      - posteaze
+
+  redis:
+    image: redis:alpine
+    container_name: posteaze-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
     networks:
       - posteaze
 

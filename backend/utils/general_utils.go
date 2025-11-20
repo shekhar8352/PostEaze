@@ -36,6 +36,18 @@ func SendLogAPIError(c *gin.Context, code int, message, errorType string) {
 	})
 }
 
+// ContainsAny checks if any of the target strings are present in the slice
+func ContainsAny(slice []string, targets ...string) bool {
+	for _, item := range slice {
+		for _, target := range targets {
+			if item == target {
+				return true
+			}
+		}
+	}
+	return false
+}
+
 func SendSuccess(c *gin.Context, data any, msg string) {
 	c.JSON(http.StatusOK, gin.H{"status": "success", "msg": msg, "data": data})
 }

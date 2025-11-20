@@ -33,4 +33,9 @@ const (
 	DatabaseMaxConnectionIdleTimeInSecondsConfigKey = "maxConnectionIdleTimeInSeconds"
 
 	APIGetCatsFactConfigKey = "getCatsFact"
+
+	RedisHostConfigKey     = "redisHost"
+	RedisPortConfigKey     = "redisPort"
+	RedisPasswordConfigKey = "redisPassword"
+	RedisDBConfigKey       = "redisDB"
 )

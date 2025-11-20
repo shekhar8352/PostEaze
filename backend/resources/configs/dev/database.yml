@@ -6,3 +6,8 @@ maxOpenConnections: 20
 maxIdleConnections: 10
 maxConnectionLifetimeInSeconds: 300
 maxConnectionIdleTimeInSeconds: 60
+
+redisHost: "${REDIS_HOST}"
+redisPort: "${REDIS_PORT}"
+redisPassword: "${REDIS_PASSWORD}"
+redisDB: "${REDIS_DB}"
