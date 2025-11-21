@@ -110,18 +110,4 @@ func initAsynq(ctx context.Context) {
 	if err := tasks.InitClient(); err != nil {
 		log.Fatal(ctx, "failed to init asynq client", err)
 	}
-
-	// Initialize Server
-	if err := tasks.InitServer(); err != nil {
-		log.Fatal(ctx, "failed to init asynq server", err)
-	}
-
-	// Initialize Scheduler
-	if err := tasks.InitScheduler(); err != nil {
-		log.Fatal(ctx, "failed to init asynq scheduler", err)
-	}
-
-	// Start Server and Scheduler in goroutines
-	go tasks.StartServer()
-	go tasks.StartScheduler()
 }

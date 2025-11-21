@@ -22,6 +22,7 @@ RUN chmod 755 /app/logs
 
 # Build the application
 RUN go build -mod=vendor -o main .
+RUN go build -mod=vendor -o worker cmd/worker/main.go
 
 EXPOSE 8000
 

@@ -53,6 +53,21 @@ services:
     networks:
       - posteaze
 
+  worker:
+    build: ./backend
+    container_name: posteaze-worker
+    restart: unless-stopped
+    command: ./worker
+    env_file:
+      - .env
+    environment:
+      - REDIS_HOST=redis
+    depends_on:
+      - redis
+      - postgres
+    networks:
+      - posteaze
+
   caddy:
     image: caddy:alpine
     container_name: posteaze-caddy
