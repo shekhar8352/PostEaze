@@ -8,6 +8,7 @@ import (
 	_ "github.com/lib/pq"
 	"github.com/shekhar8352/PostEaze/api"
 	"github.com/shekhar8352/PostEaze/constants"
+	"github.com/shekhar8352/PostEaze/tasks"
 	"github.com/shekhar8352/PostEaze/utils"
 	"github.com/shekhar8352/PostEaze/utils/configs"
 	sql "github.com/shekhar8352/PostEaze/utils/database"
@@ -25,6 +26,7 @@ func main() {
 	initDatabase(ctx)
 	initRedis(ctx)
 	initFirebase(ctx)
+	initAsynq(ctx)
 	initRouter(ctx)
 	initHttp(ctx)
 }
@@ -101,4 +103,25 @@ func initRouter(ctx context.Context) {
 	if err != nil {
 		log.Fatal(ctx, " error in initialising router ", err)
 	}
+}
+
+func initAsynq(ctx context.Context) {
+	// Initialize Client
+	if err := tasks.InitClient(); err != nil {
+		log.Fatal(ctx, "failed to init asynq client", err)
+	}
+
+	// Initialize Server
+	if err := tasks.InitServer(); err != nil {
+		log.Fatal(ctx, "failed to init asynq server", err)
+	}
+
+	// Initialize Scheduler
+	if err := tasks.InitScheduler(); err != nil {
+		log.Fatal(ctx, "failed to init asynq scheduler", err)
+	}
+
+	// Start Server and Scheduler in goroutines
+	go tasks.StartServer()
+	go tasks.StartScheduler()
 }
