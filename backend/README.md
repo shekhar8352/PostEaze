@@ -30,6 +30,11 @@ The backend follows a clean architecture approach with the following layers:
 ┌─────────────────────▼───────────────────────────────────────┐
 │                  Infrastructure Layer                       │
 │          Database, Config, Utils, Constants                 │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
+│                  Task Queue (Asynq)                         │
+│          Producer (Client) & Consumer (Worker)              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -71,6 +76,16 @@ The backend follows a clean architecture approach with the following layers:
 - **`utils/`** - Utility functions and helper modules
 - **`constants/`** - Application constants and configuration keys
 - **`resources/`** - Configuration files and static resources
+
+#### Task Queue (`tasks/`)
+- **`definitions.go`** - Task types and payloads
+- **`client.go`** - Task producer (enqueue)
+- **`server.go`** - Task consumer (worker)
+- **`handlers.go`** - Task processing logic
+- **`scheduler.go`** - Periodic task scheduler
+
+#### Worker (`cmd/worker/`)
+- **`main.go`** - Entry point for the background worker process
 
 ## Service Initialization
 
