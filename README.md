@@ -15,6 +15,7 @@ PostEaze is a social media management platform built for influencers and marketi
 - **Backend:** Go (Gin)
 - **Database:** PostgreSQL
 - **Cache:** Redis
+- **Task Queue:** Asynq (Redis-based)
 - **Auth:** JWT (access & refresh token flow)
 - **Containerization:** Docker, Docker Compose
 
@@ -79,13 +80,17 @@ cd PostEaze
 
 ### 3. Run with Docker
 ```bash
-docker-compose up --build
+docker-compose -f docker-compose.local.yml up --build
 ```
 
 ### 4. Run without Docker
 ```bash
 cd backend
+cd backend
 go run main.go
+
+# Run Worker (in a separate terminal)
+go run cmd/worker/main.go
 
 cd frontend
 npm install

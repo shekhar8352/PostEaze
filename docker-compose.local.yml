@@ -17,6 +17,19 @@ services:
     ports:
       - "6379:6379"
 
+  worker:
+    build: ./backend
+    container_name: posteaze_worker
+    command: go run cmd/worker/main.go
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    depends_on:
+      - redis
+      - postgres
+    volumes:
+      - ./backend:/app
+
 volumes:
   postgres_data:
 
