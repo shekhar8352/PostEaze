@@ -201,6 +201,10 @@ health_check() {
         failed_services+=("redis")
     fi
 
+    if ! docker compose ps worker | grep -q "Up"; then
+        failed_services+=("worker")
+    fi
+
     if [[ ${#failed_services[@]} -eq 0 ]]; then
         log "All health checks passed ✓"
     else
