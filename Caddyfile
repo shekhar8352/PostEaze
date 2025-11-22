@@ -25,10 +25,7 @@ dev.posteaze.in {
         X-Content-Type-Options nosniff
         # Remove server info
         -Server
-        # CORS headers for development (adjust origins as needed)
-        Access-Control-Allow-Origin "*"
-        Access-Control-Allow-Methods "GET, POST, PUT, DELETE, OPTIONS"
-        Access-Control-Allow-Headers "Authorization, Content-Type"
+
     }
 
     # Enable compression
