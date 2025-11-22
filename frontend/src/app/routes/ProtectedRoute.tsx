@@ -1,23 +1,41 @@
-import { Navigate, Outlet } from "react-router-dom";
-// import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "@/features/auth";
+import { LoadingFallback } from "./LoadingFallback";
+import { createLoginRedirect } from "@/features/auth/utils";
 
 // For protecting a group of routes (nested under Outlet)
 export const ProtectedLayout = () => {
-  // const { user } = useAuth();
-  const user = null;
-  if (!user) return <Navigate to="/login" replace />;
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
+
+  // Show loading while checking authentication
+  if (loading) {
+    return <LoadingFallback />;
+  }
+
+  // Redirect to login with return URL if not authenticated
+  if (!isAuthenticated) {
+    const loginPath = createLoginRedirect(location.pathname + location.search);
+    return <Navigate to={loginPath} replace />;
+  }
 
   return <Outlet />; // renders child routes
 };
 
-
 // For protecting a single route
 const ProtectedRoute = ({ element }: { element: React.JSX.Element }) => {
-  // const { user } = useAuth();
-  const user = null;
+  const { isAuthenticated, loading } = useAuth();
+  const location = useLocation();
 
-  if (!user) {
-    return <Navigate to="/login" replace />;
+  // Show loading while checking authentication
+  if (loading) {
+    return <LoadingFallback />;
+  }
+
+  // Redirect to login with return URL if not authenticated
+  if (!isAuthenticated) {
+    const loginPath = createLoginRedirect(location.pathname + location.search);
+    return <Navigate to={loginPath} replace />;
   }
 
   return element;

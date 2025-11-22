@@ -1,9 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useDispatch } from "react-redux";
 import { authService } from "./authService";
 import { type LoginFormData, type RegisterFormData } from "../types";
+import { setUser, clearUser } from "../authSlice";
 
 export const useLogin = () => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  
   return useMutation({
     mutationFn: (data: LoginFormData) => {
       const loginRequest: { email: string; password: string } = {
@@ -13,7 +17,9 @@ export const useLogin = () => {
 
       return authService.loginUser(loginRequest);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Update Redux store with user data
+      dispatch(setUser(data.user));
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
     onError: (error: any) => {
@@ -47,10 +53,14 @@ export const useRegister = () => {
 // Complete registration after email verification
 export const useCompleteRegistration = () => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  
   return useMutation({
     mutationFn: ({ email, password }: { email: string; password: string }) =>
       authService.completeRegistration(email, password),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Update Redux store with user data
+      dispatch(setUser(data.user));
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
     onError: (error: any) => {
@@ -84,9 +94,13 @@ export const useCheckEmailVerification = () => {
 // Social Auth (already verified)
 export const useGoogleAuth = () => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  
   return useMutation({
     mutationFn: () => authService.googleAuth(),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Update Redux store with user data
+      dispatch(setUser(data.user));
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
     onError: (error: any) => {
@@ -97,9 +111,13 @@ export const useGoogleAuth = () => {
 
 export const useFacebookAuth = () => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  
   return useMutation({
     mutationFn: () => authService.facebookAuth(),
-    onSuccess: () => {
+    onSuccess: (data) => {
+      // Update Redux store with user data
+      dispatch(setUser(data.user));
       queryClient.invalidateQueries({ queryKey: ["currentUser"] });
     },
     onError: (error: any) => {
@@ -124,9 +142,13 @@ export const useForgotPassword = () => {
 // Logout
 export const useLogout = () => {
   const queryClient = useQueryClient();
+  const dispatch = useDispatch();
+  
   return useMutation({
     mutationFn: () => authService.logoutUser(),
     onSuccess: () => {
+      // Clear Redux store
+      dispatch(clearUser());
       queryClient.clear();
     },
   });
