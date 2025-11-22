@@ -7,19 +7,22 @@ import { BrowserRouter } from "react-router-dom";
 import "@mantine/core/styles.css";
 import { Notifications } from '@mantine/notifications';
 import "@mantine/notifications/styles.css";
+import { AuthProvider } from "@/features/auth";
 
 export default function App() {
   return (
     <React.StrictMode>
       <StoreProvider>
-        <AppMantineProvider>
-          <Notifications position="top-right" limit={5}/>
-          <TanstackProvider>
-            <BrowserRouter>
-              <AppRoutes />
-            </BrowserRouter>
-          </TanstackProvider>
-        </AppMantineProvider>
+        <AuthProvider>
+          <AppMantineProvider>
+            <Notifications position="top-right" limit={5} />
+            <TanstackProvider>
+              <BrowserRouter>
+                <AppRoutes />
+              </BrowserRouter>
+            </TanstackProvider>
+          </AppMantineProvider>
+        </AuthProvider>
       </StoreProvider>
     </React.StrictMode>
   );
