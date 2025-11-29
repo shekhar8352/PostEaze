@@ -145,3 +145,56 @@ for _, page := range pages {
     fmt.Printf("Page: %s (ID: %s)\n", page.Name, page.ID)
 }
 ```
+
+---
+
+## Instagram Service
+
+The `InstagramService` handles the complete flow of creating Instagram channels, including OAuth token exchange, encryption, and database persistence.
+
+### Initialization
+
+```go
+import "github.com/shekhar8352/PostEaze/services/instagram_service"
+
+instagramService := instagram_service.NewInstagramService()
+```
+
+### Methods
+
+#### `CreateChannel`
+Creates an Instagram channel by exchanging authorization code for tokens and storing encrypted credentials.
+- **Signature**: `CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID) (*ChannelResponse, error)`
+
+### Example Usage
+
+```go
+service := instagram_service.NewInstagramService()
+
+channelResp, err := service.CreateChannel(
+    ctx,
+    "instagram_auth_code",
+    "My Instagram Channel",
+    ownerUserID,
+    teamID,
+)
+if err != nil {
+    // Handle error
+}
+
+fmt.Printf("Channel created: %d - %s\n", channelResp.ChannelID, channelResp.ChannelName)
+```
+
+### Features
+- Exchanges authorization code for short-lived token
+- Converts to long-lived token (60 days)
+- Encrypts access token using AES-GCM
+- Stores channel and token in database with transaction support
+- Returns channel ID and name
+
+### Configuration
+Requires the following environment variables:
+- `INSTAGRAM_APP_ID`
+- `INSTAGRAM_APP_SECRET`
+- `INSTAGRAM_REDIRECT_URI`
+- `ENCRYPTION_KEY` (base64-encoded 32-byte key)
