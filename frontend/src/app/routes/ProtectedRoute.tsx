@@ -19,7 +19,7 @@ export const ProtectedLayout = () => {
     return <Navigate to={loginPath} replace />;
   }
 
-  return <Outlet />; // renders child routes
+  return <Outlet />; // renders child routes (MainLayout wraps these in routes/index.tsx)
 };
 
 // For protecting a single route

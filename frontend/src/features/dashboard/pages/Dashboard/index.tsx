@@ -1,83 +1,129 @@
-import { Container, Title, Text, Button, Stack, Paper, Group, Box } from '@mantine/core';
+import { Container, Title, Text, Button, Stack, Paper, SimpleGrid, Card } from '@mantine/core';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
-import { IconLogout, IconUser } from '@tabler/icons-react';
-import { notifications } from '@mantine/notifications';
+import { IconBrandInstagram, IconBrandFacebook, IconBrandYoutube, IconPlus } from '@tabler/icons-react';
 
 const DashboardPage = () => {
-    const { user, logout } = useAuth();
+    const { user } = useAuth();
     const navigate = useNavigate();
 
-    const handleLogout = async () => {
-        try {
-            logout();
-            notifications.show({
-                title: 'Logged Out',
-                message: 'You have been successfully logged out.',
-                color: 'blue',
-            });
-            navigate('/login');
-        } catch (error) {
-            notifications.show({
-                title: 'Logout Failed',
-                message: 'An error occurred while logging out.',
-                color: 'red',
-            });
-        }
-    };
+    const channels = [
+        {
+            name: 'Instagram',
+            icon: IconBrandInstagram,
+            color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+            path: '/channels/instagram',
+            connected: false,
+        },
+        {
+            name: 'Facebook',
+            icon: IconBrandFacebook,
+            color: '#1877F2',
+            path: '/channels/facebook',
+            connected: false,
+        },
+        {
+            name: 'YouTube',
+            icon: IconBrandYoutube,
+            color: '#FF0000',
+            path: '/channels/youtube',
+            connected: false,
+        },
+    ];
 
     return (
-        <Box
-            style={{
-                minHeight: '100vh',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                padding: '2rem',
-            }}
-        >
-            <Container size="lg">
-                <Stack gap="xl">
-                    <Paper p="xl" radius="md" shadow="md">
-                        <Stack gap="lg">
-                            <Group justify="space-between" align="center">
-                                <div>
-                                    <Title order={1}>Welcome to PostEaze!</Title>
-                                    <Text size="lg" c="dimmed" mt="xs">
-                                        Hello, {user?.name || user?.email || 'User'}! 👋
-                                    </Text>
-                                </div>
-                                <Button
-                                    leftSection={<IconLogout size={20} />}
-                                    onClick={handleLogout}
-                                    variant="light"
-                                    color="red"
-                                    size="md"
-                                >
-                                    Logout
-                                </Button>
-                            </Group>
-                        </Stack>
-                    </Paper>
+        <Container size="xl">
+            <Stack gap="xl">
+                {/* Welcome Section */}
+                <Paper p="xl" radius="md" shadow="sm" withBorder>
+                    <Stack gap="md">
+                        <Title order={1}>Welcome back, {user?.name || user?.email}! 👋</Title>
+                        <Text c="dimmed" size="lg">
+                            Manage all your social media posts from one place
+                        </Text>
+                    </Stack>
+                </Paper>
 
-                    <Paper p="xl" radius="md" shadow="md">
-                        <Stack gap="md">
-                            <Group>
-                                <IconUser size={24} />
-                                <Title order={3}>Your Profile</Title>
-                            </Group>
-                            <Text>
-                                <strong>Email:</strong> {user?.email || 'N/A'}
+                {/* Quick Stats */}
+                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
+                    <Card shadow="sm" padding="lg" radius="md" withBorder>
+                        <Stack gap="xs">
+                            <Text size="sm" c="dimmed" fw={500}>
+                                Connected Accounts
                             </Text>
-                            <Text>
-                                <strong>Name:</strong> {user?.name || 'N/A'}
-                            </Text>
-                            <Text c="dimmed" size="sm">
-                                This is a placeholder dashboard. More features coming soon!
+                            <Text size="xl" fw={700}>
+                                0
                             </Text>
                         </Stack>
-                    </Paper>
-                </Stack>
-            </Container>
-        </Box>
+                    </Card>
+                    <Card shadow="sm" padding="lg" radius="md" withBorder>
+                        <Stack gap="xs">
+                            <Text size="sm" c="dimmed" fw={500}>
+                                Scheduled Posts
+                            </Text>
+                            <Text size="xl" fw={700}>
+                                0
+                            </Text>
+                        </Stack>
+                    </Card>
+                    <Card shadow="sm" padding="lg" radius="md" withBorder>
+                        <Stack gap="xs">
+                            <Text size="sm" c="dimmed" fw={500}>
+                                Published Today
+                            </Text>
+                            <Text size="xl" fw={700}>
+                                0
+                            </Text>
+                        </Stack>
+                    </Card>
+                </SimpleGrid>
+
+                {/* Connect Channels */}
+                <Paper p="xl" radius="md" shadow="sm" withBorder>
+                    <Stack gap="lg">
+                        <Title order={2}>Connect Your Channels</Title>
+                        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
+                            {channels.map((channel) => {
+                                const Icon = channel.icon;
+                                return (
+                                    <Card
+                                        key={channel.name}
+                                        shadow="sm"
+                                        padding="lg"
+                                        radius="md"
+                                        withBorder
+                                        style={{ cursor: 'pointer' }}
+                                        onClick={() => navigate(channel.path)}
+                                    >
+                                        <Stack gap="md" align="center">
+                                            <Icon
+                                                size={48}
+                                                style={{
+                                                    color: typeof channel.color === 'string' ? channel.color : undefined,
+                                                    background: typeof channel.color !== 'string' ? channel.color : undefined,
+                                                    WebkitBackgroundClip: typeof channel.color !== 'string' ? 'text' : undefined,
+                                                    WebkitTextFillColor: typeof channel.color !== 'string' ? 'transparent' : undefined,
+                                                }}
+                                            />
+                                            <Text fw={600} size="lg">
+                                                {channel.name}
+                                            </Text>
+                                            <Button
+                                                leftSection={<IconPlus size={16} />}
+                                                variant="light"
+                                                fullWidth
+                                            >
+                                                Connect
+                                            </Button>
+                                        </Stack>
+                                    </Card>
+                                );
+                            })}
+                        </SimpleGrid>
+                    </Stack>
+                </Paper>
+            </Stack>
+        </Container>
     );
 };
 

@@ -2,6 +2,7 @@
 import { Container, Center, Box } from '@mantine/core';
 import { LoginForm } from '../../components/LoginForm';
 import { useNavigate } from 'react-router-dom';
+import { getRedirectPath } from '../../utils';
 
 const LoginPage = () => {
   const navigate = useNavigate();
@@ -10,12 +11,13 @@ const LoginPage = () => {
   const switchToForgotPassword = () => navigate('/forgot-password');
 
   const handleAuthSuccess = () => {
-    navigate('/dashboard');
+    const redirectPath = getRedirectPath();
+    navigate(redirectPath);
   };
 
   const handleEmailNotVerified = (email: string, password: string) => {
-    navigate('/email-verify', { 
-      state: { email, password,}
+    navigate('/email-verify', {
+      state: { email, password, }
     });
   };
 
@@ -31,7 +33,7 @@ const LoginPage = () => {
       <Container size="sm" py="xl">
         <Center>
           <Box style={{ width: '100%', maxWidth: '450px' }}>
-            <LoginForm 
+            <LoginForm
               onToggleMode={switchToRegister}
               onForgotPassword={switchToForgotPassword}
               onSuccess={handleAuthSuccess}
