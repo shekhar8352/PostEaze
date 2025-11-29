@@ -97,6 +97,7 @@ addV1NewFeatureRoutes(v1)
 ## Related Documentation
 
 - [API v1 Documentation](./v1/README.md) - Detailed endpoint documentation
+- [Webhooks Documentation](./webhooks/README.md) - Webhook verification and processing
 - [Business Layer](../business/README.md) - Business logic implementation
 - [Middleware](../middleware/README.md) - Request processing middleware
 - [Models](../models/README.md) - Data structures and validation

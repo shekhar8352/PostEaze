@@ -173,8 +173,12 @@ func main() {
 ### Meta Integration (`/api/v1/meta`)
 - **POST** `/callback` - Exchange auth code for pages
 
-### Channels (`/api/v1/channels`)
-- **POST** `/instagram/create` - Create Instagram channel from auth code
+### Channels
+- `POST /api/v1/channels/instagram/create` - Create Instagram channel
+
+### Webhooks
+- `GET /api/v1/webhooks/instagram` - Webhook verification
+- `POST /api/v1/webhooks/instagram` - Webhook event receiver
 
 ## Development Setup
 
@@ -254,3 +258,4 @@ openssl rand -base64 32
 - [`migrations/`](migrations/) - Database schema and migration procedures
 - [`provider/`](provider/) - External service providers documentation
 - [`services/`](services/) - Business services documentation
+- [`api/webhooks/`](api/webhooks/) - Webhook handling documentation
