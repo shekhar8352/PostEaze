@@ -174,7 +174,7 @@ const DashboardPage = () => {
                                 const Icon = channel.icon;
                                 return (
                                     <Card
-                                        key={channel.name}
+                                        key={index}
                                         shadow="md"
                                         padding="xl"
                                         radius="lg"
