@@ -1,0 +1,20 @@
+.control {
+  width: 100%;
+  padding: 0.625rem 0.75rem;
+  border-radius: var(--mantine-radius-sm);
+  transition: background-color 150ms ease;
+  cursor: pointer;
+}
+
+.control:hover {
+  background-color: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-6));
+}
+
+.control[data-active] {
+  background-color: light-dark(var(--mantine-color-blue-0), var(--mantine-color-dark-5));
+  color: var(--mantine-color-blue-filled);
+}
+
+.channelLink {
+  padding-left: 1.5rem;
+}
