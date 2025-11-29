@@ -1,4 +1,4 @@
-import { Container, Title, Text, Button, Stack, Paper, SimpleGrid, Card } from '@mantine/core';
+import { Container, Title, Text, Button, Stack, Paper, SimpleGrid, Card, Group, Box, RingProgress } from '@mantine/core';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
 import { Icons } from '@/app/theme';
@@ -11,107 +11,233 @@ const DashboardPage = () => {
         {
             name: 'Instagram',
             icon: Icons.Instagram,
-            color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+            gradient: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
             path: '/channels/instagram',
             connected: false,
         },
         {
             name: 'Facebook',
             icon: Icons.Facebook,
-            color: '#1877F2',
+            gradient: 'linear-gradient(135deg, #1877F2 0%, #0C63D4 100%)',
             path: '/channels/facebook',
             connected: false,
         },
         {
             name: 'YouTube',
             icon: Icons.YouTube,
-            color: '#FF0000',
+            gradient: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
             path: '/channels/youtube',
             connected: false,
         },
     ];
 
+    const stats = [
+        {
+            title: 'Connected Accounts',
+            value: 0,
+            icon: Icons.User,
+            color: '#667eea',
+            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        },
+        {
+            title: 'Scheduled Posts',
+            value: 0,
+            icon: Icons.Calendar,
+            color: '#11998e',
+            gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+        },
+        {
+            title: 'Published Today',
+            value: 0,
+            icon: Icons.CheckCircle,
+            color: '#f093fb',
+            gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+        },
+    ];
+
     return (
-        <Container size="xl">
+        <Container size="xl" className="fade-in">
             <Stack gap="xl">
-                {/* Welcome Section */}
-                <Paper p="xl" radius="md" shadow="sm" withBorder>
-                    <Stack gap="md">
-                        <Title order={1}>Welcome back, {user?.name || user?.email}! 👋</Title>
-                        <Text c="dimmed" size="lg">
-                            Manage all your social media posts from one place
+                {/* Welcome Banner with Gradient */}
+                <Paper
+                    p="xl"
+                    radius="lg"
+                    style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        color: 'white',
+                        position: 'relative',
+                        overflow: 'hidden',
+                    }}
+                    className="shadow-lift"
+                >
+                    <Box
+                        style={{
+                            position: 'absolute',
+                            top: -50,
+                            right: -50,
+                            width: 200,
+                            height: 200,
+                            borderRadius: '50%',
+                            background: 'rgba(255, 255, 255, 0.1)',
+                            filter: 'blur(40px)',
+                        }}
+                    />
+                    <Stack gap="md" style={{ position: 'relative', zIndex: 1 }}>
+                        <Title order={1} style={{ fontSize: '2.5rem', fontWeight: 800 }}>
+                            Welcome back, {user?.name || user?.email?.split('@')[0]}! 👋
+                        </Title>
+                        <Text size="lg" style={{ opacity: 0.95 }}>
+                            Manage all your social media posts from one beautiful dashboard
                         </Text>
                     </Stack>
                 </Paper>
 
-                {/* Quick Stats */}
+                {/* Enhanced Stats Cards */}
                 <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
-                    <Card shadow="sm" padding="lg" radius="md" withBorder>
-                        <Stack gap="xs">
-                            <Text size="sm" c="dimmed" fw={500}>
-                                Connected Accounts
-                            </Text>
-                            <Text size="xl" fw={700}>
-                                0
-                            </Text>
-                        </Stack>
-                    </Card>
-                    <Card shadow="sm" padding="lg" radius="md" withBorder>
-                        <Stack gap="xs">
-                            <Text size="sm" c="dimmed" fw={500}>
-                                Scheduled Posts
-                            </Text>
-                            <Text size="xl" fw={700}>
-                                0
-                            </Text>
-                        </Stack>
-                    </Card>
-                    <Card shadow="sm" padding="lg" radius="md" withBorder>
-                        <Stack gap="xs">
-                            <Text size="sm" c="dimmed" fw={500}>
-                                Published Today
-                            </Text>
-                            <Text size="xl" fw={700}>
-                                0
-                            </Text>
-                        </Stack>
-                    </Card>
+                    {stats.map((stat) => {
+                        const Icon = stat.icon;
+                        return (
+                            <Card
+                                key={stat.title}
+                                shadow="md"
+                                padding="xl"
+                                radius="lg"
+                                withBorder
+                                className="shadow-lift"
+                                style={{
+                                    background: 'white',
+                                    border: '1px solid rgba(102, 126, 234, 0.1)',
+                                }}
+                            >
+                                <Group justify="space-between" mb="md">
+                                    <Box
+                                        style={{
+                                            width: 60,
+                                            height: 60,
+                                            borderRadius: '12px',
+                                            background: stat.gradient,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            boxShadow: `0 8px 16px ${stat.color}40`,
+                                        }}
+                                    >
+                                        <Icon size={28} color="white" />
+                                    </Box>
+                                    <RingProgress
+                                        size={60}
+                                        thickness={6}
+                                        sections={[{ value: 0, color: stat.color }]}
+                                        label={
+                                            <Text size="xs" ta="center" fw={700}>
+                                                0%
+                                            </Text>
+                                        }
+                                    />
+                                </Group>
+                                <Text size="sm" c="dimmed" fw={600} tt="uppercase" mb={4}>
+                                    {stat.title}
+                                </Text>
+                                <Title order={2} style={{ fontSize: '2.5rem', fontWeight: 800 }}>
+                                    {stat.value}
+                                </Title>
+                            </Card>
+                        );
+                    })}
                 </SimpleGrid>
 
-                {/* Connect Channels */}
-                <Paper p="xl" radius="md" shadow="sm" withBorder>
-                    <Stack gap="lg">
-                        <Title order={2}>Connect Your Channels</Title>
+                {/* Enhanced Channel Cards */}
+                <Paper
+                    p="xl"
+                    radius="lg"
+                    shadow="sm"
+                    withBorder
+                    style={{
+                        background: 'white',
+                        border: '1px solid rgba(102, 126, 234, 0.1)',
+                    }}
+                >
+                    <Stack gap="xl">
+                        <Group justify="space-between" align="center">
+                            <div>
+                                <Title order={2} mb={4}>
+                                    Connect Your Channels
+                                </Title>
+                                <Text c="dimmed">
+                                    Link your social media accounts to start managing posts
+                                </Text>
+                            </div>
+                        </Group>
+
                         <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
-                            {channels.map((channel) => {
+                            {channels.map((channel, index) => {
                                 const Icon = channel.icon;
                                 return (
                                     <Card
                                         key={channel.name}
-                                        shadow="sm"
-                                        padding="lg"
-                                        radius="md"
+                                        shadow="md"
+                                        padding="xl"
+                                        radius="lg"
                                         withBorder
-                                        style={{ cursor: 'pointer' }}
+                                        className="shadow-lift"
+                                        style={{
+                                            cursor: 'pointer',
+                                            background: 'white',
+                                            border: '2px solid transparent',
+                                            backgroundImage: `linear-gradient(white, white), ${channel.gradient}`,
+                                            backgroundOrigin: 'border-box',
+                                            backgroundClip: 'padding-box, border-box',
+                                            transition: 'all 0.3s ease',
+                                        }}
                                         onClick={() => navigate(channel.path)}
+                                        onMouseEnter={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(-4px)';
+                                            e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.1)';
+                                        }}
+                                        onMouseLeave={(e) => {
+                                            e.currentTarget.style.transform = 'translateY(0)';
+                                            e.currentTarget.style.boxShadow = '';
+                                        }}
                                     >
-                                        <Stack gap="md" align="center">
-                                            <Icon
-                                                size={48}
+                                        <Stack gap="lg" align="center">
+                                            <Box
                                                 style={{
-                                                    color: typeof channel.color === 'string' ? channel.color : undefined,
-                                                    background: typeof channel.color !== 'string' ? channel.color : undefined,
-                                                    WebkitBackgroundClip: typeof channel.color !== 'string' ? 'text' : undefined,
-                                                    WebkitTextFillColor: typeof channel.color !== 'string' ? 'transparent' : undefined,
+                                                    width: 80,
+                                                    height: 80,
+                                                    borderRadius: '20px',
+                                                    background: channel.gradient,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
                                                 }}
-                                            />
-                                            <Text fw={600} size="lg">
-                                                {channel.name}
-                                            </Text>
+                                            >
+                                                <Icon size={40} color="white" />
+                                            </Box>
+                                            <div style={{ textAlign: 'center' }}>
+                                                <Text fw={700} size="xl" mb={4}>
+                                                    {channel.name}
+                                                </Text>
+                                                <Text size="sm" c="dimmed">
+                                                    Not connected
+                                                </Text>
+                                            </div>
                                             <Button
-                                                leftSection={<Icons.Plus size={16} />}
-                                                variant="light"
+                                                leftSection={<Icons.Plus size={18} />}
                                                 fullWidth
+                                                size="md"
+                                                radius="md"
+                                                style={{
+                                                    background: channel.gradient,
+                                                    border: 'none',
+                                                }}
+                                                styles={{
+                                                    root: {
+                                                        '&:hover': {
+                                                            transform: 'scale(1.02)',
+                                                        },
+                                                    },
+                                                }}
                                             >
                                                 Connect
                                             </Button>

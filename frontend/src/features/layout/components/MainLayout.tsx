@@ -17,6 +17,12 @@ export const MainLayout = () => {
                 collapsed: { mobile: !mobileOpened, desktop: !desktopOpened },
             }}
             padding="md"
+            styles={{
+                main: {
+                    background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+                    minHeight: '100vh',
+                },
+            }}
         >
             <AppShell.Header>
                 <AppHeader

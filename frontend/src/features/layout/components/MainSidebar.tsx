@@ -35,6 +35,9 @@ export const MainSidebar = () => {
                 display: 'flex',
                 flexDirection: 'column',
                 height: '100%',
+                background: 'rgba(255, 255, 255, 0.7)',
+                backdropFilter: 'blur(10px)',
+                borderRight: '1px solid rgba(102, 126, 234, 0.1)',
             }}
         >
             <ScrollArea

@@ -1,7 +1,24 @@
 import { Container, Title, Text, Paper, Stack, Button, Group, Badge, Box } from '@mantine/core';
+import { useAppDispatch, useAppSelector } from '@/app/store/hooks';
 import { Icons } from '@/app/theme';
+import { openCreateModal, closeCreateModal } from '../store/instagramChannelSlice';
+import { useInstagramChannels } from '../services/instagramChannelQueries';
+import { InstagramChannelList } from '../components/InstagramChannelList';
+import { InstagramChannelModal } from '../components/InstagramChannelModal';
 
-const InstagramChannel = () => {
+export const InstagramChannelPage = () => {
+    const dispatch = useAppDispatch();
+    const { isCreateModalOpen } = useAppSelector((state) => state.instagramChannel);
+    const { data: channels, isLoading } = useInstagramChannels();
+
+    const handleOpenModal = () => {
+        dispatch(openCreateModal());
+    };
+
+    const handleCloseModal = () => {
+        dispatch(closeCreateModal());
+    };
+
     return (
         <Container size="xl" className="fade-in">
             <Stack gap="xl">
@@ -10,7 +27,8 @@ const InstagramChannel = () => {
                     p="xl"
                     radius="lg"
                     style={{
-                        background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+                        background:
+                            'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
                         color: 'white',
                         position: 'relative',
                         overflow: 'hidden',
@@ -58,6 +76,7 @@ const InstagramChannel = () => {
                             color="dark"
                             radius="md"
                             className="hover-scale"
+                            onClick={handleOpenModal}
                         >
                             Connect Account
                         </Button>
@@ -74,53 +93,19 @@ const InstagramChannel = () => {
                                 variant="gradient"
                                 gradient={{ from: '#f09433', to: '#bc1888', deg: 45 }}
                             >
-                                0 connected
+                                {channels?.length || 0} connected
                             </Badge>
                         </Group>
-                        <Box
-                            p="xl"
-                            style={{
-                                textAlign: 'center',
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, rgba(240, 148, 51, 0.05) 0%, rgba(188, 24, 136, 0.05) 100%)',
-                            }}
-                        >
-                            <Icons.Instagram size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-                            <Text c="dimmed" size="lg" fw={500}>
-                                No Instagram accounts connected yet
-                            </Text>
-                            <Text c="dimmed" size="sm" mt="xs">
-                                Click "Connect Account" above to get started
-                            </Text>
-                        </Box>
-                    </Stack>
-                </Paper>
 
-                {/* Quick Stats */}
-                <Paper p="xl" radius="lg" shadow="md" withBorder className="scale-in">
-                    <Stack gap="md">
-                        <Title order={3}>Quick Stats</Title>
-                        <Box
-                            p="xl"
-                            style={{
-                                textAlign: 'center',
-                                borderRadius: '12px',
-                                background: 'linear-gradient(135deg, rgba(240, 148, 51, 0.05) 0%, rgba(188, 24, 136, 0.05) 100%)',
-                            }}
-                        >
-                            <Icons.ChartBar size={64} style={{ opacity: 0.3, marginBottom: '1rem' }} />
-                            <Text c="dimmed" size="lg" fw={500}>
-                                Connect your Instagram account
-                            </Text>
-                            <Text c="dimmed" size="sm" mt="xs">
-                                View analytics and insights once connected
-                            </Text>
-                        </Box>
+                        <InstagramChannelList channels={channels || []} isLoading={isLoading} />
                     </Stack>
                 </Paper>
             </Stack>
+
+            {/* Create Channel Modal */}
+            <InstagramChannelModal opened={isCreateModalOpen} onClose={handleCloseModal} />
         </Container>
     );
 };
 
-export default InstagramChannel;
+export default InstagramChannelPage;
