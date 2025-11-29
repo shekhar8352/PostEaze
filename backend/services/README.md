@@ -6,6 +6,7 @@ This package provides various services used throughout the PostEaze backend appl
 
 - [Redis Service](#redis-service)
 - [Email Service](#email-service)
+- [Meta Service](#meta-service)
 
 ---
 
@@ -109,4 +110,38 @@ err := service.SendNotificationEmail("user@example.com", "You have a new message
 
 // Send an invite
 err := service.SendTeamInviteEmail("colleague@example.com", "https://posteaze.com/join/123")
+```
+
+---
+
+## Meta Service
+
+The `MetaService` orchestrates the flow of authenticating with Meta and fetching user pages. It uses the `MetaProvider` internally.
+
+### Initialization
+
+```go
+import "github.com/shekhar8352/PostEaze/services/meta_service"
+
+metaService := meta_service.NewMetaService()
+```
+
+### Methods
+
+#### `GetPagesFromCode`
+Exchanges an authorization code for a long-lived access token and fetches pages.
+- **Signature**: `GetPagesFromCode(code string, redirectURI string) ([]meta.Page, error)`
+
+### Example Usage
+
+```go
+service := meta_service.NewMetaService()
+pages, err := service.GetPagesFromCode("auth_code", "https://myapp.com/callback")
+if err != nil {
+    // Handle error
+}
+
+for _, page := range pages {
+    fmt.Printf("Page: %s (ID: %s)\n", page.Name, page.ID)
+}
 ```

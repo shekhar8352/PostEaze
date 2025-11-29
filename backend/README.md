@@ -33,6 +33,11 @@ The backend follows a clean architecture approach with the following layers:
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
+│                   Provider Layer                            │
+│              External Service Providers (Meta)              │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
 │                  Task Queue (Asynq)                         │
 │          Producer (Client) & Consumer (Worker)              │
 └─────────────────────────────────────────────────────────────┘
@@ -76,6 +81,10 @@ The backend follows a clean architecture approach with the following layers:
 - **`utils/`** - Utility functions and helper modules
 - **`constants/`** - Application constants and configuration keys
 - **`resources/`** - Configuration files and static resources
+
+#### Provider Layer (`provider/`)
+- **`meta/`** - Meta (Facebook/Instagram) integration provider
+- Handles external API interactions
 
 #### Task Queue (`tasks/`)
 - **`definitions.go`** - Task types and payloads
@@ -147,6 +156,9 @@ func main() {
 - **GET** `/byDate/:date` - Retrieve logs by date
 - **GET** `/byId/:log_id` - Retrieve specific log entry
 
+### Meta Integration (`/api/v1/meta`)
+- **POST** `/callback` - Exchange auth code for pages
+
 ## Development Setup
 
 ### Prerequisites
@@ -193,3 +205,4 @@ The application supports two modes:
 - [`middleware/`](middleware/) - HTTP middleware components
 - [`utils/`](utils/) - Utility functions and helpers
 - [`migrations/`](migrations/) - Database schema and migration procedures
+- [`provider/`](provider/) - External service providers documentation
