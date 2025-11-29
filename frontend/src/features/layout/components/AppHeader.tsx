@@ -34,7 +34,16 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
     };
 
     return (
-        <Group h="100%" px="md" justify="space-between">
+        <Group
+            h="100%"
+            px="md"
+            justify="space-between"
+            style={{
+                background: 'rgba(255, 255, 255, 0.8)',
+                backdropFilter: 'blur(10px)',
+                borderBottom: '1px solid rgba(102, 126, 234, 0.1)',
+            }}
+        >
             <Group>
                 <Burger
                     opened={mobileOpened}
@@ -47,7 +56,17 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
                     fw={800}
                     variant="gradient"
                     gradient={{ from: 'blue', to: 'cyan', deg: 45 }}
-                    style={{ letterSpacing: '-0.5px' }}
+                    style={{
+                        letterSpacing: '-0.5px',
+                        cursor: 'pointer',
+                        transition: 'transform 0.3s ease',
+                    }}
+                    onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'scale(1.05)';
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'scale(1)';
+                    }}
                 >
                     PostEaze
                 </Text>
