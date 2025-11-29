@@ -18,9 +18,9 @@ The `RedisService` provides an interface for interacting with the Redis datastor
 To use the Redis service, create a new instance using `NewRedisService()`:
 
 ```go
-import "github.com/shekhar8352/PostEaze/services"
+import "github.com/shekhar8352/PostEaze/services/redis_service"
 
-redisService := services.NewRedisService()
+redisService := redis_service.NewRedisService()
 ```
 
 ### Methods
@@ -46,7 +46,7 @@ Removes a key from Redis.
 
 ```go
 ctx := context.Background()
-service := services.NewRedisService()
+service := redis_service.NewRedisService()
 
 // Set with default 24h expiration
 err := service.Set(ctx, "user_session:123", "active")
@@ -75,9 +75,9 @@ The `EmailService` handles sending emails via SMTP (specifically configured for 
 To use the Email service, create a new instance using `NewGmailEmailService()`:
 
 ```go
-import "github.com/shekhar8352/PostEaze/services"
+import "github.com/shekhar8352/PostEaze/services/email_service"
 
-emailService := services.NewGmailEmailService()
+emailService := email_service.NewGmailEmailService()
 ```
 
 *Note: Requires `SMTP_HOST`, `SMTP_PORT`, `SMTP_EMAIL`, and `SMTP_PASSWORD` environment variables to be set.*
@@ -99,7 +99,7 @@ Sends a pre-formatted team invitation email.
 ### Example Usage
 
 ```go
-service := services.NewGmailEmailService()
+service := email_service.NewGmailEmailService()
 
 // Send a generic email
 err := service.SendEmail([]string{"user@example.com"}, "Welcome!", "<h1>Hello</h1>")
