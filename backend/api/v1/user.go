@@ -19,7 +19,7 @@ import (
 // @Param        user_id  path      string  true  "User ID"
 // @Security     ApiKeyAuth
 // @Success      200 {object} modelsv1.User
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Failure      500 {object} map[string]interface{}
 // @Router       /users/{user_id} [get]
 func GetUserByIdHandler(c *gin.Context) {
 	userID := c.Param("user_id")
@@ -43,7 +43,7 @@ func GetUserByIdHandler(c *gin.Context) {
 // @Param        request body modelsv1.UpdateUserParams true "Update user data"
 // @Security     ApiKeyAuth
 // @Success      200 {object} modelsv1.User
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Failure      500 {object} map[string]interface{}
 // @Router       /users/{user_id} [patch]
 func UpdateUserHandler(c *gin.Context) {
 	var body modelsv1.UpdateUserParams

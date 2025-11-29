@@ -195,6 +195,21 @@ go mod download
 go run main.go
 ```
 
+## API Documentation
+
+The API is documented using Swagger/OpenAPI. Once the server is running, you can access the interactive API documentation at:
+
+**Swagger UI**: `http://localhost:8080/api/swagger/index.html`
+
+To regenerate Swagger documentation after making changes to API endpoints:
+```bash
+# Install swag CLI tool (one-time setup)
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate/update Swagger docs
+~/go/bin/swag init
+```
+
 ### Configuration
 The application supports two modes:
 - **Development Mode**: Uses local config files from `resources/configs/`

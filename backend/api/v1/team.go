@@ -18,8 +18,8 @@ import (
 // @Produce      json
 // @Param        team body modelsv1.Team true "Team details"
 // @Success      200 {object} modelsv1.Team
-// @Failure      400 {object} modelsv1.ErrorResponse
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Failure      400 {object} map[string]interface{}
+// @Failure      500 {object} map[string]interface{}
 // @Router       /teams [post]
 func CreateTeamHandler(c *gin.Context) {
 	var team modelsv1.Team
@@ -47,7 +47,7 @@ func CreateTeamHandler(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Success      200 {array} modelsv1.Team
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Failure      500 {object} map[string]interface{}
 // @Router       /teams/all [get]
 func GetAllTeamsHandler(c *gin.Context) {
 	teams, err := businessv1.GetAllTeams(c.Request.Context())
@@ -69,7 +69,7 @@ func GetAllTeamsHandler(c *gin.Context) {
 // @Produce      json
 // @Param        team_id path      string  true  "Team ID"
 // @Success      200 {object} modelsv1.Team
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Failure      500 {object} map[string]interface{}
 // @Router       /teams/{team_id} [get]
 func GetTeamByIDHandler(c *gin.Context) {
 	teamID := c.Param("team_id")
@@ -92,7 +92,7 @@ func GetTeamByIDHandler(c *gin.Context) {
 // @Produce      json
 // @Param        owner_id path      string  true  "Owner ID"
 // @Success      200 {object} modelsv1.Team
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Failure      500 {object} map[string]interface{}
 // @Router       /teams/owner/{owner_id} [get]
 func GetTeamByOwnerIDHandler(c *gin.Context) {
 	ownerID := c.Param("owner_id")
@@ -116,8 +116,8 @@ func GetTeamByOwnerIDHandler(c *gin.Context) {
 // @Param        team_id  path      string  true  "Team ID"
 // @Param        team body      modelsv1.Team true "Team details"
 // @Success      200 {object} modelsv1.Team
-// @Failure      400 {object} modelsv1.ErrorResponse
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Failure      400 {object} map[string]interface{}
+// @Failure      500 {object} map[string]interface{}
 // @Router       /teams/{team_id} [patch]
 func UpdateTeamHandler(c *gin.Context) {
 	teamID := c.Param("team_id")

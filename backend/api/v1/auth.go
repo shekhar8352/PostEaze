@@ -9,7 +9,6 @@ import (
 	"github.com/shekhar8352/PostEaze/utils"
 )
 
-
 // AuthenticateWithFirebaseHandler godoc
 // @Summary      Authenticate user with Firebase
 // @Description  Authenticate user using Firebase token and local ID, create user if not exists
@@ -17,10 +16,10 @@ import (
 // @Accept       json
 // @Produce      json
 // @Param        request body modelsv1.FirebaseAuthParams true "Firebase Authentication Request"
-// @Success      200 {object} modelsv1.SuccessResponse{data=map[string]interface{}}
-// @Failure      400 {object} modelsv1.ErrorResponse
-// @Failure      401 {object} modelsv1.ErrorResponse
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} map[string]interface{}
+// @Failure      401 {object} map[string]interface{}
+// @Failure      500 {object} map[string]interface{}
 // @Router       /auth/authenticate [post]
 func AuthenticateWithFirebaseHandler(c *gin.Context) {
 	var body modelsv1.FirebaseAuthParams
@@ -48,16 +47,16 @@ func AuthenticateWithFirebaseHandler(c *gin.Context) {
 }
 
 // RefreshTokenHandler godoc
-// @Summary      Refresh Token
-// @Description  Generate new access token using refresh token
-// @Tags         Auth
+// @Summary      Refresh Access Token
+// @Description  Refreshes the access token using a valid refresh token
+// @Tags         Authentication
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
 // @Param        request body modelsv1.RefreshTokenParams true "Refresh Token Request"
-// @Success      200 {object} modelsv1.SuccessResponse
-// @Failure      400 {object} modelsv1.ErrorResponse
-// @Failure      401 {object} modelsv1.ErrorResponse
+// @Success      200 {object} map[string]interface{}
+// @Failure      400 {object} map[string]interface{}
+// @Failure      401 {object} map[string]interface{}
 // @Router       /auth/refresh [post]
 func RefreshTokenHandler(c *gin.Context) {
 	var body modelsv1.RefreshTokenParams
@@ -79,14 +78,14 @@ func RefreshTokenHandler(c *gin.Context) {
 }
 
 // LogoutHandler godoc
-// @Summary      User Logout
-// @Description  Invalidate user session and token
-// @Tags         Auth
+// @Summary      Logout User
+// @Description  Logs out the user by revoking their refresh token
+// @Tags         Authentication
 // @Accept       json
 // @Produce      json
 // @Security     ApiKeyAuth
-// @Success      200 {object} modelsv1.SuccessResponse
-// @Failure      500 {object} modelsv1.ErrorResponse
+// @Success      200 {object} map[string]interface{}
+// @Failure      500 {object} map[string]interface{}
 // @Router       /auth/logout [post]
 func LogoutHandler(c *gin.Context) {
 	err := businessv1.Logout(c.Request.Context(), c.GetHeader("Authorization"))
