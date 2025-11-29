@@ -17,11 +17,14 @@ const (
 	GetUserById = "/:user_id"
 	UpdateUser  = "/:user_id"
 
-	TeamRoute   = "/team"
-	GetAllTeams = "/all"
-	GetTeamById = "/:team_id"
-	GetTeamByOwnerID = "/owner/:owner_id"
-	CreateTeam  = "/create"
-	UpdateTeam  = "/:team_id"
-	UpdateTeamStatus = "status/:team_id"
+	TeamRoute        = "/team"
+	GetAllTeams      = "/all"
+	GetTeamById      = "/:id"
+	GetTeamByOwnerID = "/owner/:id"
+	CreateTeam       = "/create"
+	UpdateTeam       = "/update"
+	UpdateTeamStatus = "/update-status"
+
+	MetaRoute    = "/meta"
+	MetaCallback = "/callback"
 )

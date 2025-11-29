@@ -63,6 +63,7 @@ func Init() error {
 		addV1LogRoutes(v1)
 		addV1UserRoutes(v1)
 		addV1TeamRoutes(v1)
+		addV1MetaRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -101,4 +102,9 @@ func addV1TeamRoutes(v1 *gin.RouterGroup) {
 	teamv1.GET(constants.GetTeamByOwnerID, apiv1.GetTeamByOwnerIDHandler)
 	teamv1.PUT(constants.UpdateTeam, apiv1.UpdateTeamHandler)
 	teamv1.PUT(constants.UpdateTeamStatus, apiv1.UpdateTeamStatusHandler)
+}
+
+func addV1MetaRoutes(v1 *gin.RouterGroup) {
+	metav1 := v1.Group(constants.MetaRoute)
+	metav1.POST(constants.MetaCallback, apiv1.HandleMetaCallback)
 }
