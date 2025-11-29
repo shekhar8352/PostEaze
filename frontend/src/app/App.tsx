@@ -8,6 +8,7 @@ import "@mantine/core/styles.css";
 import { Notifications } from '@mantine/notifications';
 import "@mantine/notifications/styles.css";
 import { AuthProvider } from "@/features/auth";
+import "./styles/global.css";
 
 export default function App() {
   return (

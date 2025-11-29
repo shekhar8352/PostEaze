@@ -1,7 +1,7 @@
 import { Container, Title, Text, Button, Stack, Paper, SimpleGrid, Card } from '@mantine/core';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
-import { IconBrandInstagram, IconBrandFacebook, IconBrandYoutube, IconPlus } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 
 const DashboardPage = () => {
     const { user } = useAuth();
@@ -10,21 +10,21 @@ const DashboardPage = () => {
     const channels = [
         {
             name: 'Instagram',
-            icon: IconBrandInstagram,
+            icon: Icons.Instagram,
             color: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
             path: '/channels/instagram',
             connected: false,
         },
         {
             name: 'Facebook',
-            icon: IconBrandFacebook,
+            icon: Icons.Facebook,
             color: '#1877F2',
             path: '/channels/facebook',
             connected: false,
         },
         {
             name: 'YouTube',
-            icon: IconBrandYoutube,
+            icon: Icons.YouTube,
             color: '#FF0000',
             path: '/channels/youtube',
             connected: false,
@@ -109,7 +109,7 @@ const DashboardPage = () => {
                                                 {channel.name}
                                             </Text>
                                             <Button
-                                                leftSection={<IconPlus size={16} />}
+                                                leftSection={<Icons.Plus size={16} />}
                                                 variant="light"
                                                 fullWidth
                                             >

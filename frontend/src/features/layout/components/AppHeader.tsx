@@ -1,5 +1,5 @@
 import { Group, Burger, Text, Menu, Avatar, UnstyledButton, rem } from '@mantine/core';
-import { IconChevronDown, IconSettings, IconLogout, IconUser } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
@@ -43,10 +43,11 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
                     size="sm"
                 />
                 <Text
-                    size="xl"
-                    fw={700}
+                    size="24px"
+                    fw={800}
                     variant="gradient"
                     gradient={{ from: 'blue', to: 'cyan', deg: 45 }}
+                    style={{ letterSpacing: '-0.5px' }}
                 >
                     PostEaze
                 </Text>
@@ -62,10 +63,10 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
                                 radius="xl"
                                 size={32}
                             />
-                            <Text fw={500} size="sm" style={{ lineHeight: 1 }} mr={3}>
+                            <Text fw={600} size="sm" style={{ lineHeight: 1 }} mr={3}>
                                 {user?.name || user?.email}
                             </Text>
-                            <IconChevronDown size={12} stroke={1.5} />
+                            <Icons.ChevronDown size={12} stroke={1.5} />
                         </Group>
                     </UnstyledButton>
                 </Menu.Target>
@@ -73,13 +74,13 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
                 <Menu.Dropdown>
                     <Menu.Label>Account</Menu.Label>
                     <Menu.Item
-                        leftSection={<IconUser style={{ width: rem(14), height: rem(14) }} />}
+                        leftSection={<Icons.User style={{ width: rem(14), height: rem(14) }} />}
                         onClick={() => navigate('/profile')}
                     >
                         Profile
                     </Menu.Item>
                     <Menu.Item
-                        leftSection={<IconSettings style={{ width: rem(14), height: rem(14) }} />}
+                        leftSection={<Icons.Settings style={{ width: rem(14), height: rem(14) }} />}
                         onClick={() => navigate('/settings')}
                     >
                         Settings
@@ -89,7 +90,7 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
 
                     <Menu.Item
                         color="red"
-                        leftSection={<IconLogout style={{ width: rem(14), height: rem(14) }} />}
+                        leftSection={<Icons.Logout style={{ width: rem(14), height: rem(14) }} />}
                         onClick={handleLogout}
                     >
                         Logout

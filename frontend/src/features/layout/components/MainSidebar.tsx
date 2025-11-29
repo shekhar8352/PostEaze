@@ -1,6 +1,6 @@
 import { Stack, NavLink, Divider, Box, ScrollArea } from '@mantine/core';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { IconLogout } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 import { MAIN_NAV_ITEMS, BOTTOM_NAV_ITEMS } from '../constants';
 import { ChannelsNav } from './ChannelsNav';
 import { useAuth } from '@/features/auth';
@@ -89,7 +89,7 @@ export const MainSidebar = () => {
             <Box p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
                 <NavLink
                     label="Logout"
-                    leftSection={<IconLogout size={20} />}
+                    leftSection={<Icons.Logout size={20} />}
                     onClick={handleLogout}
                     color="red"
                 />

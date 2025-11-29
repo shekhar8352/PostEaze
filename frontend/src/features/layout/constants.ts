@@ -1,33 +1,26 @@
-import {
-  IconHome,
-  IconBrandInstagram,
-  IconBrandFacebook,
-  IconBrandYoutube,
-  IconSettings,
-  IconChartBar,
-  IconCalendar,
-} from '@tabler/icons-react';
-import { type NavItem } from './types';
 
-// Sidebar dimensions
-export const SIDEBAR_WIDTH = 280;
-export const SIDEBAR_COLLAPSED_WIDTH = 80;
+import { type NavItem } from './types';
+import { LAYOUT_SIZES, Icons } from '@/app/theme';
+
+// Sidebar dimensions (imported from theme)
+export const SIDEBAR_WIDTH = LAYOUT_SIZES.sidebarWidth;
+export const SIDEBAR_COLLAPSED_WIDTH = LAYOUT_SIZES.sidebarCollapsedWidth;
 
 // Main navigation items
 export const MAIN_NAV_ITEMS: NavItem[] = [
   {
     label: 'Dashboard',
-    icon: IconHome,
+    icon: Icons.Home,
     path: '/dashboard',
   },
   {
     label: 'Analytics',
-    icon: IconChartBar,
+    icon: Icons.ChartBar,
     path: '/analytics',
   },
   {
     label: 'Calendar',
-    icon: IconCalendar,
+    icon: Icons.Calendar,
     path: '/calendar',
   },
 ];
@@ -36,17 +29,17 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
 export const CHANNEL_NAV_ITEMS: NavItem[] = [
   {
     label: 'Instagram',
-    icon: IconBrandInstagram,
+    icon: Icons.Instagram,
     path: '/channels/instagram',
   },
   {
     label: 'Facebook',
-    icon: IconBrandFacebook,
+    icon: Icons.Facebook,
     path: '/channels/facebook',
   },
   {
     label: 'YouTube',
-    icon: IconBrandYoutube,
+    icon: Icons.YouTube,
     path: '/channels/youtube',
   },
 ];
@@ -55,14 +48,7 @@ export const CHANNEL_NAV_ITEMS: NavItem[] = [
 export const BOTTOM_NAV_ITEMS: NavItem[] = [
   {
     label: 'Settings',
-    icon: IconSettings,
+    icon: Icons.Settings,
     path: '/settings',
   },
 ];
-
-// Channel colors for branding
-export const CHANNEL_COLORS = {
-  instagram: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-  facebook: '#1877F2',
-  youtube: '#FF0000',
-};

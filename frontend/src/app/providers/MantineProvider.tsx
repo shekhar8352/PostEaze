@@ -1,12 +1,6 @@
-import { MantineProvider, createTheme } from "@mantine/core";
+import { MantineProvider } from "@mantine/core";
 import type { ReactNode } from "react";
-
-const theme = createTheme({
-  primaryColor: "indigo",
-  fontFamily: "Inter, sans-serif",
-  headings: { fontFamily: "Inter, sans-serif" },
-  // Add more theme customizations here
-});
+import { theme } from "../theme";
 
 const AppMantineProvider = ({ children }: { children: ReactNode }) => {
   return (
