@@ -64,6 +64,7 @@ func Init() error {
 		addV1UserRoutes(v1)
 		addV1TeamRoutes(v1)
 		addV1MetaRoutes(v1)
+		addV1ChannelRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -107,4 +108,10 @@ func addV1TeamRoutes(v1 *gin.RouterGroup) {
 func addV1MetaRoutes(v1 *gin.RouterGroup) {
 	metav1 := v1.Group(constants.MetaRoute)
 	metav1.POST(constants.MetaCallback, apiv1.HandleMetaCallback)
+}
+
+func addV1ChannelRoutes(v1 *gin.RouterGroup) {
+	channelv1 := v1.Group(constants.ChannelRoute)
+	instagramv1 := channelv1.Group(constants.InstagramRoute)
+	instagramv1.POST(constants.CreateInstagramChannel, apiv1.CreateInstagramChannelHandler)
 }

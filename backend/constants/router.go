@@ -27,4 +27,8 @@ const (
 
 	MetaRoute    = "/meta"
 	MetaCallback = "/callback"
+
+	ChannelRoute           = "/channels"
+	InstagramRoute         = "/instagram"
+	CreateInstagramChannel = "/create"
 )
