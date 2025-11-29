@@ -1,20 +1,27 @@
-import { lazy } from 'react';
+import { lazy, Suspense } from 'react';
+import type { RouteObject } from 'react-router-dom';
+import { LoadingFallback } from '@/app/routes/LoadingFallback';
 
-const InstagramChannel = lazy(() => import('./pages/InstagramChannel'));
-const FacebookChannel = lazy(() => import('./pages/FacebookChannel'));
-const YouTubeChannel = lazy(() => import('./pages/YouTubeChannel'));
+const InstagramChannelPage = lazy(() => import('./pages/InstagramChannelPage'));
+const InstagramOAuthCallback = lazy(() => import('./components/InstagramOAuthCallback'));
 
-export const channelRoutes = [
+const channelRoutes: RouteObject[] = [
     {
         path: '/channels/instagram',
-        element: <InstagramChannel />,
+        element: (
+            <Suspense fallback={<LoadingFallback />}>
+                <InstagramChannelPage />
+            </Suspense>
+        ),
     },
     {
-        path: '/channels/facebook',
-        element: <FacebookChannel />,
-    },
-    {
-        path: '/channels/youtube',
-        element: <YouTubeChannel />,
+        path: '/auth/instagram/callback',
+        element: (
+            <Suspense fallback={<LoadingFallback />}>
+                <InstagramOAuthCallback />
+            </Suspense>
+        ),
     },
 ];
+
+export default channelRoutes;
