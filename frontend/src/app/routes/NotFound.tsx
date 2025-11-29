@@ -1,6 +1,6 @@
 import { Container, Title, Text, Button, Stack, Center, Box } from '@mantine/core';
 import { useNavigate } from 'react-router-dom';
-import { IconHome } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 
 export const NotFound = () => {
     const navigate = useNavigate();
@@ -36,7 +36,7 @@ export const NotFound = () => {
                         </Text>
                         <Button
                             size="lg"
-                            leftSection={<IconHome size={20} />}
+                            leftSection={<Icons.Home size={20} />}
                             onClick={() => navigate('/')}
                             variant="white"
                             color="violet"

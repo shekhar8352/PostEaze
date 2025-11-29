@@ -1,5 +1,5 @@
 import { Container, Title, Text, Paper, Stack, Button, Group, Badge } from '@mantine/core';
-import { IconBrandFacebook, IconPlus } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 
 const FacebookChannel = () => {
     return (
@@ -8,7 +8,7 @@ const FacebookChannel = () => {
                 {/* Page Header */}
                 <Group justify="space-between" align="center">
                     <Group>
-                        <IconBrandFacebook size={40} style={{ color: '#1877F2' }} />
+                        <Icons.Facebook size={40} style={{ color: '#1877F2' }} />
                         <div>
                             <Title order={1}>Facebook</Title>
                             <Text c="dimmed" size="sm">
@@ -17,7 +17,7 @@ const FacebookChannel = () => {
                         </div>
                     </Group>
                     <Button
-                        leftSection={<IconPlus size={20} />}
+                        leftSection={<Icons.Plus size={20} />}
                         color="blue"
                         variant="filled"
                     >

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Stack, Group, Text, Collapse, UnstyledButton, Box } from '@mantine/core';
-import { IconChevronRight } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { CHANNEL_NAV_ITEMS } from '../constants';
 import classes from './ChannelsNav.module.css';
@@ -25,7 +25,7 @@ export const ChannelsNav = () => {
                     <Text fw={500} size="sm">
                         Channels
                     </Text>
-                    <IconChevronRight
+                    <Icons.ChevronRight
                         size={16}
                         style={{
                             transform: opened ? 'rotate(90deg)' : 'none',

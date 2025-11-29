@@ -1,5 +1,5 @@
 import { Container, Title, Text, Paper, Stack, Button, Group, Badge } from '@mantine/core';
-import { IconBrandInstagram, IconPlus } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 
 const InstagramChannel = () => {
     return (
@@ -8,7 +8,7 @@ const InstagramChannel = () => {
                 {/* Page Header */}
                 <Group justify="space-between" align="center">
                     <Group>
-                        <IconBrandInstagram size={40} style={{ color: '#E4405F' }} />
+                        <Icons.Instagram size={40} style={{ color: '#E4405F' }} />
                         <div>
                             <Title order={1}>Instagram</Title>
                             <Text c="dimmed" size="sm">
@@ -17,7 +17,7 @@ const InstagramChannel = () => {
                         </div>
                     </Group>
                     <Button
-                        leftSection={<IconPlus size={20} />}
+                        leftSection={<Icons.Plus size={20} />}
                         variant="gradient"
                         gradient={{ from: '#f09433', to: '#bc1888', deg: 45 }}
                     >

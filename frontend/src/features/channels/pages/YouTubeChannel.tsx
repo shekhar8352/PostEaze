@@ -1,5 +1,5 @@
 import { Container, Title, Text, Paper, Stack, Button, Group, Badge } from '@mantine/core';
-import { IconBrandYoutube, IconPlus } from '@tabler/icons-react';
+import { Icons } from '@/app/theme';
 
 const YouTubeChannel = () => {
     return (
@@ -8,7 +8,7 @@ const YouTubeChannel = () => {
                 {/* Page Header */}
                 <Group justify="space-between" align="center">
                     <Group>
-                        <IconBrandYoutube size={40} style={{ color: '#FF0000' }} />
+                        <Icons.YouTube size={40} style={{ color: '#FF0000' }} />
                         <div>
                             <Title order={1}>YouTube</Title>
                             <Text c="dimmed" size="sm">
@@ -17,7 +17,7 @@ const YouTubeChannel = () => {
                         </div>
                     </Group>
                     <Button
-                        leftSection={<IconPlus size={20} />}
+                        leftSection={<Icons.Plus size={20} />}
                         color="red"
                         variant="filled"
                     >
