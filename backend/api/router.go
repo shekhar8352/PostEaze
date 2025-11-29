@@ -6,6 +6,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	apiv1 "github.com/shekhar8352/PostEaze/api/v1"
+	"github.com/shekhar8352/PostEaze/api/webhooks"
 	"github.com/shekhar8352/PostEaze/constants"
 	"github.com/shekhar8352/PostEaze/middleware"
 
@@ -114,4 +115,8 @@ func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 	channelv1 := v1.Group(constants.ChannelRoute)
 	instagramv1 := channelv1.Group(constants.InstagramRoute)
 	instagramv1.POST(constants.CreateInstagramChannel, apiv1.CreateInstagramChannelHandler)
+
+	webhookv1 := v1.Group(constants.WebhookRoute)
+	webhookv1.GET(constants.InstagramWebhook, webhooks.HandleInstagramWebhookVerify)
+	webhookv1.POST(constants.InstagramWebhook, webhooks.HandleInstagramWebhookEvent)
 }

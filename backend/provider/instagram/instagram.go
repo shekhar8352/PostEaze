@@ -21,6 +21,7 @@ type InstagramProvider interface {
 	ExchangeCodeForToken(code string, redirectURI string) (*ShortLivedTokenResponse, error)
 	GetLongLivedToken(shortLivedToken string) (*LongLivedTokenResponse, error)
 	RefreshToken(accessToken string) (*LongLivedTokenResponse, error)
+	SubscribeToWebhooks(accessToken string, pageID string, fields []string) error
 }
 
 type InstagramProviderImpl struct {
@@ -135,4 +136,42 @@ func (p *InstagramProviderImpl) RefreshToken(accessToken string) (*LongLivedToke
 	}
 
 	return &tokenResp, nil
+}
+
+func (p *InstagramProviderImpl) SubscribeToWebhooks(accessToken string, pageID string, fields []string) error {
+	reqURL := fmt.Sprintf("https://graph.facebook.com/v18.0/%s/subscribed_apps", pageID)
+
+	data := url.Values{}
+	data.Set("access_token", accessToken)
+	data.Set("subscribed_fields", strings.Join(fields, ","))
+
+	resp, err := http.Post(reqURL, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	if err != nil {
+		return err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]interface{}
+		if err := json.Unmarshal(body, &errResp); err == nil {
+			return fmt.Errorf("failed to subscribe to webhooks: %v", errResp)
+		}
+		return fmt.Errorf("failed to subscribe to webhooks: %s, body: %s", resp.Status, string(body))
+	}
+
+	var successResp map[string]bool
+	if err := json.Unmarshal(body, &successResp); err != nil {
+		return fmt.Errorf("failed to parse subscription response: %w", err)
+	}
+
+	if !successResp["success"] {
+		return fmt.Errorf("subscription returned success=false")
+	}
+
+	return nil
 }

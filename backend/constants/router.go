@@ -31,4 +31,6 @@ const (
 	ChannelRoute           = "/channels"
 	InstagramRoute         = "/instagram"
 	CreateInstagramChannel = "/create"
+	WebhookRoute           = "/webhooks"
+	InstagramWebhook       = "/instagram"
 )

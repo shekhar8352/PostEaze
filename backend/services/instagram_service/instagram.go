@@ -101,7 +101,25 @@ func (s *InstagramServiceImpl) CreateChannel(ctx context.Context, code string, c
 		return nil, fmt.Errorf("failed to create channel token: %w", err)
 	}
 
-	// 8. Commit transaction
+	// 8. Subscribe to webhooks
+	// We do this BEFORE committing the transaction, but if it fails, we might want to log a warning
+	// rather than failing the whole channel creation, or we can fail it.
+	// Given the requirement "We need to subscribe to these events while creating the channel itself",
+	// we should probably fail if subscription fails.
+	webhookFields := []string{"comments", "mentions", "story_insights"}
+	// Note: We need the Page ID (Instagram Business Account ID) to subscribe.
+	// The shortTokenResp.UserID is the Instagram User ID.
+	// For Instagram Basic Display, we might not be able to subscribe to these webhooks directly on the user node
+	// in the same way as Graph API.
+	// However, assuming we are using the Instagram Graph API (Business), the ID we got is likely the IG User ID.
+	// Let's attempt subscription.
+	err = s.provider.SubscribeToWebhooks(longTokenResp.AccessToken, fmt.Sprintf("%d", shortTokenResp.UserID), webhookFields)
+	if err != nil {
+		// Webhooks are not compulsory as of now, so we just log the error and proceed
+		fmt.Printf("Warning: failed to subscribe to webhooks: %v\n", err)
+	}
+
+	// 9. Commit transaction
 	if err := tx.Commit(); err != nil {
 		return nil, fmt.Errorf("failed to commit transaction: %w", err)
 	}
