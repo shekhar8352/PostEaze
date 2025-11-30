@@ -12,6 +12,7 @@ import (
 	"github.com/shekhar8352/PostEaze/utils"
 	"github.com/shekhar8352/PostEaze/utils/configs"
 	sql "github.com/shekhar8352/PostEaze/utils/database"
+	"github.com/shekhar8352/PostEaze/utils/encryption"
 	"github.com/shekhar8352/PostEaze/utils/env"
 	"github.com/shekhar8352/PostEaze/utils/flags"
 	httpclient "github.com/shekhar8352/PostEaze/utils/http"
@@ -25,6 +26,7 @@ func main() {
 	initConfigs(ctx)
 	initDatabase(ctx)
 	initRedis(ctx)
+	initEncryption(ctx)
 	initFirebase(ctx)
 	initAsynq(ctx)
 	initRouter(ctx)
@@ -80,6 +82,13 @@ func initRedis(ctx context.Context) {
 	err := redis.Init(ctx)
 	if err != nil {
 		log.Fatal(ctx, " failed to initialize redis ", err)
+	}
+}
+
+func initEncryption(ctx context.Context) {
+	err := encryption.Init()
+	if err != nil {
+		log.Fatal(ctx, " failed to initialize encryption ", err)
 	}
 }
 

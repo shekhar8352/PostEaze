@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/shekhar8352/PostEaze/constants"
-	"github.com/shekhar8352/PostEaze/services"
+	"github.com/shekhar8352/PostEaze/services/redis_service"
 	"github.com/shekhar8352/PostEaze/utils/configs"
 	"github.com/shekhar8352/PostEaze/utils/env"
 	"github.com/shekhar8352/PostEaze/utils/flags"
@@ -32,7 +32,7 @@ func main() {
 	}
 
 	// Initialize Service
-	redisService := services.NewRedisService()
+	redisService := redis_service.NewRedisService()
 
 	// Test 1: Set with default timeout (no argument)
 	key1 := "test_service_default_timeout"

@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/joho/godotenv"
-	"github.com/shekhar8352/PostEaze/services"
+	"github.com/shekhar8352/PostEaze/services/email_service"
 )
 
 func main() {
@@ -32,7 +32,7 @@ func main() {
 		fmt.Printf("DEBUG: SMTP_PASSWORD='%s' (len=%d)\n", smtpPass, len(smtpPass))
 	}
 
-	emailService := services.NewGmailEmailService()
+	emailService := email_service.NewGmailEmailService()
 
 	// Test Notification Email
 	to := "abc@gmail.com" // Sending to self for testing

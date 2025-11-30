@@ -2,8 +2,11 @@ package tasks
 
 // Task Types
 const (
-	TypeEmailDelivery = "email:deliver"
-	TypeLogMessage    = "log:message"
+	TypeEmailDelivery         = "email:deliver"
+	TypeLogMessage            = "log:message"
+	TypeInstagramComment      = "instagram:comment"
+	TypeInstagramMention      = "instagram:mention"
+	TypeInstagramStoryInsight = "instagram:story_insight"
 )
 
 // Queue Names

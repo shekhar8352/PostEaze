@@ -33,6 +33,11 @@ The backend follows a clean architecture approach with the following layers:
 └─────────────────────┬───────────────────────────────────────┘
                       │
 ┌─────────────────────▼───────────────────────────────────────┐
+│                   Provider Layer                            │
+│              External Service Providers (Meta)              │
+└─────────────────────┬───────────────────────────────────────┘
+                      │
+┌─────────────────────▼───────────────────────────────────────┐
 │                  Task Queue (Asynq)                         │
 │          Producer (Client) & Consumer (Worker)              │
 └─────────────────────────────────────────────────────────────┘
@@ -76,6 +81,24 @@ The backend follows a clean architecture approach with the following layers:
 - **`utils/`** - Utility functions and helper modules
 - **`constants/`** - Application constants and configuration keys
 - **`resources/`** - Configuration files and static resources
+
+#### Provider Layer (`provider/`)
+- **`meta/`** - Meta (Facebook/Instagram) integration provider
+- **`instagram/`** - Instagram Basic Display API provider
+- Handles external API interactions
+
+#### Services Layer (`services/`)
+- **`email_service/`** - Email sending via SMTP
+- **`redis_service/`** - Redis caching operations
+- **`meta_service/`** - Meta OAuth and page fetching
+- **`instagram_service/`** - Instagram channel creation and token management
+- Business service implementations
+
+#### Utilities (`utils/`)
+- **`encryption/`** - AES-GCM encryption for sensitive data (tokens)
+- **`database/`** - Database connection and query utilities
+- **`redis/`** - Redis client initialization
+- Various helper functions
 
 #### Task Queue (`tasks/`)
 - **`definitions.go`** - Task types and payloads
@@ -147,6 +170,16 @@ func main() {
 - **GET** `/byDate/:date` - Retrieve logs by date
 - **GET** `/byId/:log_id` - Retrieve specific log entry
 
+### Meta Integration (`/api/v1/meta`)
+- **POST** `/callback` - Exchange auth code for pages
+
+### Channels
+- `POST /api/v1/channels/instagram/create` - Create Instagram channel
+
+### Webhooks
+- `GET /api/v1/webhooks/instagram` - Webhook verification
+- `POST /api/v1/webhooks/instagram` - Webhook event receiver
+
 ## Development Setup
 
 ### Prerequisites
@@ -166,10 +199,40 @@ go mod download
 go run main.go
 ```
 
+## API Documentation
+
+The API is documented using Swagger/OpenAPI. Once the server is running, you can access the interactive API documentation at:
+
+**Swagger UI**: `http://localhost:8080/api/swagger/index.html`
+
+To regenerate Swagger documentation after making changes to API endpoints:
+```bash
+# Install swag CLI tool (one-time setup)
+go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate/update Swagger docs
+~/go/bin/swag init
+```
+
 ### Configuration
 The application supports two modes:
 - **Development Mode**: Uses local config files from `resources/configs/`
 - **Release Mode**: Uses AWS AppConfig and environment variables
+
+### Environment Variables
+Key environment variables required:
+- `INSTAGRAM_APP_ID` - Instagram app credentials
+- `INSTAGRAM_APP_SECRET` - Instagram app secret
+- `INSTAGRAM_REDIRECT_URI` - OAuth redirect URI
+- `META_APP_ID` - Meta (Facebook) app credentials
+- `META_APP_SECRET` - Meta app secret
+- `ENCRYPTION_KEY` - Base64-encoded 32-byte AES key for token encryption
+- `SMTP_HOST`, `SMTP_PORT`, `SMTP_EMAIL`, `SMTP_PASSWORD` - Email service config
+
+Generate encryption key:
+```bash
+openssl rand -base64 32
+```
 
 ## Security Features
 
@@ -193,3 +256,6 @@ The application supports two modes:
 - [`middleware/`](middleware/) - HTTP middleware components
 - [`utils/`](utils/) - Utility functions and helpers
 - [`migrations/`](migrations/) - Database schema and migration procedures
+- [`provider/`](provider/) - External service providers documentation
+- [`services/`](services/) - Business services documentation
+- [`api/webhooks/`](api/webhooks/) - Webhook handling documentation

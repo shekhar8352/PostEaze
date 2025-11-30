@@ -6,6 +6,7 @@ This package provides various services used throughout the PostEaze backend appl
 
 - [Redis Service](#redis-service)
 - [Email Service](#email-service)
+- [Meta Service](#meta-service)
 
 ---
 
@@ -18,9 +19,9 @@ The `RedisService` provides an interface for interacting with the Redis datastor
 To use the Redis service, create a new instance using `NewRedisService()`:
 
 ```go
-import "github.com/shekhar8352/PostEaze/services"
+import "github.com/shekhar8352/PostEaze/services/redis_service"
 
-redisService := services.NewRedisService()
+redisService := redis_service.NewRedisService()
 ```
 
 ### Methods
@@ -46,7 +47,7 @@ Removes a key from Redis.
 
 ```go
 ctx := context.Background()
-service := services.NewRedisService()
+service := redis_service.NewRedisService()
 
 // Set with default 24h expiration
 err := service.Set(ctx, "user_session:123", "active")
@@ -75,9 +76,9 @@ The `EmailService` handles sending emails via SMTP (specifically configured for 
 To use the Email service, create a new instance using `NewGmailEmailService()`:
 
 ```go
-import "github.com/shekhar8352/PostEaze/services"
+import "github.com/shekhar8352/PostEaze/services/email_service"
 
-emailService := services.NewGmailEmailService()
+emailService := email_service.NewGmailEmailService()
 ```
 
 *Note: Requires `SMTP_HOST`, `SMTP_PORT`, `SMTP_EMAIL`, and `SMTP_PASSWORD` environment variables to be set.*
@@ -99,7 +100,7 @@ Sends a pre-formatted team invitation email.
 ### Example Usage
 
 ```go
-service := services.NewGmailEmailService()
+service := email_service.NewGmailEmailService()
 
 // Send a generic email
 err := service.SendEmail([]string{"user@example.com"}, "Welcome!", "<h1>Hello</h1>")
@@ -110,3 +111,90 @@ err := service.SendNotificationEmail("user@example.com", "You have a new message
 // Send an invite
 err := service.SendTeamInviteEmail("colleague@example.com", "https://posteaze.com/join/123")
 ```
+
+---
+
+## Meta Service
+
+The `MetaService` orchestrates the flow of authenticating with Meta and fetching user pages. It uses the `MetaProvider` internally.
+
+### Initialization
+
+```go
+import "github.com/shekhar8352/PostEaze/services/meta_service"
+
+metaService := meta_service.NewMetaService()
+```
+
+### Methods
+
+#### `GetPagesFromCode`
+Exchanges an authorization code for a long-lived access token and fetches pages.
+- **Signature**: `GetPagesFromCode(code string, redirectURI string) ([]meta.Page, error)`
+
+### Example Usage
+
+```go
+service := meta_service.NewMetaService()
+pages, err := service.GetPagesFromCode("auth_code", "https://myapp.com/callback")
+if err != nil {
+    // Handle error
+}
+
+for _, page := range pages {
+    fmt.Printf("Page: %s (ID: %s)\n", page.Name, page.ID)
+}
+```
+
+---
+
+## Instagram Service
+
+The `InstagramService` handles the complete flow of creating Instagram channels, including OAuth token exchange, encryption, and database persistence.
+
+### Initialization
+
+```go
+import "github.com/shekhar8352/PostEaze/services/instagram_service"
+
+instagramService := instagram_service.NewInstagramService()
+```
+
+### Methods
+
+#### `CreateChannel`
+Creates an Instagram channel by exchanging authorization code for tokens and storing encrypted credentials.
+- **Signature**: `CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID) (*ChannelResponse, error)`
+
+### Example Usage
+
+```go
+service := instagram_service.NewInstagramService()
+
+channelResp, err := service.CreateChannel(
+    ctx,
+    "instagram_auth_code",
+    "My Instagram Channel",
+    ownerUserID,
+    teamID,
+)
+if err != nil {
+    // Handle error
+}
+
+fmt.Printf("Channel created: %d - %s\n", channelResp.ChannelID, channelResp.ChannelName)
+```
+
+### Features
+- Exchanges authorization code for short-lived token
+- Converts to long-lived token (60 days)
+- Encrypts access token using AES-GCM
+- Stores channel and token in database with transaction support
+- Returns channel ID and name
+
+### Configuration
+Requires the following environment variables:
+- `INSTAGRAM_APP_ID`
+- `INSTAGRAM_APP_SECRET`
+- `INSTAGRAM_REDIRECT_URI`
+- `ENCRYPTION_KEY` (base64-encoded 32-byte key)

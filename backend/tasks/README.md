@@ -48,7 +48,10 @@ Open `backend/tasks/definitions.go` and add a unique **Task Type** string and a 
 
 const (
     TypeEmailDelivery = "email:deliver"
-    TypeGenerateReport = "report:generate" // [NEW]
+    TypeLogMessage    = "log:message"
+    TypeInstagramComment = "instagram:comment"
+    TypeInstagramMention = "instagram:mention"
+    TypeInstagramStoryInsight = "instagram:story_insight"
 )
 
 type GenerateReportPayload struct { // [NEW]
@@ -84,7 +87,9 @@ Still in `backend/tasks/handlers.go`, register your new handler in the `Register
 ```go
 func RegisterHandlers(mux *asynq.ServeMux) {
     mux.HandleFunc(TypeEmailDelivery, HandleEmailDeliveryTask)
-    mux.HandleFunc(TypeGenerateReport, HandleGenerateReportTask) // [NEW]
+    mux.HandleFunc(TypeInstagramComment, HandleInstagramCommentTask)
+    mux.HandleFunc(TypeInstagramMention, HandleInstagramMentionTask)
+    mux.HandleFunc(TypeInstagramStoryInsight, HandleInstagramStoryInsightTask)
 }
 ```
 

@@ -89,3 +89,11 @@ func RollbackTx(db Database) {
 		_ = tx.Rollback()
 	}
 }
+
+// GetDB returns the underlying *sql.DB instance
+func GetDB() *sql.DB {
+	if db != nil {
+		return db.DB
+	}
+	return nil
+}
