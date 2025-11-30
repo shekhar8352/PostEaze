@@ -17,11 +17,18 @@ export interface InstagramChannel {
   updatedAt: string;
 }
 
+// Frontend form data
 export interface CreateInstagramChannelRequest {
   channelName: string;
   email: string;
   website?: string;
   authCode: string;
+}
+
+// Backend API payload
+export interface CreateInstagramChannelPayload {
+  code: string;
+  channel_name: string;
 }
 
 export interface UpdateInstagramChannelRequest {

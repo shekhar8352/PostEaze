@@ -4,6 +4,7 @@ import { type ApiResponse } from "@/services/api/types";
 import type {
   InstagramChannel,
   CreateInstagramChannelRequest,
+  CreateInstagramChannelPayload,
   UpdateInstagramChannelRequest,
   InstagramChannelStats,
 } from "../types/instagram.types";
@@ -17,9 +18,15 @@ class InstagramChannelService extends BaseService {
   async createChannel(
     data: CreateInstagramChannelRequest
   ): Promise<InstagramChannel> {
+    // Transform frontend data to backend payload format
+    const payload: CreateInstagramChannelPayload = {
+      code: data.authCode,
+      channel_name: data.channelName,
+    };
+    
     const response = await apiClient.post<ApiResponse<InstagramChannel>>(
-      this.endpoint,
-      data
+      `${this.endpoint}/create`,
+      payload
     );
     return response.data.data;
   }
