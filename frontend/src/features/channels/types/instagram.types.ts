@@ -29,6 +29,7 @@ export interface CreateInstagramChannelRequest {
 export interface CreateInstagramChannelPayload {
   code: string;
   channel_name: string;
+  metadata: Record<string, any>;
 }
 
 export interface UpdateInstagramChannelRequest {
@@ -56,4 +57,17 @@ export interface InstagramChannelStats {
   mediaCount: number;
   engagementRate: number;
   recentPosts: number;
+}
+
+// Query parameters for fetching channels
+export interface GetChannelsParams {
+  provider?: 'instagram' | 'facebook' | 'youtube';
+  isConnected?: boolean;
+  limit?: number;
+  offset?: number;
+  sortBy?: 'createdAt' | 'updatedAt' | 'channelName';
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+  // Allow any additional dynamic parameters
+  [key: string]: string | number | boolean | string[] | undefined;
 }
