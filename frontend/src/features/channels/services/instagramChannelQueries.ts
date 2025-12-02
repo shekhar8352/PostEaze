@@ -3,23 +3,24 @@ import { instagramChannelService } from "./instagramChannelService";
 import type {
   CreateInstagramChannelRequest,
   UpdateInstagramChannelRequest,
+  GetChannelsParams,
 } from "../types/instagram.types";
 
 // Query Keys
 export const instagramChannelKeys = {
   all: ['instagram', 'channels'] as const,
   lists: () => [...instagramChannelKeys.all, 'list'] as const,
-  list: (filters: string) => [...instagramChannelKeys.lists(), { filters }] as const,
+  list: (params?: GetChannelsParams) => [...instagramChannelKeys.lists(), params] as const,
   details: () => [...instagramChannelKeys.all, 'detail'] as const,
   detail: (id: string) => [...instagramChannelKeys.details(), id] as const,
   stats: (id: string) => [...instagramChannelKeys.all, 'stats', id] as const,
 };
 
-// Get All Instagram Channels
-export const useInstagramChannels = () => {
+// Get All Instagram Channels with optional filters
+export const useInstagramChannels = (params?: GetChannelsParams) => {
   return useQuery({
-    queryKey: instagramChannelKeys.lists(),
-    queryFn: () => instagramChannelService.getChannels(),
+    queryKey: instagramChannelKeys.list(params),
+    queryFn: () => instagramChannelService.getChannels(params),
   });
 };
 

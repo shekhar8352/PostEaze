@@ -7,6 +7,7 @@ import type {
   CreateInstagramChannelPayload,
   UpdateInstagramChannelRequest,
   InstagramChannelStats,
+  GetChannelsParams,
 } from "../types/instagram.types";
 
 class InstagramChannelService extends BaseService {
@@ -22,6 +23,9 @@ class InstagramChannelService extends BaseService {
     const payload: CreateInstagramChannelPayload = {
       code: data.authCode,
       channel_name: data.channelName,
+      metadata: {
+        email: data.email,
+      }
     };
     
     const response = await apiClient.post<ApiResponse<InstagramChannel>>(
@@ -31,10 +35,16 @@ class InstagramChannelService extends BaseService {
     return response.data.data;
   }
 
-  // Get All Instagram Channels
-  async getChannels(): Promise<InstagramChannel[]> {
+  // Get All Instagram Channels with optional filters
+  async getChannels(params?: GetChannelsParams): Promise<InstagramChannel[]> {
     const response = await apiClient.get<ApiResponse<InstagramChannel[]>>(
-      this.endpoint
+      '/v1/channels',
+      {
+        params: {
+          provider: 'instagram',
+          ...params,
+        }
+      }
     );
     return response.data.data;
   }
