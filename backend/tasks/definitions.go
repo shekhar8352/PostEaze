@@ -7,6 +7,7 @@ const (
 	TypeInstagramComment      = "instagram:comment"
 	TypeInstagramMention      = "instagram:mention"
 	TypeInstagramStoryInsight = "instagram:story_insight"
+	TypeSyncInstagramProfiles = "instagram:sync_profiles"
 )
 
 // Queue Names
