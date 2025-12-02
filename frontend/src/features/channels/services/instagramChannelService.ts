@@ -37,7 +37,7 @@ class InstagramChannelService extends BaseService {
 
   // Get All Instagram Channels with optional filters
   async getChannels(params?: GetChannelsParams): Promise<InstagramChannel[]> {
-    const response = await apiClient.get<ApiResponse<InstagramChannel[]>>(
+    const response = await apiClient.get<ApiResponse<{ channels: InstagramChannel[], total: number }>>(
       '/v1/channels',
       {
         params: {
@@ -46,7 +46,8 @@ class InstagramChannelService extends BaseService {
         }
       }
     );
-    return response.data.data;
+    // Backend returns { channels: [], total: 0 }, so we need to extract the channels array
+    return response.data.data.channels;
   }
 
   // Get Single Instagram Channel
