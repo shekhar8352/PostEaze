@@ -83,3 +83,25 @@ const (
 		WHERE id = :id
 	`
 )
+
+// GetChannelsByUserIDQuery returns query for fetching channels by user ID
+func GetChannelsByUserIDQuery() string {
+	return `
+		SELECT id, owner_user_id, team_id, provider, provider_channel_id, display_name, 
+		       username, avatar_url, is_active, error_status, metadata, connected_at, created_at, updated_at
+		FROM channels
+		WHERE owner_user_id = $1
+		ORDER BY created_at DESC
+	`
+}
+
+// GetChannelsByUserIDAndProviderQuery returns query for fetching channels by user ID and provider
+func GetChannelsByUserIDAndProviderQuery() string {
+	return `
+		SELECT id, owner_user_id, team_id, provider, provider_channel_id, display_name, 
+		       username, avatar_url, is_active, error_status, metadata, connected_at, created_at, updated_at
+		FROM channels
+		WHERE owner_user_id = $1 AND provider = $2
+		ORDER BY created_at DESC
+	`
+}

@@ -107,3 +107,54 @@ func GetLatestTokenByChannelID(ctx context.Context, channelID int64) (*entities.
 	}
 	return token, nil
 }
+
+// GetChannelsByUserID retrieves all channels for a user, optionally filtered by provider
+func GetChannelsByUserID(ctx context.Context, userID string, provider string) ([]entities.Channel, error) {
+	db := database.GetDB()
+	var rows *sql.Rows
+	var err error
+
+	if provider != "" {
+		// Filter by provider
+		rows, err = db.QueryContext(ctx, entities.GetChannelsByUserIDAndProviderQuery(), userID, provider)
+	} else {
+		// Get all channels for user
+		rows, err = db.QueryContext(ctx, entities.GetChannelsByUserIDQuery(), userID)
+	}
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var channels []entities.Channel
+	for rows.Next() {
+		var channel entities.Channel
+		err := rows.Scan(
+			&channel.ID,
+			&channel.OwnerUserID,
+			&channel.TeamID,
+			&channel.Provider,
+			&channel.ProviderChannelID,
+			&channel.DisplayName,
+			&channel.Username,
+			&channel.AvatarURL,
+			&channel.IsActive,
+			&channel.ErrorStatus,
+			&channel.Metadata,
+			&channel.ConnectedAt,
+			&channel.CreatedAt,
+			&channel.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		channels = append(channels, channel)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return channels, nil
+}

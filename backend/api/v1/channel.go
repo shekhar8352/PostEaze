@@ -44,3 +44,39 @@ func CreateInstagramChannelHandler(c *gin.Context) {
 
 	utils.SendSuccess(c, resp, "Instagram channel created successfully")
 }
+
+// GetChannelsHandler godoc
+// @Summary      Get User Channels
+// @Description  Retrieves all channels for the authenticated user. Optionally filter by provider (e.g., instagram, facebook).
+// @Tags         Channels
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        provider query string false "Filter by provider (instagram, facebook, etc.)"
+// @Success      200  {object}  modelsv1.GetChannelsResponse
+// @Failure      401  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /channels [get]
+func GetChannelsHandler(c *gin.Context) {
+	// Extract user_id from JWT token (set by AuthMiddleware)
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		utils.SendError(c, http.StatusUnauthorized, "User ID not found in token")
+		return
+	}
+
+	// Get optional provider filter from query params
+	var req modelsv1.GetChannelsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		utils.SendError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	resp, err := businessv1.GetChannels(c.Request.Context(), userIDStr.(string), req.Provider)
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, resp, "Channels retrieved successfully")
+}
