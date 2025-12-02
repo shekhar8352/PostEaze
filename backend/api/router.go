@@ -113,8 +113,10 @@ func addV1MetaRoutes(v1 *gin.RouterGroup) {
 
 func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 	channelv1 := v1.Group(constants.ChannelRoute)
+	channelv1.GET("", middleware.AuthMiddleware(), apiv1.GetChannelsHandler)
+
 	instagramv1 := channelv1.Group(constants.InstagramRoute)
-	instagramv1.POST(constants.CreateInstagramChannel, apiv1.CreateInstagramChannelHandler)
+	instagramv1.POST(constants.CreateInstagramChannel, middleware.AuthMiddleware(), apiv1.CreateInstagramChannelHandler)
 
 	webhookv1 := v1.Group(constants.WebhookRoute)
 	webhookv1.GET(constants.InstagramWebhook, webhooks.HandleInstagramWebhookVerify)
