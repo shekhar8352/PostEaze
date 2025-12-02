@@ -10,6 +10,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/entities/repositories"
+	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 	"github.com/shekhar8352/PostEaze/provider/instagram"
 	"github.com/shekhar8352/PostEaze/utils"
 	"github.com/shekhar8352/PostEaze/utils/database"
@@ -18,6 +19,7 @@ import (
 
 type InstagramService interface {
 	CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID, metadata map[string]interface{}) (*ChannelResponse, error)
+	GetPageDetails(ctx context.Context, accessToken string) (*modelsv1.GetPageDetailsResponse, error)
 }
 
 type InstagramServiceImpl struct {
@@ -140,5 +142,24 @@ func (s *InstagramServiceImpl) CreateChannel(ctx context.Context, code string, c
 	return &ChannelResponse{
 		ChannelID:   channel.ID,
 		ChannelName: channelName,
+	}, nil
+}
+
+func (s *InstagramServiceImpl) GetPageDetails(ctx context.Context, accessToken string) (*modelsv1.GetPageDetailsResponse, error) {
+	pageDetails, err := s.provider.GetPageDetails(accessToken)
+	if err != nil {
+		return nil, err
+	}
+
+	return &modelsv1.GetPageDetailsResponse{
+		ID:                pageDetails.ID,
+		Username:          pageDetails.Username,
+		Name:              pageDetails.Name,
+		Biography:         pageDetails.Biography,
+		FollowersCount:    pageDetails.FollowersCount,
+		FollowsCount:      pageDetails.FollowsCount,
+		MediaCount:        pageDetails.MediaCount,
+		ProfilePictureURL: pageDetails.ProfilePictureURL,
+		Website:           pageDetails.Website,
 	}, nil
 }

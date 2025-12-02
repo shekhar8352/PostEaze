@@ -97,7 +97,36 @@ addV1NewFeatureRoutes(v1)
 ## Related Documentation
 
 - [API v1 Documentation](./v1/README.md) - Detailed endpoint documentation
-- [Webhooks Documentation](./webhooks/README.md) - Webhook verification and processing
+### Channels (`/api/v1/channels`)
+
+#### Instagram Channel Management
+- **POST** `/instagram/create` - Create a new Instagram channel
+  - **Auth**: Required (JWT)
+  - **Body**: `{ "code": "auth_code", "channel_name": "name", "metadata": {...} }`
+  - **Returns**: Channel ID and name
+
+- **GET** `/` - Get all channels for authenticated user
+  - **Auth**: Required (JWT)
+  - **Query Params**: `provider` (optional) - Filter by provider (e.g., `instagram`)
+  - **Returns**: List of channels with metadata
+
+- **GET** `/details` - Get Instagram page details for a channel
+  - **Auth**: Required (JWT)
+  - **Query Params**: `channel_id` (required)
+  - **Returns**: Live Instagram profile data (username, followers, bio, etc.)
+
+### Webhooks
+For detailed webhook documentation, see [Webhooks Documentation](webhooks/README.md).
+
+### Development (`/api/v1/dev`) - Dev Mode Only
+
+- **POST** `/generate-token` - Generate test JWT token
+  - **Auth**: None
+  - **Body**: `{ "user_id": "uuid" }`
+  - **Returns**: JWT token valid for 30 days
+  - **Note**: Only available when `ENV=development` or `ENV=dev`
+
+---
 - [Business Layer](../business/README.md) - Business logic implementation
 - [Middleware](../middleware/README.md) - Request processing middleware
 - [Models](../models/README.md) - Data structures and validation

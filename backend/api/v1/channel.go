@@ -80,3 +80,45 @@ func GetChannelsHandler(c *gin.Context) {
 
 	utils.SendSuccess(c, resp, "Channels retrieved successfully")
 }
+
+// GetPageDetailsHandler godoc
+// @Summary      Get Instagram Page Details
+// @Description  Fetches Instagram page details for a specific channel using the stored access token. Requires authentication.
+// @Tags         Channels
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        channel_id query int true "Channel ID"
+// @Success      200  {object}  modelsv1.GetPageDetailsResponse
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]interface{}
+// @Failure      403  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /channels/details [get]
+func GetPageDetailsHandler(c *gin.Context) {
+	// Extract user_id from JWT token (set by AuthMiddleware)
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		utils.SendError(c, http.StatusUnauthorized, "User ID not found in token")
+		return
+	}
+
+	// Get channel_id from query parameter
+	var req modelsv1.GetPageDetailsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		utils.SendError(c, http.StatusBadRequest, "Invalid or missing channel_id")
+		return
+	}
+
+	resp, err := businessv1.GetPageDetails(c.Request.Context(), req.ChannelID, userIDStr.(string))
+	if err != nil {
+		if err.Error() == "unauthorized: channel does not belong to user" {
+			utils.SendError(c, http.StatusForbidden, err.Error())
+			return
+		}
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, resp, "Page details retrieved successfully")
+}

@@ -32,3 +32,19 @@ type GetChannelsResponse struct {
 	Channels []ChannelInfo `json:"channels"`
 	Total    int           `json:"total"`
 }
+
+type GetPageDetailsRequest struct {
+	ChannelID int64 `form:"channel_id" binding:"required"`
+}
+
+type GetPageDetailsResponse struct {
+	ID                string `json:"id"`
+	Username          string `json:"username"`
+	Name              string `json:"name"`
+	Biography         string `json:"biography"`
+	FollowersCount    int    `json:"followers_count"`
+	FollowsCount      int    `json:"follows_count"`
+	MediaCount        int    `json:"media_count"`
+	ProfilePictureURL string `json:"profile_picture_url"`
+	Website           string `json:"website"`
+}

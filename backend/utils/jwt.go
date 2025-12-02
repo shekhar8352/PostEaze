@@ -71,3 +71,17 @@ func GetUserIDFromToken(tokenStr string) (string, error) {
 func GetRefreshTokenExpiry() time.Time {
 	return time.Now().Add(7 * 24 * time.Hour)
 }
+
+// GenerateDevToken generates a token with extended validity for development/testing
+func GenerateDevToken(userID string, role string, validityDays int) (string, error) {
+	claims := JWTClaims{
+		UserID: userID,
+		Role:   role,
+		RegisteredClaims: jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Duration(validityDays) * 24 * time.Hour)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+		},
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(accessSecret)
+}

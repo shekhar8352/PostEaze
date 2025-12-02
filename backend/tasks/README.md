@@ -2,6 +2,39 @@
 
 This package handles asynchronous task processing and periodic (cron) jobs using [Asynq](https://github.com/hibiken/asynq), a robust Redis-based task queue library.
 
+---
+
+## Periodic Tasks (Cron Jobs)
+
+The system uses Asynq's scheduler to run periodic background tasks automatically.
+
+### Instagram Profile Sync
+
+**Task Type**: `instagram:sync_profiles`  
+**Schedule**: Every 6 hours  
+**Purpose**: Automatically syncs Instagram profile data for all active channels
+
+**What it does**:
+- Fetches all active Instagram channels from the database
+- For each channel, retrieves the latest profile data from Instagram API
+- Updates channel metadata with:
+  - username, name, biography
+  - followers_count, follows_count, media_count
+  - profile_picture_url, website
+  - last_synced_at timestamp
+- Preserves existing metadata (e.g., email)
+
+**Configuration**: Registered in `backend/tasks/scheduler.go`
+
+```go
+syncTask := asynq.NewTask(TypeSyncInstagramProfiles, nil)
+scheduler.Register("@every 6h", syncTask)
+```
+
+**Error Handling**: Errors are logged using `utils.Logger.Error()` and processing continues with the next channel.
+
+---
+
 ## 🏗 Architecture
 
 The system is decoupled into **Producers** and **Consumers**:
@@ -52,6 +85,7 @@ const (
     TypeInstagramComment = "instagram:comment"
     TypeInstagramMention = "instagram:mention"
     TypeInstagramStoryInsight = "instagram:story_insight"
+    TypeSyncInstagramProfiles = "instagram:sync_profiles"
 )
 
 type GenerateReportPayload struct { // [NEW]

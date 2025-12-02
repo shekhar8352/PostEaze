@@ -54,6 +54,17 @@ Contains team-related data access functions:
 - **SaveTeam**: Creates new team records with owner assignment
 - **AddListOfUsersToTeam**: Bulk addition of users to teams with role assignment
 
+### channel.go
+Contains channel-related data access functions:
+
+- **CreateChannel**: Creates new channel records with transaction support
+- **GetChannelByID**: Retrieves channel by ID
+- **GetChannelsByUserID**: Fetches all channels for a user with optional provider filter
+- **GetAllActiveInstagramChannels**: Retrieves all active Instagram channels for sync jobs
+- **UpdateChannelMetadata**: Updates channel metadata (JSONB field)
+- **CreateChannelToken**: Stores encrypted access tokens for channels
+- **GetLatestTokenByChannelID**: Retrieves the most recent non-revoked token
+
 ## Usage Patterns
 
 ### Basic Repository Function

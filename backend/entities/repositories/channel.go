@@ -158,3 +158,64 @@ func GetChannelsByUserID(ctx context.Context, userID string, provider string) ([
 
 	return channels, nil
 }
+
+// GetAllActiveInstagramChannels retrieves all active Instagram channels
+func GetAllActiveInstagramChannels(ctx context.Context) ([]entities.Channel, error) {
+	db := database.GetDB()
+	query := `
+		SELECT id, owner_user_id, team_id, provider, provider_channel_id, display_name, 
+		       username, avatar_url, is_active, error_status, metadata, connected_at, created_at, updated_at
+		FROM channels
+		WHERE provider = 'instagram' AND is_active = true
+		ORDER BY created_at DESC
+	`
+
+	rows, err := db.QueryContext(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var channels []entities.Channel
+	for rows.Next() {
+		var channel entities.Channel
+		err := rows.Scan(
+			&channel.ID,
+			&channel.OwnerUserID,
+			&channel.TeamID,
+			&channel.Provider,
+			&channel.ProviderChannelID,
+			&channel.DisplayName,
+			&channel.Username,
+			&channel.AvatarURL,
+			&channel.IsActive,
+			&channel.ErrorStatus,
+			&channel.Metadata,
+			&channel.ConnectedAt,
+			&channel.CreatedAt,
+			&channel.UpdatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		channels = append(channels, channel)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return channels, nil
+}
+
+// UpdateChannelMetadata updates the metadata field for a channel
+func UpdateChannelMetadata(ctx context.Context, channelID int64, metadata []byte) error {
+	db := database.GetDB()
+	query := `
+		UPDATE channels
+		SET metadata = $1, updated_at = NOW()
+		WHERE id = $2
+	`
+	_, err := db.ExecContext(ctx, query, metadata, channelID)
+	return err
+}

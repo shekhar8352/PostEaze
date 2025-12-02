@@ -173,12 +173,17 @@ func main() {
 ### Meta Integration (`/api/v1/meta`)
 - **POST** `/callback` - Exchange auth code for pages
 
-### Channels
-- `POST /api/v1/channels/instagram/create` - Create Instagram channel
+#### Channels
+- `POST /api/v1/channels/instagram/create` - Create Instagram channel (requires auth)
+- `GET /api/v1/channels` - Get all channels for authenticated user (optional `?provider=instagram` filter)
+- `GET /api/v1/channels/details?channel_id={id}` - Get Instagram page details for a channel (requires auth)
 
-### Webhooks
-- `GET /api/v1/webhooks/instagram` - Webhook verification
-- `POST /api/v1/webhooks/instagram` - Webhook event receiver
+#### Webhooks
+- `GET /api/v1/webhooks/instagram` - Instagram webhook verification
+- `POST /api/v1/webhooks/instagram` - Instagram webhook event receiver
+
+#### Development (Dev Mode Only)
+- `POST /api/v1/dev/generate-token` - Generate test JWT token (30-day validity)
 
 ## Development Setup
 
@@ -258,4 +263,23 @@ openssl rand -base64 32
 - [`migrations/`](migrations/) - Database schema and migration procedures
 - [`provider/`](provider/) - External service providers documentation
 - [`services/`](services/) - Business services documentation
-- [`api/webhooks/`](api/webhooks/) - Webhook handling documentation
+
+---
+
+## Background Tasks
+
+The application uses [Asynq](https://github.com/hibiken/asynq) for background task processing and scheduling.
+
+### Task Queue
+- Processes webhook events asynchronously
+- Handles email delivery
+- Manages Instagram profile synchronization
+
+### Periodic Tasks
+- **Instagram Profile Sync**: Runs every 6 hours to update channel metadata with latest Instagram profile data
+
+For detailed information about tasks, see [Tasks Documentation](tasks/README.md).
+
+---
+
+For detailed information about webhooks, see [Webhooks Documentation](api/webhooks/README.md).

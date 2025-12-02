@@ -40,10 +40,13 @@ func InitScheduler() error {
 		},
 	)
 
-	// Example: Register a cron job
-	// if _, err := scheduler.Register("* * * * *", asynq.NewTask(TypeLogMessage, []byte("{\"Message\":\"Cron Job Executed\"}"))); err != nil {
-	// 	return err
-	// }
+	// Register Instagram profile sync job to run every 6 hours
+	syncTask := asynq.NewTask(TypeSyncInstagramProfiles, nil)
+	if _, err := scheduler.Register("@every 6h", syncTask); err != nil {
+		log.Printf("Warning: Failed to register Instagram profile sync job: %v", err)
+	} else {
+		log.Println("Registered Instagram profile sync job to run every 6 hours")
+	}
 
 	return nil
 }

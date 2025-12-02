@@ -66,6 +66,7 @@ func Init() error {
 		addV1TeamRoutes(v1)
 		addV1MetaRoutes(v1)
 		addV1ChannelRoutes(v1)
+		addV1DevRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -114,6 +115,7 @@ func addV1MetaRoutes(v1 *gin.RouterGroup) {
 func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 	channelv1 := v1.Group(constants.ChannelRoute)
 	channelv1.GET("", middleware.AuthMiddleware(), apiv1.GetChannelsHandler)
+	channelv1.GET("/details", middleware.AuthMiddleware(), apiv1.GetPageDetailsHandler)
 
 	instagramv1 := channelv1.Group(constants.InstagramRoute)
 	instagramv1.POST(constants.CreateInstagramChannel, middleware.AuthMiddleware(), apiv1.CreateInstagramChannelHandler)
@@ -121,4 +123,9 @@ func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 	webhookv1 := v1.Group(constants.WebhookRoute)
 	webhookv1.GET(constants.InstagramWebhook, webhooks.HandleInstagramWebhookVerify)
 	webhookv1.POST(constants.InstagramWebhook, webhooks.HandleInstagramWebhookEvent)
+}
+
+func addV1DevRoutes(v1 *gin.RouterGroup) {
+	devv1 := v1.Group("/dev")
+	devv1.POST("/generate-token", apiv1.GenerateTestTokenHandler)
 }
