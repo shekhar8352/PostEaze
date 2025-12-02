@@ -164,12 +164,24 @@ instagramService := instagram_service.NewInstagramService()
 
 #### `CreateChannel`
 Creates an Instagram channel by exchanging authorization code for tokens and storing encrypted credentials.
-- **Signature**: `CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID) (*ChannelResponse, error)`
+- **Signature**: `CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID, metadata map[string]interface{}) (*ChannelResponse, error)`
+- **Parameters**:
+  - `metadata`: Optional custom metadata to store with the channel (e.g., email)
+
+#### `GetPageDetails`
+Fetches live Instagram profile data for a channel using its stored access token.
+- **Signature**: `GetPageDetails(ctx context.Context, accessToken string) (*modelsv1.GetPageDetailsResponse, error)`
+- **Returns**: Instagram profile data including username, followers, bio, media count, etc.
 
 ### Example Usage
 
 ```go
 service := instagram_service.NewInstagramService()
+
+// Create channel with metadata
+metadata := map[string]interface{}{
+    "email": "user@example.com",
+}
 
 channelResp, err := service.CreateChannel(
     ctx,
@@ -177,12 +189,19 @@ channelResp, err := service.CreateChannel(
     "My Instagram Channel",
     ownerUserID,
     teamID,
+    metadata,
 )
 if err != nil {
     // Handle error
 }
 
-fmt.Printf("Channel created: %d - %s\n", channelResp.ChannelID, channelResp.ChannelName)
+// Get page details
+pageDetails, err := service.GetPageDetails(ctx, accessToken)
+if err != nil {
+    // Handle error
+}
+
+fmt.Printf("Username: %s, Followers: %d\n", pageDetails.Username, pageDetails.FollowersCount)
 ```
 
 ### Features
@@ -190,6 +209,9 @@ fmt.Printf("Channel created: %d - %s\n", channelResp.ChannelID, channelResp.Chan
 - Converts to long-lived token (60 days)
 - Encrypts access token using AES-GCM
 - Stores channel and token in database with transaction support
+- Supports custom metadata storage
+- Fetches live Instagram profile data
+- Subscribes to Instagram webhooks (non-blocking)
 - Returns channel ID and name
 
 ### Configuration
@@ -197,4 +219,5 @@ Requires the following environment variables:
 - `INSTAGRAM_APP_ID`
 - `INSTAGRAM_APP_SECRET`
 - `INSTAGRAM_REDIRECT_URI`
+- `INSTAGRAM_WEBHOOK_VERIFY_TOKEN`
 - `ENCRYPTION_KEY` (base64-encoded 32-byte key)
