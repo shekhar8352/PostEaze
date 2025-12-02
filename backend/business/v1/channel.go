@@ -3,11 +3,13 @@ package businessv1
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/google/uuid"
 	"github.com/shekhar8352/PostEaze/entities/repositories"
 	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 	"github.com/shekhar8352/PostEaze/services/instagram_service"
+	"github.com/shekhar8352/PostEaze/utils/encryption"
 )
 
 func CreateInstagramChannel(ctx context.Context, req modelsv1.CreateInstagramChannelRequest, userID string) (*modelsv1.CreateInstagramChannelResponse, error) {
@@ -76,4 +78,38 @@ func GetChannels(ctx context.Context, userID string, provider string) (*modelsv1
 		Channels: channelInfos,
 		Total:    len(channelInfos),
 	}, nil
+}
+
+func GetPageDetails(ctx context.Context, channelID int64, userID string) (*modelsv1.GetPageDetailsResponse, error) {
+	// 1. Get channel to verify ownership
+	channel, err := repositories.GetChannelByID(ctx, channelID)
+	if err != nil {
+		return nil, fmt.Errorf("channel not found: %w", err)
+	}
+
+	// 2. Verify the channel belongs to the user
+	if channel.OwnerUserID.String() != userID {
+		return nil, fmt.Errorf("unauthorized: channel does not belong to user")
+	}
+
+	// 3. Get the latest access token
+	token, err := repositories.GetLatestTokenByChannelID(ctx, channelID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get access token: %w", err)
+	}
+
+	// 4. Decrypt the access token
+	decryptedToken, err := encryption.Decrypt(token.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
+	}
+
+	// 5. Call Instagram API to get page details
+	service := instagram_service.NewInstagramService()
+	pageDetails, err := service.GetPageDetails(ctx, decryptedToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch page details from Instagram: %w", err)
+	}
+
+	return pageDetails, nil
 }

@@ -22,6 +22,7 @@ type InstagramProvider interface {
 	GetLongLivedToken(shortLivedToken string) (*LongLivedTokenResponse, error)
 	RefreshToken(accessToken string) (*LongLivedTokenResponse, error)
 	SubscribeToWebhooks(accessToken string, pageID string, fields []string) error
+	GetPageDetails(accessToken string) (*PageDetailsResponse, error)
 }
 
 type InstagramProviderImpl struct {
@@ -45,6 +46,18 @@ type LongLivedTokenResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"` // seconds until expiration (typically 5184000 = 60 days)
+}
+
+type PageDetailsResponse struct {
+	ID                string `json:"id"`
+	Username          string `json:"username"`
+	Name              string `json:"name"`
+	Biography         string `json:"biography"`
+	FollowersCount    int    `json:"followers_count"`
+	FollowsCount      int    `json:"follows_count"`
+	MediaCount        int    `json:"media_count"`
+	ProfilePictureURL string `json:"profile_picture_url"`
+	Website           string `json:"website"`
 }
 
 type RefreshTokenResponse struct {
@@ -174,4 +187,35 @@ func (p *InstagramProviderImpl) SubscribeToWebhooks(accessToken string, pageID s
 	}
 
 	return nil
+}
+
+func (p *InstagramProviderImpl) GetPageDetails(accessToken string) (*PageDetailsResponse, error) {
+	// Instagram Graph API endpoint to get user profile information
+	reqURL := fmt.Sprintf("https://graph.instagram.com/me?fields=id,username,name,biography,followers_count,follows_count,media_count,profile_picture_url,website&access_token=%s", accessToken)
+
+	resp, err := http.Get(reqURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]interface{}
+		if err := json.Unmarshal(body, &errResp); err == nil {
+			return nil, fmt.Errorf("failed to get page details: %v", errResp)
+		}
+		return nil, fmt.Errorf("failed to get page details: %s, body: %s", resp.Status, string(body))
+	}
+
+	var pageDetails PageDetailsResponse
+	if err := json.Unmarshal(body, &pageDetails); err != nil {
+		return nil, fmt.Errorf("failed to parse page details response: %w", err)
+	}
+
+	return &pageDetails, nil
 }
