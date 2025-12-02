@@ -2,6 +2,7 @@ package instagram_service
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -16,7 +17,7 @@ import (
 )
 
 type InstagramService interface {
-	CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID) (*ChannelResponse, error)
+	CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID, metadata map[string]interface{}) (*ChannelResponse, error)
 }
 
 type InstagramServiceImpl struct {
@@ -34,7 +35,7 @@ type ChannelResponse struct {
 	ChannelName string `json:"channel_name"`
 }
 
-func (s *InstagramServiceImpl) CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID) (*ChannelResponse, error) {
+func (s *InstagramServiceImpl) CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID, metadata map[string]interface{}) (*ChannelResponse, error) {
 	// Get redirect URI from environment
 	redirectURI := os.Getenv("INSTAGRAM_REDIRECT_URI")
 	if redirectURI == "" {
@@ -70,7 +71,18 @@ func (s *InstagramServiceImpl) CreateChannel(ctx context.Context, code string, c
 	}
 	defer tx.Rollback()
 
-	// 6. Create channel record
+	// 6. Marshal metadata to JSON
+	var metadataJSON []byte
+	if len(metadata) > 0 {
+		metadataJSON, err = json.Marshal(metadata)
+		if err != nil {
+			return nil, fmt.Errorf("failed to marshal metadata: %w", err)
+		}
+	} else {
+		metadataJSON = []byte("{}")
+	}
+
+	// 7. Create channel record
 	channel := &entities.Channel{
 		OwnerUserID:       ownerUserID,
 		TeamID:            teamID,
@@ -78,7 +90,7 @@ func (s *InstagramServiceImpl) CreateChannel(ctx context.Context, code string, c
 		ProviderChannelID: fmt.Sprintf("%d", shortTokenResp.UserID),
 		DisplayName:       &channelName,
 		IsActive:          true,
-		Metadata:          []byte("{}"),
+		Metadata:          metadataJSON,
 	}
 
 	err = repositories.CreateChannel(ctx, tx, channel)
