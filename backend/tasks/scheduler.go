@@ -40,9 +40,9 @@ func InitScheduler() error {
 		},
 	)
 
-	// Register Instagram profile sync job to run every 6 hours
+	// Register Instagram profile sync job to run every 6 hours (using slow queue for background jobs)
 	syncTask := asynq.NewTask(TypeSyncInstagramProfiles, nil)
-	if _, err := scheduler.Register("@every 6h", syncTask); err != nil {
+	if _, err := scheduler.Register("@every 6h", syncTask, asynq.Queue(QueueSlow)); err != nil {
 		log.Printf("Warning: Failed to register Instagram profile sync job: %v", err)
 	} else {
 		log.Println("Registered Instagram profile sync job to run every 6 hours")

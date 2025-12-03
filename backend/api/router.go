@@ -128,4 +128,5 @@ func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 func addV1DevRoutes(v1 *gin.RouterGroup) {
 	devv1 := v1.Group("/dev")
 	devv1.POST("/generate-token", apiv1.GenerateTestTokenHandler)
+	devv1.POST("/trigger-sync", apiv1.TriggerInstagramSyncHandler)
 }
