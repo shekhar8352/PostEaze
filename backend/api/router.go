@@ -67,6 +67,7 @@ func Init() error {
 		addV1MetaRoutes(v1)
 		addV1ChannelRoutes(v1)
 		addV1DevRoutes(v1)
+		addV1CronRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -128,5 +129,9 @@ func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 func addV1DevRoutes(v1 *gin.RouterGroup) {
 	devv1 := v1.Group("/dev")
 	devv1.POST("/generate-token", apiv1.GenerateTestTokenHandler)
-	devv1.POST("/trigger-sync", apiv1.TriggerInstagramSyncHandler)
+}
+
+func addV1CronRoutes(v1 *gin.RouterGroup) {
+	cronv1 := v1.Group("/cron")
+	cronv1.POST("/trigger-instagram-sync", apiv1.TriggerInstagramSyncHandler)
 }
