@@ -23,6 +23,10 @@ type InstagramProvider interface {
 	RefreshToken(accessToken string) (*LongLivedTokenResponse, error)
 	SubscribeToWebhooks(accessToken string, pageID string, fields []string) error
 	GetPageDetails(accessToken string) (*PageDetailsResponse, error)
+	GetMedia(accessToken string, igUserID string, after string) (*MediaResponse, error)
+	GetMediaInsights(accessToken string, mediaID string, metrics []string) (*InsightsResponse, error)
+	GetStoryInsights(accessToken string, mediaID string) (*InsightsResponse, error)
+	GetProfileInsights(accessToken string, igUserID string, metrics []string, since int64, until int64) (*InsightsResponse, error)
 }
 
 type InstagramProviderImpl struct {
@@ -64,6 +68,51 @@ type RefreshTokenResponse struct {
 	AccessToken string `json:"access_token"`
 	TokenType   string `json:"token_type"`
 	ExpiresIn   int    `json:"expires_in"`
+}
+
+// MediaResponse represents the response from Instagram media endpoint
+type MediaResponse struct {
+	Data   []MediaItem `json:"data"`
+	Paging *Paging     `json:"paging,omitempty"`
+}
+
+type MediaItem struct {
+	ID        string `json:"id"`
+	MediaType string `json:"media_type"` // IMAGE, VIDEO, CAROUSEL_ALBUM
+	MediaURL  string `json:"media_url,omitempty"`
+	Caption   string `json:"caption,omitempty"`
+	Timestamp string `json:"timestamp"`
+	Permalink string `json:"permalink,omitempty"`
+	IGUserID  string `json:"ig_id,omitempty"`
+}
+
+type Paging struct {
+	Cursors *Cursors `json:"cursors,omitempty"`
+	Next    string   `json:"next,omitempty"`
+}
+
+type Cursors struct {
+	Before string `json:"before,omitempty"`
+	After  string `json:"after,omitempty"`
+}
+
+// InsightsResponse represents the response from Instagram insights endpoint
+type InsightsResponse struct {
+	Data []InsightData `json:"data"`
+}
+
+type InsightData struct {
+	Name        string         `json:"name"`
+	Period      string         `json:"period,omitempty"`
+	Values      []InsightValue `json:"values"`
+	Title       string         `json:"title,omitempty"`
+	Description string         `json:"description,omitempty"`
+	ID          string         `json:"id,omitempty"`
+}
+
+type InsightValue struct {
+	Value   interface{} `json:"value"` // Can be int or map
+	EndTime string      `json:"end_time,omitempty"`
 }
 
 func (p *InstagramProviderImpl) ExchangeCodeForToken(code string, redirectURI string) (*ShortLivedTokenResponse, error) {
@@ -218,4 +267,118 @@ func (p *InstagramProviderImpl) GetPageDetails(accessToken string) (*PageDetails
 	}
 
 	return &pageDetails, nil
+}
+
+// GetMedia fetches media (posts/stories) for an Instagram user
+func (p *InstagramProviderImpl) GetMedia(accessToken string, igUserID string, after string) (*MediaResponse, error) {
+	fields := "id,media_type,media_url,caption,timestamp,permalink"
+	reqURL := fmt.Sprintf("https://graph.instagram.com/%s/media?fields=%s&access_token=%s", igUserID, fields, accessToken)
+
+	if after != "" {
+		reqURL += "&after=" + after
+	}
+
+	resp, err := http.Get(reqURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]interface{}
+		if err := json.Unmarshal(body, &errResp); err == nil {
+			return nil, fmt.Errorf("failed to get media: %v", errResp)
+		}
+		return nil, fmt.Errorf("failed to get media: %s, body: %s", resp.Status, string(body))
+	}
+
+	var mediaResp MediaResponse
+	if err := json.Unmarshal(body, &mediaResp); err != nil {
+		return nil, fmt.Errorf("failed to parse media response: %w", err)
+	}
+
+	return &mediaResp, nil
+}
+
+// GetMediaInsights fetches insights for a specific media (post/reel)
+func (p *InstagramProviderImpl) GetMediaInsights(accessToken string, mediaID string, metrics []string) (*InsightsResponse, error) {
+	metricsStr := strings.Join(metrics, ",")
+	reqURL := fmt.Sprintf("https://graph.instagram.com/%s/insights?metric=%s&access_token=%s", mediaID, metricsStr, accessToken)
+
+	resp, err := http.Get(reqURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]interface{}
+		if err := json.Unmarshal(body, &errResp); err == nil {
+			return nil, fmt.Errorf("failed to get media insights: %v", errResp)
+		}
+		return nil, fmt.Errorf("failed to get media insights: %s, body: %s", resp.Status, string(body))
+	}
+
+	var insightsResp InsightsResponse
+	if err := json.Unmarshal(body, &insightsResp); err != nil {
+		return nil, fmt.Errorf("failed to parse insights response: %w", err)
+	}
+
+	return &insightsResp, nil
+}
+
+// GetStoryInsights fetches insights for a story
+func (p *InstagramProviderImpl) GetStoryInsights(accessToken string, mediaID string) (*InsightsResponse, error) {
+	// Story-specific metrics
+	metrics := []string{"impressions", "reach", "exits", "replies", "taps_forward", "taps_back"}
+	return p.GetMediaInsights(accessToken, mediaID, metrics)
+}
+
+// GetProfileInsights fetches insights for an Instagram profile
+func (p *InstagramProviderImpl) GetProfileInsights(accessToken string, igUserID string, metrics []string, since int64, until int64) (*InsightsResponse, error) {
+	metricsStr := strings.Join(metrics, ",")
+	reqURL := fmt.Sprintf("https://graph.instagram.com/%s/insights?metric=%s&period=day&access_token=%s", igUserID, metricsStr, accessToken)
+
+	if since > 0 {
+		reqURL += fmt.Sprintf("&since=%d", since)
+	}
+	if until > 0 {
+		reqURL += fmt.Sprintf("&until=%d", until)
+	}
+
+	resp, err := http.Get(reqURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		var errResp map[string]interface{}
+		if err := json.Unmarshal(body, &errResp); err == nil {
+			return nil, fmt.Errorf("failed to get profile insights: %v", errResp)
+		}
+		return nil, fmt.Errorf("failed to get profile insights: %s, body: %s", resp.Status, string(body))
+	}
+
+	var insightsResp InsightsResponse
+	if err := json.Unmarshal(body, &insightsResp); err != nil {
+		return nil, fmt.Errorf("failed to parse profile insights response: %w", err)
+	}
+
+	return &insightsResp, nil
 }

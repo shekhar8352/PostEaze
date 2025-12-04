@@ -68,6 +68,7 @@ func Init() error {
 		addV1ChannelRoutes(v1)
 		addV1DevRoutes(v1)
 		addV1CronRoutes(v1)
+		addV1AnalyticsRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -134,4 +135,17 @@ func addV1DevRoutes(v1 *gin.RouterGroup) {
 func addV1CronRoutes(v1 *gin.RouterGroup) {
 	cronv1 := v1.Group("/cron")
 	cronv1.POST("/trigger-instagram-sync", apiv1.TriggerInstagramSyncHandler)
+	cronv1.POST("/trigger-instagram-posts", apiv1.TriggerInstagramPostsSyncHandler)
+	cronv1.POST("/trigger-instagram-analytics", apiv1.TriggerInstagramAnalyticsSyncHandler)
+}
+
+func addV1AnalyticsRoutes(v1 *gin.RouterGroup) {
+	analyticsv1 := v1.Group("/channels/:channelId/analytics")
+	{
+		analyticsv1.GET("/profile", apiv1.GetProfileAnalyticsHandler)
+		analyticsv1.GET("/posts", apiv1.GetPostAnalyticsHandler)
+		analyticsv1.GET("/overview", apiv1.GetAnalyticsOverviewHandler)
+		analyticsv1.GET("/top-posts", apiv1.GetTopPostsHandler)
+		analyticsv1.GET("/posts-overview", apiv1.GetPostsOverviewHandler)
+	}
 }

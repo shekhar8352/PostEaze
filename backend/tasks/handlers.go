@@ -22,6 +22,8 @@ func RegisterHandlers(mux *asynq.ServeMux) {
 	mux.HandleFunc(TypeInstagramMention, HandleInstagramMentionTask)
 	mux.HandleFunc(TypeInstagramStoryInsight, HandleInstagramStoryInsightTask)
 	mux.HandleFunc(TypeSyncInstagramProfiles, HandleSyncInstagramProfilesTask)
+	mux.HandleFunc(TypeSyncInstagramPosts, HandleSyncInstagramPostsTask)
+	mux.HandleFunc(TypeSyncInstagramAnalytics, HandleSyncInstagramAnalyticsTask)
 }
 
 // HandleEmailDeliveryTask handles email delivery tasks
@@ -135,6 +137,7 @@ func syncChannelProfile(ctx context.Context, channel entities.Channel) error {
 	}
 
 	// Merge new data with existing metadata (preserve email)
+	existingMetadata["id"] = pageDetails.ID
 	existingMetadata["username"] = pageDetails.Username
 	existingMetadata["name"] = pageDetails.Name
 	existingMetadata["biography"] = pageDetails.Biography
