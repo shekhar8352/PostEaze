@@ -1,21 +1,28 @@
-import { useEffect } from 'react';
-import { useAuth } from '../hooks/useAuth';
+import { useAuthInitialization } from '../hooks/useAuthInitialization';
 
 interface AuthProviderProps {
     children: React.ReactNode;
 }
 
 /**
- * AuthProvider component that initializes authentication state on mount
- * This should wrap the entire app to ensure auth state is hydrated from localStorage
+ * Initializes authentication state on app startup
+ * Fetches user data from backend and shows loading state
  */
 export const AuthProvider = ({ children }: AuthProviderProps) => {
-    const { initializeAuth } = useAuth();
+    const { isLoading } = useAuthInitialization();
 
-    useEffect(() => {
-        // Initialize auth state from localStorage when app mounts
-        initializeAuth();
-    }, [initializeAuth]);
+    if (isLoading) {
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh'
+            }}>
+                Loading...
+            </div>
+        );
+    }
 
     return <>{children}</>;
 };

@@ -16,16 +16,16 @@ export default function App() {
   return (
     <React.StrictMode>
       <StoreProvider>
-        <AuthProvider>
-          <AppMantineProvider>
-            <Notifications position="top-right" limit={5} />
-            <TanstackProvider>
+        <TanstackProvider>
+          <AuthProvider>
+            <AppMantineProvider>
+              <Notifications position="top-right" limit={5} />
               <BrowserRouter>
                 <AppRoutes />
               </BrowserRouter>
-            </TanstackProvider>
-          </AppMantineProvider>
-        </AuthProvider>
+            </AppMantineProvider>
+          </AuthProvider>
+        </TanstackProvider>
       </StoreProvider>
     </React.StrictMode>
   );
