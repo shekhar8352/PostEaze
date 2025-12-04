@@ -84,8 +84,9 @@ func syncChannelAnalytics(ctx context.Context, channel entities.Channel) error {
 
 func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvider, channelID int64, igUserID string, accessToken string) error {
 	// Profile insights metrics (daily period)
-	// Valid metrics: impressions, reach, profile_views, follower_count, email_contacts, phone_call_clicks, text_message_clicks, get_directions_clicks, website_clicks
-	metrics := []string{"impressions", "reach", "profile_views", "follower_count"}
+	// Valid metrics from API: reach, follower_count, website_clicks, profile_views, online_followers, accounts_engaged, total_interactions
+	// Note: impressions is NOT available for profile insights
+	metrics := []string{"reach", "profile_views", "follower_count", "website_clicks"}
 
 	// Calculate time range (last 7 days)
 	now := time.Now()
@@ -97,13 +98,16 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 		return fmt.Errorf("failed to fetch profile insights: %w", err)
 	}
 
+	// Group metrics by date
+	metricsByDate := make(map[string]*entities.InstagramProfileAnalytics)
+
 	// Process insights data
 	for _, insight := range insightsResp.Data {
 		for _, value := range insight.Values {
-			// Parse end_time
+			// Parse end_time (Instagram format: "2025-11-28T08:00:00+0000")
 			var date time.Time
 			if value.EndTime != "" {
-				date, err = time.Parse(time.RFC3339, value.EndTime)
+				date, err = time.Parse("2006-01-02T15:04:05-0700", value.EndTime)
 				if err != nil {
 					utils.Logger.Error(ctx, fmt.Sprintf("Failed to parse end_time: %v", err))
 					continue
@@ -112,11 +116,17 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 				date = time.Now()
 			}
 
-			// Get or create analytics record
-			analytics := &entities.InstagramProfileAnalytics{
-				ChannelID: channelID,
-				Date:      date.Truncate(24 * time.Hour),
+			dateKey := date.Truncate(24 * time.Hour).Format("2006-01-02")
+
+			// Get or create analytics record for this date
+			if metricsByDate[dateKey] == nil {
+				metricsByDate[dateKey] = &entities.InstagramProfileAnalytics{
+					ChannelID: channelID,
+					Date:      date.Truncate(24 * time.Hour),
+				}
 			}
+
+			analytics := metricsByDate[dateKey]
 
 			// Extract value
 			var intValue int
@@ -131,24 +141,37 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 
 			// Set the appropriate field based on metric name
 			switch insight.Name {
-			case "impressions":
-				analytics.Impressions = &intValue
 			case "reach":
 				analytics.Reach = &intValue
+				utils.Logger.Info(ctx, fmt.Sprintf("Setting reach=%d for date %s", intValue, dateKey))
 			case "profile_views":
 				analytics.ProfileViews = &intValue
+				utils.Logger.Info(ctx, fmt.Sprintf("Setting profile_views=%d for date %s", intValue, dateKey))
 			case "follower_count":
 				analytics.FollowerCount = &intValue
+				utils.Logger.Info(ctx, fmt.Sprintf("Setting follower_count=%d for date %s", intValue, dateKey))
+			case "website_clicks":
+				analytics.WebsiteClicks = &intValue
+				utils.Logger.Info(ctx, fmt.Sprintf("Setting website_clicks=%d for date %s", intValue, dateKey))
 			}
+		}
+	}
 
-			// Marshal raw data
-			rawData, _ := json.Marshal(insight)
-			analytics.Raw = rawData
-
-			// Upsert analytics
-			if err := repositories.UpsertInstagramProfileAnalytics(ctx, analytics); err != nil {
-				utils.Logger.Error(ctx, fmt.Sprintf("Failed to upsert profile analytics: %v", err))
-			}
+	// Marshal raw data and upsert all analytics
+	rawData, _ := json.Marshal(insightsResp)
+	utils.Logger.Info(ctx, fmt.Sprintf("Upserting profile analytics for %d dates", len(metricsByDate)))
+	for _, analytics := range metricsByDate {
+		analytics.Raw = rawData
+		utils.Logger.Info(ctx, fmt.Sprintf("Upserting analytics for date %s: reach=%v, profile_views=%v, follower_count=%v, website_clicks=%v",
+			analytics.Date.Format("2006-01-02"),
+			analytics.Reach,
+			analytics.ProfileViews,
+			analytics.FollowerCount,
+			analytics.WebsiteClicks))
+		if err := repositories.UpsertInstagramProfileAnalytics(ctx, analytics); err != nil {
+			utils.Logger.Error(ctx, fmt.Sprintf("Failed to upsert profile analytics: %v", err))
+		} else {
+			utils.Logger.Info(ctx, fmt.Sprintf("Upserted profile analytics for date %s", analytics.Date.Format("2006-01-02")))
 		}
 	}
 
