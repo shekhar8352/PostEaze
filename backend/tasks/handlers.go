@@ -22,6 +22,8 @@ func RegisterHandlers(mux *asynq.ServeMux) {
 	mux.HandleFunc(TypeInstagramMention, HandleInstagramMentionTask)
 	mux.HandleFunc(TypeInstagramStoryInsight, HandleInstagramStoryInsightTask)
 	mux.HandleFunc(TypeSyncInstagramProfiles, HandleSyncInstagramProfilesTask)
+	mux.HandleFunc(TypeSyncInstagramPosts, HandleSyncInstagramPostsTask)
+	mux.HandleFunc(TypeSyncInstagramAnalytics, HandleSyncInstagramAnalyticsTask)
 }
 
 // HandleEmailDeliveryTask handles email delivery tasks

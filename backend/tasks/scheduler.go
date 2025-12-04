@@ -48,6 +48,22 @@ func InitScheduler() error {
 		log.Println("Registered Instagram profile sync job to run every 6 hours")
 	}
 
+	// Register Instagram posts sync job to run every 12 hours
+	postsTask := asynq.NewTask(TypeSyncInstagramPosts, nil)
+	if _, err := scheduler.Register("@every 8h", postsTask, asynq.Queue(QueueSlow)); err != nil {
+		log.Printf("Warning: Failed to register Instagram posts sync job: %v", err)
+	} else {
+		log.Println("Registered Instagram posts sync job to run every 12 hours")
+	}
+
+	// Register Instagram analytics sync job to run every 3 hours
+	analyticsTask := asynq.NewTask(TypeSyncInstagramAnalytics, nil)
+	if _, err := scheduler.Register("@every 3h", analyticsTask, asynq.Queue(QueueSlow)); err != nil {
+		log.Printf("Warning: Failed to register Instagram analytics sync job: %v", err)
+	} else {
+		log.Println("Registered Instagram analytics sync job to run every 3 hours")
+	}
+
 	return nil
 }
 
