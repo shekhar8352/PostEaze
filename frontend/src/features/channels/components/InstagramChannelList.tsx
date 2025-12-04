@@ -1,10 +1,10 @@
 import { SimpleGrid, Box, Text, Stack } from '@mantine/core';
 import { Icons } from '@/app/theme';
 import { InstagramChannelCard } from './InstagramChannelCard';
-import type { InstagramChannel } from '../types/instagram.types';
+import type { InstagramChannelDisplay } from '../types/instagram.types';
 
 interface InstagramChannelListProps {
-    channels: InstagramChannel[];
+    channels: InstagramChannelDisplay[];
     isLoading?: boolean;
 }
 

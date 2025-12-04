@@ -1,49 +1,66 @@
-// Instagram Channel Types
+// Instagram Channel Types - Extends base channel types
 
-export interface InstagramChannel {
-  id: string;
-  channelName: string;
-  email: string;
-  website?: string;
-  instagramUsername?: string;
-  instagramUserId?: string;
-  profilePicture?: string;
-  followersCount?: number;
-  followingCount?: number;
-  mediaCount?: number;
-  isConnected: boolean;
-  lastSyncedAt?: string;
-  createdAt: string;
-  updatedAt: string;
+import type {
+  BaseChannel,
+  BaseChannelDisplay,
+  BaseChannelMetadata,
+  BaseCreateChannelRequest,
+  BaseCreateChannelPayload,
+  BaseUpdateChannelRequest,
+  BaseChannelStats,
+} from './base.types';
+
+import {
+  transformChannelToDisplay as baseTransformChannelToDisplay,
+  transformChannelsToDisplay as baseTransformChannelsToDisplay,
+} from './base.types';
+
+/**
+ * Instagram-specific metadata extending base metadata
+ * Add Instagram-specific fields here if needed in the future
+ */
+export interface InstagramChannelMetadata extends BaseChannelMetadata {
+  // Instagram-specific fields can be added here
+  // For now, it uses all base fields
 }
 
-// Frontend form data
-export interface CreateInstagramChannelRequest {
-  channelName: string;
-  email: string;
-  website?: string;
-  authCode: string;
-}
+/**
+ * Instagram channel interface - extends base channel with Instagram provider type
+ */
+export interface InstagramChannel extends BaseChannel<'instagram', InstagramChannelMetadata> {}
 
-// Backend API payload
-export interface CreateInstagramChannelPayload {
-  code: string;
-  channel_name: string;
-  metadata: Record<string, any>;
-}
+/**
+ * Instagram channel display interface - frontend-friendly version
+ */
+export interface InstagramChannelDisplay extends BaseChannelDisplay<'instagram', InstagramChannelMetadata> {}
 
-export interface UpdateInstagramChannelRequest {
-  channelName?: string;
-  email?: string;
-  website?: string;
-}
+/**
+ * Frontend form data for creating Instagram channel
+ */
+export interface CreateInstagramChannelRequest extends BaseCreateChannelRequest {}
 
+/**
+ * Backend API payload for creating Instagram channel
+ */
+export interface CreateInstagramChannelPayload extends BaseCreateChannelPayload {}
+
+/**
+ * Update Instagram channel request
+ */
+export interface UpdateInstagramChannelRequest extends BaseUpdateChannelRequest {}
+
+/**
+ * Instagram channel form data
+ */
 export interface InstagramChannelFormData {
   channelName: string;
   email: string;
   website: string;
 }
 
+/**
+ * Instagram OAuth configuration
+ */
 export interface InstagramOAuthConfig {
   clientId: string;
   redirectUri: string;
@@ -51,23 +68,26 @@ export interface InstagramOAuthConfig {
   responseType: string;
 }
 
-export interface InstagramChannelStats {
-  followersCount: number;
-  followingCount: number;
-  mediaCount: number;
-  engagementRate: number;
-  recentPosts: number;
+/**
+ * Instagram channel statistics - extends base stats
+ */
+export interface InstagramChannelStats extends BaseChannelStats {}
+
+// Re-export common types and utilities from base for convenience
+export type { GetChannelsParams, GetChannelsResponse } from './base.types';
+
+/**
+ * Transform Instagram channel to display format
+ * Uses the base transformer
+ */
+export function transformChannelToDisplay(channel: InstagramChannel): InstagramChannelDisplay {
+  return baseTransformChannelToDisplay<InstagramChannel, InstagramChannelDisplay>(channel);
 }
 
-// Query parameters for fetching channels
-export interface GetChannelsParams {
-  provider?: 'instagram' | 'facebook' | 'youtube';
-  isConnected?: boolean;
-  limit?: number;
-  offset?: number;
-  sortBy?: 'createdAt' | 'updatedAt' | 'channelName';
-  sortOrder?: 'asc' | 'desc';
-  search?: string;
-  // Allow any additional dynamic parameters
-  [key: string]: string | number | boolean | string[] | undefined;
+/**
+ * Transform array of Instagram channels to display format
+ */
+export function transformChannelsToDisplay(channels: InstagramChannel[]): InstagramChannelDisplay[] {
+  return baseTransformChannelsToDisplay<InstagramChannel, InstagramChannelDisplay>(channels);
 }
+
