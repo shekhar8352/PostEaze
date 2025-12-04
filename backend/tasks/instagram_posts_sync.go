@@ -91,8 +91,8 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 				continue
 			}
 
-			// Parse timestamp
-			publishedAt, err := time.Parse(time.RFC3339, media.Timestamp)
+			// Parse timestamp (Instagram format: "2020-08-09T04:12:37+0000")
+			publishedAt, err := time.Parse("2006-01-02T15:04:05-0700", media.Timestamp)
 			if err != nil {
 				utils.Logger.Error(ctx, fmt.Sprintf("Failed to parse timestamp for media %s: %v", media.ID, err))
 				publishedAt = time.Now()

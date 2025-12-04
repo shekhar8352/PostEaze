@@ -83,7 +83,8 @@ func syncChannelAnalytics(ctx context.Context, channel entities.Channel) error {
 }
 
 func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvider, channelID int64, igUserID string, accessToken string) error {
-	// Fetch profile insights for the last 7 days
+	// Profile insights metrics (daily period)
+	// Valid metrics: impressions, reach, profile_views, follower_count, email_contacts, phone_call_clicks, text_message_clicks, get_directions_clicks, website_clicks
 	metrics := []string{"impressions", "reach", "profile_views", "follower_count"}
 
 	// Calculate time range (last 7 days)
@@ -179,10 +180,15 @@ func syncPostsAnalytics(ctx context.Context, provider instagram.InstagramProvide
 		if isStory {
 			insightsResp, err = provider.GetStoryInsights(accessToken, post.ProviderPostID)
 		} else {
-			// Post/Reel metrics
-			metrics := []string{"impressions", "reach", "likes", "comments", "saves", "shares"}
+			// Determine metrics based on post type
+			// Valid metrics from API: impressions, reach, likes, comments, saved, shares, plays, total_interactions
+			var metrics []string
 			if post.PostType != nil && (*post.PostType == "video" || *post.PostType == "reel") {
-				metrics = append(metrics, "video_views")
+				// Video/Reel metrics
+				metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "plays", "total_interactions"}
+			} else {
+				// Image/Carousel metrics
+				metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "total_interactions"}
 			}
 			insightsResp, err = provider.GetMediaInsights(accessToken, post.ProviderPostID, metrics)
 		}
@@ -241,12 +247,15 @@ func processPostInsights(ctx context.Context, post entities.Post, insightsResp *
 			analytics.Likes = &intValue
 		case "comments":
 			analytics.Comments = &intValue
-		case "saves":
+		case "saved", "saves":
 			analytics.Saves = &intValue
 		case "shares":
 			analytics.Shares = &intValue
-		case "video_views":
+		case "plays", "video_views":
 			analytics.VideoViews = &intValue
+		case "total_interactions":
+			// Total interactions is a sum of all engagement, we can skip or store separately
+			continue
 		}
 	}
 
