@@ -139,14 +139,20 @@ func SubscribeToWebhooks(ctx context.Context, channelID int64, userID string, fi
 		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
 	}
 
-	// 5. Set default fields if not provided
+	// 5. Get Instagram user ID from GetPageDetails
+	service := instagram_service.NewInstagramService()
+	pageDetails, err := service.GetPageDetails(ctx, decryptedToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get page details: %w", err)
+	}
+
+	// 6. Set default fields if not provided
 	if len(fields) == 0 {
 		fields = []string{"comments", "mentions", "story_insights"}
 	}
 
-	// 6. Call Instagram service to subscribe to webhooks
-	service := instagram_service.NewInstagramService()
-	err = service.SubscribeToWebhooks(ctx, decryptedToken, channel.ProviderChannelID, fields)
+	// 7. Call Instagram service to subscribe to webhooks using the fetched Instagram user ID
+	err = service.SubscribeToWebhooks(ctx, decryptedToken, pageDetails.ID, fields)
 	if err != nil {
 		return nil, fmt.Errorf("failed to subscribe to webhooks: %w", err)
 	}
