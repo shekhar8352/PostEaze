@@ -20,6 +20,7 @@ import (
 type InstagramService interface {
 	CreateChannel(ctx context.Context, code string, channelName string, ownerUserID uuid.UUID, teamID *uuid.UUID, metadata map[string]interface{}) (*ChannelResponse, error)
 	GetPageDetails(ctx context.Context, accessToken string) (*modelsv1.GetPageDetailsResponse, error)
+	SubscribeToWebhooks(ctx context.Context, accessToken string, igUserID string, fields []string) error
 }
 
 type InstagramServiceImpl struct {
@@ -162,4 +163,12 @@ func (s *InstagramServiceImpl) GetPageDetails(ctx context.Context, accessToken s
 		ProfilePictureURL: pageDetails.ProfilePictureURL,
 		Website:           pageDetails.Website,
 	}, nil
+}
+
+// SubscribeToWebhooks subscribes an Instagram account to Meta webhooks
+func (s *InstagramServiceImpl) SubscribeToWebhooks(ctx context.Context, accessToken string, igUserID string, fields []string) error {
+	if len(fields) == 0 {
+		fields = []string{"comments", "mentions", "story_insights"}
+	}
+	return s.provider.SubscribeToWebhooks(accessToken, igUserID, fields)
 }

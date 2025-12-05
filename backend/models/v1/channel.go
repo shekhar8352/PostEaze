@@ -48,3 +48,15 @@ type GetPageDetailsResponse struct {
 	ProfilePictureURL string `json:"profile_picture_url"`
 	Website           string `json:"website"`
 }
+
+// SubscribeWebhooksRequest for subscribing to Meta webhooks
+type SubscribeWebhooksRequest struct {
+	ChannelID int64    `json:"channel_id" binding:"required"`
+	Fields    []string `json:"fields"` // Optional, defaults to ["comments", "mentions", "story_insights"]
+}
+
+// SubscribeWebhooksResponse for webhook subscription result
+type SubscribeWebhooksResponse struct {
+	Success bool     `json:"success"`
+	Fields  []string `json:"subscribed_fields"`
+}

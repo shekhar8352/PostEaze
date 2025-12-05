@@ -122,3 +122,45 @@ func GetPageDetailsHandler(c *gin.Context) {
 
 	utils.SendSuccess(c, resp, "Page details retrieved successfully")
 }
+
+// SubscribeWebhooksHandler godoc
+// @Summary      Subscribe to Meta Webhooks
+// @Description  Subscribes an Instagram channel to Meta webhooks (comments, mentions, story_insights). Requires authentication.
+// @Tags         Channels
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body modelsv1.SubscribeWebhooksRequest true "Subscribe Webhooks Request"
+// @Success      200  {object}  modelsv1.SubscribeWebhooksResponse
+// @Failure      400  {object}  map[string]interface{}
+// @Failure      401  {object}  map[string]interface{}
+// @Failure      403  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /channels/instagram/subscribe-webhooks [post]
+func SubscribeWebhooksHandler(c *gin.Context) {
+	// Extract user_id from JWT token (set by AuthMiddleware)
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		utils.SendError(c, http.StatusUnauthorized, "User ID not found in token")
+		return
+	}
+
+	// Bind request body
+	var req modelsv1.SubscribeWebhooksRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.SendError(c, http.StatusBadRequest, "Invalid request: "+err.Error())
+		return
+	}
+
+	resp, err := businessv1.SubscribeToWebhooks(c.Request.Context(), req.ChannelID, userIDStr.(string), req.Fields)
+	if err != nil {
+		if err.Error() == "unauthorized: channel does not belong to user" {
+			utils.SendError(c, http.StatusForbidden, err.Error())
+			return
+		}
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, resp, "Successfully subscribed to webhooks")
+}
