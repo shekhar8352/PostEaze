@@ -33,6 +33,8 @@ func HandleInstagramWebhookVerify(c *gin.Context) {
 
 	verifyToken := os.Getenv("INSTAGRAM_WEBHOOK_VERIFY_TOKEN")
 
+	utils.Logger.Info(c.Request.Context(), "Received webhook verify request: ")
+
 	if mode == "subscribe" && token == verifyToken {
 		c.String(http.StatusOK, challenge)
 	} else {
@@ -54,6 +56,8 @@ func HandleInstagramWebhookVerify(c *gin.Context) {
 // @Router       /webhooks/instagram [post]
 func HandleInstagramWebhookEvent(c *gin.Context) {
 	// 1. Verify Signature
+	utils.Logger.Info(c.Request.Context(), "Received webhook request: ")
+
 	signature := c.GetHeader("X-Hub-Signature-256")
 	if signature == "" {
 		utils.SendError(c, http.StatusForbidden, "Missing signature")
@@ -65,6 +69,8 @@ func HandleInstagramWebhookEvent(c *gin.Context) {
 		utils.SendError(c, http.StatusBadRequest, "Failed to read body")
 		return
 	}
+
+	utils.Logger.Info(c.Request.Context(), "Received webhook body: ", body)
 
 	appSecret := os.Getenv("INSTAGRAM_APP_SECRET")
 	if !verifySignature(body, signature, appSecret) {
@@ -78,6 +84,8 @@ func HandleInstagramWebhookEvent(c *gin.Context) {
 		utils.SendError(c, http.StatusBadRequest, "Failed to parse JSON")
 		return
 	}
+
+	utils.Logger.Info(c.Request.Context(), "Received webhook payload: ", payload)
 
 	// 3. Process Events (Async)
 	// Meta sends a list of entries
