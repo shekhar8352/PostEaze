@@ -201,7 +201,9 @@ func (p *InstagramProviderImpl) RefreshToken(accessToken string) (*LongLivedToke
 }
 
 func (p *InstagramProviderImpl) SubscribeToWebhooks(accessToken string, pageID string, fields []string) error {
-	reqURL := fmt.Sprintf("https://graph.facebook.com/v18.0/%s/subscribed_apps", pageID)
+	// Use the Instagram Graph API endpoint for subscribing to webhooks
+	// The /me/subscribed_apps endpoint enables webhook subscriptions for the Instagram Professional Account
+	reqURL := "https://graph.instagram.com/me/subscribed_apps"
 
 	data := url.Values{}
 	data.Set("access_token", accessToken)

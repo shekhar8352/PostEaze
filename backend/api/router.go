@@ -121,6 +121,7 @@ func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 
 	instagramv1 := channelv1.Group(constants.InstagramRoute)
 	instagramv1.POST(constants.CreateInstagramChannel, middleware.AuthMiddleware(), apiv1.CreateInstagramChannelHandler)
+	instagramv1.POST("/subscribe-webhooks", middleware.AuthMiddleware(), apiv1.SubscribeWebhooksHandler)
 
 	webhookv1 := v1.Group(constants.WebhookRoute)
 	webhookv1.GET(constants.InstagramWebhook, webhooks.HandleInstagramWebhookVerify)

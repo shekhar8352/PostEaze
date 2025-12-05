@@ -113,3 +113,46 @@ func GetPageDetails(ctx context.Context, channelID int64, userID string) (*model
 
 	return pageDetails, nil
 }
+
+// SubscribeToWebhooks subscribes an existing channel to Meta webhooks
+func SubscribeToWebhooks(ctx context.Context, channelID int64, userID string, fields []string) (*modelsv1.SubscribeWebhooksResponse, error) {
+	// 1. Get channel to verify ownership
+	channel, err := repositories.GetChannelByID(ctx, channelID)
+	if err != nil {
+		return nil, fmt.Errorf("channel not found: %w", err)
+	}
+
+	// 2. Verify the channel belongs to the user
+	if channel.OwnerUserID.String() != userID {
+		return nil, fmt.Errorf("unauthorized: channel does not belong to user")
+	}
+
+	// 3. Get the latest access token
+	token, err := repositories.GetLatestTokenByChannelID(ctx, channelID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get access token: %w", err)
+	}
+
+	// 4. Decrypt the access token
+	decryptedToken, err := encryption.Decrypt(token.AccessToken)
+	if err != nil {
+		return nil, fmt.Errorf("failed to decrypt access token: %w", err)
+	}
+
+	// 5. Set default fields if not provided
+	if len(fields) == 0 {
+		fields = []string{"comments", "mentions", "story_insights"}
+	}
+
+	// 6. Call Instagram service to subscribe to webhooks
+	service := instagram_service.NewInstagramService()
+	err = service.SubscribeToWebhooks(ctx, decryptedToken, channel.ProviderChannelID, fields)
+	if err != nil {
+		return nil, fmt.Errorf("failed to subscribe to webhooks: %w", err)
+	}
+
+	return &modelsv1.SubscribeWebhooksResponse{
+		Success: true,
+		Fields:  fields,
+	}, nil
+}
