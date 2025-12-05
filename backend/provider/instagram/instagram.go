@@ -1,6 +1,7 @@
 package instagram
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,6 +9,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/shekhar8352/PostEaze/utils"
 )
 
 const (
@@ -200,16 +203,19 @@ func (p *InstagramProviderImpl) RefreshToken(accessToken string) (*LongLivedToke
 	return &tokenResp, nil
 }
 
-func (p *InstagramProviderImpl) SubscribeToWebhooks(accessToken string, pageID string, fields []string) error {
+func (p *InstagramProviderImpl) SubscribeToWebhooks(accessToken string, igUserID string, fields []string) error {
 	// Use the Instagram Graph API endpoint for subscribing to webhooks
-	// The /me/subscribed_apps endpoint enables webhook subscriptions for the Instagram Professional Account
-	reqURL := "https://graph.instagram.com/me/subscribed_apps"
+	// igUserID is the Instagram Professional Account ID
+	reqURL := fmt.Sprintf("https://graph.instagram.com/%s/subscribed_apps", igUserID)
 
 	data := url.Values{}
 	data.Set("access_token", accessToken)
 	data.Set("subscribed_fields", strings.Join(fields, ","))
 
+	utils.Logger.Info(context.Background(), "Subscribing to webhooks with URL: %s", reqURL)
+
 	resp, err := http.Post(reqURL, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+
 	if err != nil {
 		return err
 	}
@@ -219,6 +225,8 @@ func (p *InstagramProviderImpl) SubscribeToWebhooks(accessToken string, pageID s
 	if err != nil {
 		return err
 	}
+
+	utils.Logger.Info(context.Background(), "Subscribed tto webhook response: %s", string(body))
 
 	if resp.StatusCode != http.StatusOK {
 		var errResp map[string]interface{}
