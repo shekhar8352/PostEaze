@@ -35,7 +35,6 @@ apiClient.interceptors.response.use(
           refresh_token: refreshToken,
         });
 
-        // Extract tokens from response (adjust based on your backend response structure)
         const newAccessToken = response.data?.data?.access_token || response.data?.access_token;
         const newRefreshToken = response.data?.data?.refresh_token || response.data?.refresh_token;
         
@@ -43,28 +42,27 @@ apiClient.interceptors.response.use(
           throw new Error('No access token in refresh response');
         }
 
-        // Update tokens in localStorage
+        // Update both tokens (rotation)
         localStorage.setItem('auth_token', newAccessToken);
         if (newRefreshToken) {
           localStorage.setItem('refresh_token', newRefreshToken);
         }
 
-        // Update the failed request's authorization header
+        // Update authorization header and retry
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
 
-        // Retry the original request
         return apiClient(originalRequest);
 
       } catch (refreshError) {
-        // Refresh failed - clear auth data and redirect to login
+        // Refresh failed - clear auth and redirect
         console.error('Token refresh failed:', refreshError);
+        
         localStorage.removeItem('auth_token');
         localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         
-        // Only redirect if not already on login page
         if (!window.location.pathname.includes('/login')) {
           window.location.href = '/login';
         }

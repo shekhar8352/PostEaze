@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setUser, clearUser, selectUser, selectIsAuthenticated, selectAuthLoading } from '../authSlice';
 import { authStorage } from '../utils';
+import { authService } from '../services/authService';
 import type { User } from '../types';
 
 /**
@@ -40,14 +41,23 @@ export const useAuth = () => {
   }, [dispatch]);
 
   /**
-   * Clear user and remove from storage
+   * Logout user
+   * Clears all auth data from localStorage and Redux
    */
-  const logout = useCallback(() => {
-    // Clear localStorage
-    authStorage.clearAuth();
-    
-    // Clear Redux store
-    dispatch(clearUser());
+  const logout = useCallback(async () => {
+    try {
+      // Call backend logout endpoint to revoke refresh token
+      await authService.logoutUser();
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Continue with local cleanup even if backend call fails
+    } finally {
+      // Clear localStorage
+      authStorage.clearAuth();
+      
+      // Clear Redux store
+      dispatch(clearUser());
+    }
   }, [dispatch]);
 
   /**

@@ -2,10 +2,10 @@ import { Card, Stack, Group, Avatar, Text, Badge, ActionIcon } from '@mantine/co
 import { Icons } from '@/app/theme';
 import { useDeleteInstagramChannel } from '../services/instagramChannelQueries';
 import { notifications } from '@mantine/notifications';
-import type { InstagramChannel } from '../types/instagram.types';
+import type { InstagramChannelDisplay } from '../types/instagram.types';
 
 interface InstagramChannelCardProps {
-    channel: InstagramChannel;
+    channel: InstagramChannelDisplay;
 }
 
 export const InstagramChannelCard = ({ channel }: InstagramChannelCardProps) => {
@@ -46,7 +46,7 @@ export const InstagramChannelCard = ({ channel }: InstagramChannelCardProps) => 
                 <Group justify="space-between">
                     <Group>
                         <Avatar
-                            src={channel.profilePicture}
+                            src={channel.metadata.profile_picture_url}
                             size="lg"
                             radius="xl"
                             style={{
@@ -61,7 +61,7 @@ export const InstagramChannelCard = ({ channel }: InstagramChannelCardProps) => 
                                 {channel.channelName}
                             </Text>
                             <Text size="sm" c="dimmed">
-                                {channel.instagramUsername || channel.email}
+                                {channel.username || channel.email}
                             </Text>
                         </div>
                     </Group>
