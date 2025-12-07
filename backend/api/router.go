@@ -85,6 +85,7 @@ func addV1UserAuthRoutes(v1 *gin.RouterGroup) {
 	authv1.POST(constants.Authenticate, apiv1.AuthenticateWithFirebaseHandler)
 	authv1.POST(constants.RefreshRoute, middleware.AuthMiddleware(), apiv1.RefreshTokenHandler)
 	authv1.POST(constants.LogOutRoute, middleware.AuthMiddleware(), apiv1.LogoutHandler)
+	authv1.GET("/me", middleware.AuthMiddleware(), apiv1.GetLoggedInUserHandler)
 }
 
 func addV1LogRoutes(v1 *gin.RouterGroup) {

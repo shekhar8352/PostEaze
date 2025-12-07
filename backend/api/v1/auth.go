@@ -97,3 +97,32 @@ func LogoutHandler(c *gin.Context) {
 
 	utils.SendSuccess(c, nil, "Logged out successfully")
 }
+
+// GetLoggedInUserHandler godoc
+// @Summary      Get Logged In User
+// @Description  Get details of the currently logged in user
+// @Tags         Authentication
+// @Accept       json
+// @Produce      json
+// @Security     ApiKeyAuth
+// @Success      200 {object} modelsv1.User
+// @Failure      401 {object} map[string]interface{}
+// @Failure      500 {object} map[string]interface{}
+// @Router       /auth/me [get]
+func GetLoggedInUserHandler(c *gin.Context) {
+	userId, exists := c.Get("user_id")
+	if !exists {
+		utils.SendError(c, http.StatusUnauthorized, "Unauthorized")
+		return
+	}
+
+	user, err := businessv1.GetUserById(c.Request.Context(), userId.(string))
+	if err != nil {
+		utils.Logger.Error(c.Request.Context(), "Error fetching user by ID: %v", err)
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.Logger.Info(c.Request.Context(), "Loggined user fetched successfully")
+	utils.SendSuccess(c, user, "User fetched successfully")
+}
