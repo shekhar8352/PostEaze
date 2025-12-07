@@ -263,6 +263,7 @@ openssl rand -base64 32
 - [`migrations/`](migrations/) - Database schema and migration procedures
 - [`provider/`](provider/) - External service providers documentation
 - [`services/`](services/) - Business services documentation
+- [`scripts/`](scripts/) - Utility scripts and test runners
 
 ---
 
