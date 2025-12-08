@@ -2,7 +2,11 @@
 -- +goose StatementBegin
 
 -- Refactor generic posts table to support multi-channel and explicit owner
-ALTER TABLE posts ADD COLUMN IF NOT EXISTS channel_ids BIGINT[] DEFAULT '{}';
+
+-- Drop potential legacy JSONB channel_ids from previous migration attempts to avoid type mismatch
+ALTER TABLE posts DROP COLUMN IF EXISTS channel_ids;
+
+ALTER TABLE posts ADD COLUMN channel_ids BIGINT[] DEFAULT '{}';
 ALTER TABLE posts ADD COLUMN IF NOT EXISTS owner_id UUID REFERENCES users(id);
 
 -- Clean up generic provider columns if they were added by previous partial migrations
