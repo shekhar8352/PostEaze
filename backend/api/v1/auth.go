@@ -52,7 +52,6 @@ func AuthenticateWithFirebaseHandler(c *gin.Context) {
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Security     ApiKeyAuth
 // @Param        request body modelsv1.RefreshTokenParams true "Refresh Token Request"
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} map[string]interface{}
@@ -83,7 +82,7 @@ func RefreshTokenHandler(c *gin.Context) {
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Security     ApiKeyAuth
+// @Param        request body modelsv1.RefreshTokenParams true "Logout Request"
 // @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} map[string]interface{}
 // @Router       /auth/logout [post]
