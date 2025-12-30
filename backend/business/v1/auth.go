@@ -158,20 +158,38 @@ func RefreshToken(ctx context.Context, token string) (map[string]string, error) 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// For Firebase users, use "individual" as default user type
 	userType := "individual"
 	if user.UserType != "" {
 		userType = user.UserType
 	}
-	
+
 	newAccess, err := utils.GenerateAccessToken(user.ID, userType)
 	if err != nil {
 		return nil, err
 	}
 
+	// Implement Refresh Token Rotation
+	newRefresh, err := utils.GenerateRefreshToken(user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Revoke old token and insert new one
+	err = repositories.RevokeTokenForUser(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = repositories.InsertRefreshTokenOfUser(ctx, user.ID, newRefresh, utils.GetRefreshTokenExpiry())
+	if err != nil {
+		return nil, err
+	}
+
 	return map[string]string{
-		"access_token": newAccess,
+		"access_token":  newAccess,
+		"refresh_token": newRefresh,
 	}, nil
 }
 
@@ -180,7 +198,5 @@ func Logout(ctx context.Context, refreshToken string) error {
 	if err != nil {
 		return err
 	}
-	repositories.RevokeTokenForUser(ctx, user.ID)
-
-	return err
+	return repositories.RevokeTokenForUser(ctx, user.ID)
 }
