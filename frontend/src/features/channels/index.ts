@@ -14,6 +14,7 @@ export { default as InstagramChannelPage } from './pages/InstagramChannelPage';
 // Services
 export { instagramChannelService } from './services/instagramChannelService';
 export * from './services/instagramChannelQueries';
+export * from './services/channelQueries';
 
 // Store
 export * from './store/instagramChannelSlice';
