@@ -52,7 +52,6 @@ func AuthenticateWithFirebaseHandler(c *gin.Context) {
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Security     ApiKeyAuth
 // @Param        request body modelsv1.RefreshTokenParams true "Refresh Token Request"
 // @Success      200 {object} map[string]interface{}
 // @Failure      400 {object} map[string]interface{}
@@ -83,12 +82,18 @@ func RefreshTokenHandler(c *gin.Context) {
 // @Tags         Authentication
 // @Accept       json
 // @Produce      json
-// @Security     ApiKeyAuth
+// @Param        request body modelsv1.RefreshTokenParams true "Logout Request"
 // @Success      200 {object} map[string]interface{}
 // @Failure      500 {object} map[string]interface{}
 // @Router       /auth/logout [post]
 func LogoutHandler(c *gin.Context) {
-	err := businessv1.Logout(c.Request.Context(), c.GetHeader("Authorization"))
+	var body modelsv1.RefreshTokenParams
+	if err := c.ShouldBindJSON(&body); err != nil || body.RefreshToken == "" {
+		utils.SendError(c, http.StatusBadRequest, "Refresh token is required")
+		return
+	}
+
+	err := businessv1.Logout(c.Request.Context(), body.RefreshToken)
 	if err != nil {
 		utils.SendError(c, http.StatusInternalServerError, err.Error())
 		utils.Logger.Info(c.Request.Context(), "Error logging out user: ", err)

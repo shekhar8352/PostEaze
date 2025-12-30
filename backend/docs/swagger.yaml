@@ -1,4 +1,16 @@
 definitions:
+  apiv1.GenerateTestTokenRequest:
+    properties:
+      user_id:
+        type: string
+    required:
+    - user_id
+    type: object
+  apiv1.GenerateTestTokenResponse:
+    properties:
+      token:
+        type: string
+    type: object
   apiv1.MetaCallbackRequest:
     properties:
       code:
@@ -11,20 +23,38 @@ definitions:
     - code
     - redirect_uri
     type: object
+  modelsv1.ChannelInfo:
+    properties:
+      channel_id:
+        type: integer
+      channel_name:
+        type: string
+      created_at:
+        type: string
+      is_active:
+        type: boolean
+      metadata:
+        additionalProperties: true
+        type: object
+      provider:
+        type: string
+      provider_channel_id:
+        type: string
+    type: object
   modelsv1.CreateInstagramChannelRequest:
     properties:
       channel_name:
         type: string
       code:
         type: string
-      owner_user_id:
-        type: string
+      metadata:
+        additionalProperties: true
+        type: object
       team_id:
         type: string
     required:
     - channel_name
     - code
-    - owner_user_id
     type: object
   modelsv1.CreateInstagramChannelResponse:
     properties:
@@ -51,12 +81,63 @@ definitions:
     - firebase_token
     - platform
     type: object
+  modelsv1.GetChannelsResponse:
+    properties:
+      channels:
+        items:
+          $ref: '#/definitions/modelsv1.ChannelInfo'
+        type: array
+      total:
+        type: integer
+    type: object
+  modelsv1.GetPageDetailsResponse:
+    properties:
+      biography:
+        type: string
+      followers_count:
+        type: integer
+      follows_count:
+        type: integer
+      id:
+        type: string
+      media_count:
+        type: integer
+      name:
+        type: string
+      profile_picture_url:
+        type: string
+      username:
+        type: string
+      website:
+        type: string
+    type: object
   modelsv1.RefreshTokenParams:
     properties:
       refresh_token:
         type: string
     required:
     - refresh_token
+    type: object
+  modelsv1.SubscribeWebhooksRequest:
+    properties:
+      channel_id:
+        type: integer
+      fields:
+        description: Optional, defaults to ["comments", "mentions", "story_insights"]
+        items:
+          type: string
+        type: array
+    required:
+    - channel_id
+    type: object
+  modelsv1.SubscribeWebhooksResponse:
+    properties:
+      subscribed_fields:
+        items:
+          type: string
+        type: array
+      success:
+        type: boolean
     type: object
   modelsv1.Team:
     properties:
@@ -170,6 +251,13 @@ paths:
       consumes:
       - application/json
       description: Logs out the user by revoking their refresh token
+      parameters:
+      - description: Logout Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/modelsv1.RefreshTokenParams'
       produces:
       - application/json
       responses:
@@ -183,9 +271,34 @@ paths:
           schema:
             additionalProperties: true
             type: object
+      summary: Logout User
+      tags:
+      - Authentication
+  /auth/me:
+    get:
+      consumes:
+      - application/json
+      description: Get details of the currently logged in user
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/modelsv1.User'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
       security:
       - ApiKeyAuth: []
-      summary: Logout User
+      summary: Get Logged In User
       tags:
       - Authentication
   /auth/refresh:
@@ -218,17 +331,310 @@ paths:
           schema:
             additionalProperties: true
             type: object
-      security:
-      - ApiKeyAuth: []
       summary: Refresh Access Token
       tags:
       - Authentication
+  /channels:
+    get:
+      consumes:
+      - application/json
+      description: Retrieves all channels for the authenticated user. Optionally filter
+        by provider (e.g., instagram, facebook).
+      parameters:
+      - description: Filter by provider (instagram, facebook, etc.)
+        in: query
+        name: provider
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/modelsv1.GetChannelsResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get User Channels
+      tags:
+      - Channels
+  /channels/{channelId}/analytics/overview:
+    get:
+      consumes:
+      - application/json
+      description: Get aggregated analytics overview for a channel
+      parameters:
+      - description: Channel ID
+        in: path
+        name: channelId
+        required: true
+        type: integer
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Analytics Overview
+      tags:
+      - Analytics
+  /channels/{channelId}/analytics/posts:
+    get:
+      consumes:
+      - application/json
+      description: Get Instagram post analytics for a channel within a date range
+      parameters:
+      - description: Channel ID
+        in: path
+        name: channelId
+        required: true
+        type: integer
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Post Analytics
+      tags:
+      - Analytics
+  /channels/{channelId}/analytics/posts-overview:
+    get:
+      consumes:
+      - application/json
+      description: Get overview of posts activity including new posts, likes, comments,
+        etc.
+      parameters:
+      - description: Channel ID
+        in: path
+        name: channelId
+        required: true
+        type: integer
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Posts Overview
+      tags:
+      - Analytics
+  /channels/{channelId}/analytics/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get Instagram profile analytics for a channel within a date range
+      parameters:
+      - description: Channel ID
+        in: path
+        name: channelId
+        required: true
+        type: integer
+      - default: 7 days ago
+        description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - default: today
+        description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Profile Analytics
+      tags:
+      - Analytics
+  /channels/{channelId}/analytics/top-posts:
+    get:
+      consumes:
+      - application/json
+      description: Get top performing posts by engagement
+      parameters:
+      - description: Channel ID
+        in: path
+        name: channelId
+        required: true
+        type: integer
+      - default: 10
+        description: Number of posts to return
+        in: query
+        name: limit
+        type: integer
+      - description: Start date (YYYY-MM-DD)
+        in: query
+        name: start_date
+        type: string
+      - description: End date (YYYY-MM-DD)
+        in: query
+        name: end_date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Top Posts
+      tags:
+      - Analytics
+  /channels/details:
+    get:
+      consumes:
+      - application/json
+      description: Fetches Instagram page details for a specific channel using the
+        stored access token. Requires authentication.
+      parameters:
+      - description: Channel ID
+        in: query
+        name: channel_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/modelsv1.GetPageDetailsResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Instagram Page Details
+      tags:
+      - Channels
   /channels/instagram/create:
     post:
       consumes:
       - application/json
       description: Creates an Instagram channel by exchanging authorization code for
-        token
+        token. Requires authentication via JWT token. Accepts optional metadata dictionary.
       parameters:
       - description: Create Instagram Channel Request
         in: body
@@ -248,14 +654,185 @@ paths:
           schema:
             additionalProperties: true
             type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
         "500":
           description: Internal Server Error
           schema:
             additionalProperties: true
             type: object
+      security:
+      - BearerAuth: []
       summary: Create Instagram Channel
       tags:
       - Channels
+  /channels/instagram/subscribe-webhooks:
+    post:
+      consumes:
+      - application/json
+      description: Subscribes an Instagram channel to Meta webhooks (comments, mentions,
+        story_insights). Requires authentication.
+      parameters:
+      - description: Subscribe Webhooks Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/modelsv1.SubscribeWebhooksRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/modelsv1.SubscribeWebhooksResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Subscribe to Meta Webhooks
+      tags:
+      - Channels
+  /cron/trigger-instagram-analytics:
+    post:
+      consumes:
+      - application/json
+      description: Manually triggers the Instagram analytics sync job for immediate
+        execution. Only available in development mode.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Trigger Instagram Analytics Sync (Development Only)
+      tags:
+      - Cron Jobs
+  /cron/trigger-instagram-posts:
+    post:
+      consumes:
+      - application/json
+      description: Manually triggers the Instagram posts sync job for immediate execution.
+        Only available in development mode.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Trigger Instagram Posts Sync (Development Only)
+      tags:
+      - Cron Jobs
+  /cron/trigger-instagram-sync:
+    post:
+      consumes:
+      - application/json
+      description: Manually triggers the Instagram profile sync job for immediate
+        execution. Only available in development mode.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Trigger Instagram Profile Sync (Development Only)
+      tags:
+      - Cron Jobs
+  /dev/generate-token:
+    post:
+      consumes:
+      - application/json
+      description: Generates a JWT token for testing purposes. Only available in development
+        mode.
+      parameters:
+      - description: User ID
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/apiv1.GenerateTestTokenRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/apiv1.GenerateTestTokenResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Generate Test Token (Development Only)
+      tags:
+      - Development
   /meta/callback:
     post:
       consumes:
@@ -487,4 +1064,73 @@ paths:
       summary: Update user
       tags:
       - Users
+  /webhooks/instagram:
+    get:
+      description: Handles Meta's webhook verification challenge
+      parameters:
+      - description: Mode
+        in: query
+        name: hub.mode
+        required: true
+        type: string
+      - description: Challenge
+        in: query
+        name: hub.challenge
+        required: true
+        type: string
+      - description: Verify Token
+        in: query
+        name: hub.verify_token
+        required: true
+        type: string
+      responses:
+        "200":
+          description: challenge
+          schema:
+            type: string
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Verify Instagram Webhook
+      tags:
+      - Webhooks
+    post:
+      consumes:
+      - application/json
+      description: Receives and processes Instagram webhook events
+      parameters:
+      - description: Signature
+        in: header
+        name: X-Hub-Signature-256
+        required: true
+        type: string
+      - description: Webhook Payload
+        in: body
+        name: request
+        required: true
+        schema:
+          additionalProperties: true
+          type: object
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: EVENT_RECEIVED
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Handle Instagram Webhook Event
+      tags:
+      - Webhooks
 swagger: "2.0"

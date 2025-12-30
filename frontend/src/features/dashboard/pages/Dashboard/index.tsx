@@ -1,11 +1,13 @@
-import { Container, Title, Text, Button, Stack, Paper, SimpleGrid, Card, Group, Box, RingProgress } from '@mantine/core';
+import { Container, Title, Text, Button, Stack, Paper, SimpleGrid, Card, Group, Box, RingProgress, Loader, Center } from '@mantine/core';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
 import { Icons } from '@/app/theme';
+import { useChannels } from '@/features/channels';
 
 const DashboardPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
+    const { data: connectedChannels, isLoading } = useChannels();
 
     const channels = [
         {
@@ -13,28 +15,28 @@ const DashboardPage = () => {
             icon: Icons.Instagram,
             gradient: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
             path: '/channels/instagram',
-            connected: false,
+            connected: connectedChannels?.some(ch => ch.provider === 'instagram') || false,
         },
         {
             name: 'Facebook',
             icon: Icons.Facebook,
             gradient: 'linear-gradient(135deg, #1877F2 0%, #0C63D4 100%)',
             path: '/channels/facebook',
-            connected: false,
+            connected: connectedChannels?.some(ch => ch.provider === 'facebook') || false,
         },
         {
             name: 'YouTube',
             icon: Icons.YouTube,
             gradient: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
             path: '/channels/youtube',
-            connected: false,
+            connected: connectedChannels?.some(ch => ch.provider === 'youtube') || false,
         },
     ];
 
     const stats = [
         {
             title: 'Connected Accounts',
-            value: 0,
+            value: connectedChannels?.length || 0,
             icon: Icons.User,
             color: '#667eea',
             gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
@@ -54,6 +56,14 @@ const DashboardPage = () => {
             gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
         },
     ];
+
+    if (isLoading) {
+        return (
+            <Center style={{ height: '80vh' }}>
+                <Loader size="xl" color="blue" variant="bars" />
+            </Center>
+        );
+    }
 
     return (
         <Container size="xl" className="fade-in">
@@ -219,11 +229,11 @@ const DashboardPage = () => {
                                                     {channel.name}
                                                 </Text>
                                                 <Text size="sm" c="dimmed">
-                                                    Not connected
+                                                    {channel.connected ? 'Connected' : 'Not connected'}
                                                 </Text>
                                             </div>
                                             <Button
-                                                leftSection={<Icons.Plus size={18} />}
+                                                leftSection={channel.connected ? <Icons.Settings size={18} /> : <Icons.Plus size={18} />}
                                                 fullWidth
                                                 size="md"
                                                 radius="md"
@@ -239,7 +249,7 @@ const DashboardPage = () => {
                                                     },
                                                 }}
                                             >
-                                                Connect
+                                                {channel.connected ? 'Manage' : 'Connect'}
                                             </Button>
                                         </Stack>
                                     </Card>

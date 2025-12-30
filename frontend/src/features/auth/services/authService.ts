@@ -31,7 +31,10 @@ class AuthService extends BaseService {
   }
 
   async logout(): Promise<void> {
-    await apiClient.post(`${this.endpoint}/logout`);
+    const refreshToken = localStorage.getItem("refresh_token");
+    await apiClient.post(`${this.endpoint}/logout`, {
+      refresh_token: refreshToken,
+    });
   }
 
   async getCurrentUser(): Promise<User> {
