@@ -9,6 +9,7 @@ const (
 	TypeInstagramStoryInsight  = "instagram:story_insight"
 	TypeSyncInstagramProfiles  = "instagram:sync_profiles"
 	TypeSyncInstagramPosts     = "instagram:sync_posts"
+	TypePeriodSnapshot         = "analytics:period_snapshot"
 	TypeSyncInstagramAnalytics = "instagram:sync_analytics"
 )
 

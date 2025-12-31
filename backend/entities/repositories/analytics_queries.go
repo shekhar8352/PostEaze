@@ -97,14 +97,17 @@ func GetPostAnalyticsByDateRange(ctx context.Context, channelID int64, startDate
 
 // AggregatedProfileAnalytics represents aggregated profile metrics
 type AggregatedProfileAnalytics struct {
-	TotalReach         int
-	TotalImpressions   int
-	TotalProfileViews  int
-	TotalWebsiteClicks int
-	AverageReach       float64
-	FollowerGrowth     int
-	StartFollowers     int
-	EndFollowers       int
+	TotalReach           int
+	TotalImpressions     int
+	TotalProfileViews    int
+	TotalWebsiteClicks   int
+	TotalViews           int
+	TotalAccountsEngaged int
+	TotalInteractions    int
+	AverageReach         float64
+	FollowerGrowth       int
+	StartFollowers       int
+	EndFollowers         int
 }
 
 // GetAggregatedProfileAnalytics returns aggregated profile analytics for a date range
@@ -116,6 +119,9 @@ func GetAggregatedProfileAnalytics(ctx context.Context, channelID int64, startDa
 			COALESCE(SUM(impressions), 0) as total_impressions,
 			COALESCE(SUM(profile_views), 0) as total_profile_views,
 			COALESCE(SUM(website_clicks), 0) as total_website_clicks,
+			COALESCE(SUM(views), 0) as total_views,
+			COALESCE(SUM(accounts_engaged), 0) as total_accounts_engaged,
+			COALESCE(SUM(total_interactions), 0) as total_interactions,
 			COALESCE(AVG(reach), 0) as average_reach,
 			(SELECT follower_count FROM instagram_profile_analytics WHERE channel_id = $1 AND date >= $2 ORDER BY date ASC LIMIT 1) as start_followers,
 			(SELECT follower_count FROM instagram_profile_analytics WHERE channel_id = $1 AND date <= $3 ORDER BY date DESC LIMIT 1) as end_followers
@@ -131,6 +137,9 @@ func GetAggregatedProfileAnalytics(ctx context.Context, channelID int64, startDa
 		&agg.TotalImpressions,
 		&agg.TotalProfileViews,
 		&agg.TotalWebsiteClicks,
+		&agg.TotalViews,
+		&agg.TotalAccountsEngaged,
+		&agg.TotalInteractions,
 		&agg.AverageReach,
 		&startFollowers,
 		&endFollowers,
@@ -149,6 +158,54 @@ func GetAggregatedProfileAnalytics(ctx context.Context, channelID int64, startDa
 	agg.FollowerGrowth = agg.EndFollowers - agg.StartFollowers
 
 	return &agg, nil
+}
+
+// GetPostDetailedAnalytics returns historical analytics for a single post
+func GetPostDetailedAnalytics(ctx context.Context, postID int64, limit int) ([]entities.InstagramPostAnalytics, error) {
+	db := database.GetDB()
+	query := `
+		SELECT id, channel_id, post_id, date, impressions, reach, likes, comments, saves, shares, video_views, profile_visits, follows, views, total_interactions, engagement_rate, plays, raw, created_at
+		FROM instagram_post_analytics
+		WHERE post_id = $1
+		ORDER BY date DESC
+		LIMIT $2
+	`
+	rows, err := db.QueryContext(ctx, query, postID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var analytics []entities.InstagramPostAnalytics
+	for rows.Next() {
+		var a entities.InstagramPostAnalytics
+		err := rows.Scan(
+			&a.ID,
+			&a.ChannelID,
+			&a.PostID,
+			&a.Date,
+			&a.Impressions,
+			&a.Reach,
+			&a.Likes,
+			&a.Comments,
+			&a.Saves,
+			&a.Shares,
+			&a.VideoViews,
+			&a.ProfileVisits,
+			&a.Follows,
+			&a.Views,
+			&a.TotalInteractions,
+			&a.EngagementRate,
+			&a.Plays,
+			&a.Raw,
+			&a.CreatedAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		analytics = append(analytics, a)
+	}
+	return analytics, nil
 }
 
 // TopPost represents a post with its analytics
@@ -184,7 +241,7 @@ func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, end
 			COALESCE(pa.likes, 0) + COALESCE(pa.comments, 0) + COALESCE(pa.saves, 0) + COALESCE(pa.shares, 0) as engagement
 		FROM posts p
 		LEFT JOIN instagram_post_analytics pa ON p.id = pa.post_id
-		WHERE p.channel_id = $1 
+		WHERE p.channel_ids @> jsonb_build_array($1::bigint) 
 			AND p.published_at >= $2 
 			AND p.published_at <= $3
 		ORDER BY engagement DESC
@@ -246,14 +303,14 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 	newPostsQuery := `
 		SELECT COUNT(*) 
 		FROM posts 
-		WHERE channel_id = $1 AND published_at >= $2 AND published_at <= $3
+		WHERE channel_ids @> jsonb_build_array($1::bigint) AND published_at >= $2 AND published_at <= $3
 	`
 
 	// Get total posts count
 	totalPostsQuery := `
 		SELECT COUNT(*) 
 		FROM posts 
-		WHERE channel_id = $1
+		WHERE channel_ids @> jsonb_build_array($1::bigint)
 	`
 
 	// Get aggregated analytics for the date range from instagram_post_analytics
@@ -267,13 +324,17 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 			COALESCE(SUM(COALESCE(ipa.reach, 0)), 0) as total_reach,
 			COALESCE(SUM(COALESCE(ipa.impressions, 0)), 0) as total_impressions
 		FROM (
-			SELECT DISTINCT ON (post_id) 
-				post_id, likes, comments, saves, shares, reach, impressions
-			FROM instagram_post_analytics
-			WHERE channel_id = $1 AND date >= $2 AND date <= $3
-			ORDER BY post_id, date DESC
+			SELECT DISTINCT ON (pa.post_id) 
+				pa.post_id, pa.likes, pa.comments, pa.saves, pa.shares, pa.reach, pa.impressions
+			FROM instagram_post_analytics pa
+			JOIN posts p ON p.id = pa.post_id
+			WHERE pa.channel_id = $1 AND pa.date >= $2 AND pa.date <= $3
+			ORDER BY pa.post_id, pa.date DESC
 		) ipa
 	`
+
+	// Note: I kept pa.channel_id = $1 because analytics are still per-channel in the table.
+	// The previous code had `WHERE channel_id = $1`. PA table has channel_id. So no change needed there.
 
 	// Get previous period analytics for comparison
 	duration := endDate.Sub(startDate)
@@ -338,4 +399,67 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 	overview.NewShares = overview.TotalShares - prevShares
 
 	return &overview, nil
+}
+
+// UpsertAnalyticsSnapshot upserts an analytics snapshot
+func UpsertAnalyticsSnapshot(ctx context.Context, snapshot *entities.AnalyticsSnapshot) error {
+	db := database.GetDB()
+	query := `
+		INSERT INTO analytics_snapshots 
+		(entity_type, entity_id, period_type, start_date, end_date, metrics, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+		ON CONFLICT (entity_type, entity_id, period_type, start_date) 
+		DO UPDATE SET
+			end_date = EXCLUDED.end_date,
+			metrics = EXCLUDED.metrics,
+			updated_at = NOW()
+		RETURNING id, created_at, updated_at
+	`
+	return db.QueryRowContext(ctx, query,
+		snapshot.EntityType,
+		snapshot.EntityID,
+		snapshot.PeriodType,
+		snapshot.StartDate,
+		snapshot.EndDate,
+		snapshot.Metrics,
+		time.Now(),
+	).Scan(&snapshot.ID, &snapshot.CreatedAt, &snapshot.UpdatedAt)
+}
+
+// GetAnalyticsSnapshot retrieves a specific snapshot
+func GetAnalyticsSnapshot(ctx context.Context, entityType, periodType string, entityID int64, startDate time.Time) (*entities.AnalyticsSnapshot, error) {
+	db := database.GetDB()
+	query := `
+		SELECT id, entity_type, entity_id, period_type, start_date, end_date, metrics, created_at, updated_at
+		FROM analytics_snapshots
+		WHERE entity_type = $1 AND entity_id = $2 AND period_type = $3 AND start_date = $4
+	`
+	var s entities.AnalyticsSnapshot
+	err := db.QueryRowContext(ctx, query, entityType, entityID, periodType, startDate).Scan(
+		&s.ID, &s.EntityType, &s.EntityID, &s.PeriodType, &s.StartDate, &s.EndDate, &s.Metrics, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
+}
+
+// GetLatestAnalyticsSnapshot retrieves the latest snapshot for an entity
+func GetLatestAnalyticsSnapshot(ctx context.Context, entityType, periodType string, entityID int64) (*entities.AnalyticsSnapshot, error) {
+	db := database.GetDB()
+	query := `
+		SELECT id, entity_type, entity_id, period_type, start_date, end_date, metrics, created_at, updated_at
+		FROM analytics_snapshots
+		WHERE entity_type = $1 AND entity_id = $2 AND period_type = $3
+		ORDER BY start_date DESC
+		LIMIT 1
+	`
+	var s entities.AnalyticsSnapshot
+	err := db.QueryRowContext(ctx, query, entityType, entityID, periodType).Scan(
+		&s.ID, &s.EntityType, &s.EntityID, &s.PeriodType, &s.StartDate, &s.EndDate, &s.Metrics, &s.CreatedAt, &s.UpdatedAt,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return &s, nil
 }

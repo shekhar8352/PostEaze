@@ -23,6 +23,7 @@ func RegisterHandlers(mux *asynq.ServeMux) {
 	mux.HandleFunc(TypeInstagramStoryInsight, HandleInstagramStoryInsightTask)
 	mux.HandleFunc(TypeSyncInstagramProfiles, HandleSyncInstagramProfilesTask)
 	mux.HandleFunc(TypeSyncInstagramPosts, HandleSyncInstagramPostsTask)
+	mux.HandleFunc(TypePeriodSnapshot, HandlePeriodSnapshotTask)
 	mux.HandleFunc(TypeSyncInstagramAnalytics, HandleSyncInstagramAnalyticsTask)
 }
 

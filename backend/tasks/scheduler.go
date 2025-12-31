@@ -64,6 +64,14 @@ func InitScheduler() error {
 		log.Println("Registered Instagram analytics sync job to run every 3 hours")
 	}
 
+	// Register period snapshot task to run daily
+	snapshotTask := asynq.NewTask(TypePeriodSnapshot, nil)
+	if _, err := scheduler.Register("@daily", snapshotTask, asynq.Queue(QueueSlow)); err != nil {
+		log.Printf("Warning: Failed to register period snapshot job: %v", err)
+	} else {
+		log.Println("Registered period snapshot job to run daily")
+	}
+
 	return nil
 }
 

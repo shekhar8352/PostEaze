@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/hibiken/asynq"
+	"github.com/lib/pq"
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/entities/repositories"
 	"github.com/shekhar8352/PostEaze/provider/instagram"
@@ -113,16 +114,26 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 				mediaJSON = []byte("[]")
 			}
 
+			// Create provider_post_ids JSONB
+			providerPostIDs, _ := json.Marshal(map[string]string{
+				"instagram": media.ID,
+			})
+
+			// Get owner ID as pointer
+			ownerIDStr := channel.OwnerUserID.String()
+
 			// Create new post
 			post := &entities.Post{
-				ChannelID:      channel.ID,
-				Provider:       "instagram",
-				ProviderPostID: media.ID,
-				Source:         "native",
-				PostType:       &postType,
-				Caption:        &media.Caption,
-				Media:          mediaJSON,
-				PublishedAt:    &publishedAt,
+				ChannelIDs:      pq.Int64Array{channel.ID},
+				OwnerID:         &ownerIDStr,
+				Providers:       pq.StringArray{"instagram"},
+				ProviderPostIDs: providerPostIDs,
+
+				Source:      "native",
+				PostType:    &postType,
+				Caption:     &media.Caption,
+				Media:       mediaJSON,
+				PublishedAt: &publishedAt,
 			}
 
 			if err := repositories.CreatePost(ctx, post); err != nil {
