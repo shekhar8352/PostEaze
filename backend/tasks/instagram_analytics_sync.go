@@ -200,8 +200,15 @@ func syncPostsAnalytics(ctx context.Context, provider instagram.InstagramProvide
 		var insightsResp *instagram.InsightsResponse
 		var err error
 
+		// Get Instagram post ID from JSONB
+		instagramPostID := repositories.GetInstagramPostID(&post)
+
 		if isStory {
-			insightsResp, err = provider.GetStoryInsights(accessToken, post.ProviderPostID)
+			if instagramPostID == "" {
+				utils.Logger.Error(ctx, fmt.Sprintf("Skipping story analytics for post %d: instagram_post_id is nil", post.ID))
+				continue
+			}
+			insightsResp, err = provider.GetStoryInsights(accessToken, instagramPostID)
 		} else {
 			// Determine metrics based on post type
 			// Valid metrics from API: impressions, reach, likes, comments, saved, shares, plays, total_interactions
@@ -213,21 +220,25 @@ func syncPostsAnalytics(ctx context.Context, provider instagram.InstagramProvide
 				// Image/Carousel metrics
 				metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "total_interactions"}
 			}
-			insightsResp, err = provider.GetMediaInsights(accessToken, post.ProviderPostID, metrics)
+			if instagramPostID == "" {
+				utils.Logger.Error(ctx, fmt.Sprintf("Skipping post analytics for post %d: instagram_post_id is nil", post.ID))
+				continue
+			}
+			insightsResp, err = provider.GetMediaInsights(accessToken, instagramPostID, metrics)
 		}
 
 		if err != nil {
-			utils.Logger.Error(ctx, fmt.Sprintf("Failed to fetch insights for post %s: %v", post.ProviderPostID, err))
+			utils.Logger.Error(ctx, fmt.Sprintf("Failed to fetch insights for post %s: %v", instagramPostID, err))
 			continue
 		}
 
 		// Process insights
 		if isStory {
-			if err := processStoryInsights(ctx, post, insightsResp); err != nil {
+			if err := processStoryInsights(ctx, channelID, post, insightsResp); err != nil {
 				utils.Logger.Error(ctx, fmt.Sprintf("Failed to process story insights: %v", err))
 			}
 		} else {
-			if err := processPostInsights(ctx, post, insightsResp); err != nil {
+			if err := processPostInsights(ctx, channelID, post, insightsResp); err != nil {
 				utils.Logger.Error(ctx, fmt.Sprintf("Failed to process post insights: %v", err))
 			}
 		}
@@ -236,104 +247,109 @@ func syncPostsAnalytics(ctx context.Context, provider instagram.InstagramProvide
 	return nil
 }
 
-func processPostInsights(ctx context.Context, post entities.Post, insightsResp *instagram.InsightsResponse) error {
-	analytics := &entities.InstagramPostAnalytics{
-		ChannelID: post.ChannelID,
-		PostID:    post.ID,
-		Date:      time.Now().Truncate(24 * time.Hour),
-	}
-
-	// Extract metrics
+// getMetricValue is a helper function to extract a specific metric value from InsightsResponse.
+func getMetricValue(insightsResp *instagram.InsightsResponse, metricName string) *int {
 	for _, insight := range insightsResp.Data {
-		if len(insight.Values) == 0 {
-			continue
+		if insight.Name == metricName {
+			if len(insight.Values) > 0 {
+				var intValue int
+				switch v := insight.Values[0].Value.(type) {
+				case float64:
+					intValue = int(v)
+				case int:
+					intValue = v
+				default:
+					return nil
+				}
+				return &intValue
+			}
 		}
+	}
+	return nil
+}
 
-		// Get the value (lifetime metrics have single value)
-		var intValue int
-		switch v := insight.Values[0].Value.(type) {
-		case float64:
-			intValue = int(v)
-		case int:
-			intValue = v
-		default:
-			continue
+func processPostInsights(ctx context.Context, channelID int64, post entities.Post, insightsResp *instagram.InsightsResponse) error {
+	rawJSON, _ := json.Marshal(insightsResp)
+
+	analytics := &entities.InstagramPostAnalytics{
+		ChannelID:     channelID,
+		PostID:        post.ID,
+		Date:          time.Now(),
+		Impressions:   getMetricValue(insightsResp, "impressions"),
+		Reach:         getMetricValue(insightsResp, "reach"),
+		Likes:         getMetricValue(insightsResp, "likes"),
+		Comments:      getMetricValue(insightsResp, "comments"),
+		Saves:         getMetricValue(insightsResp, "saved"),
+		Shares:        getMetricValue(insightsResp, "shares"),
+		VideoViews:    getMetricValue(insightsResp, "video_views"),
+		ProfileVisits: getMetricValue(insightsResp, "profile_visits"),
+		Follows:       getMetricValue(insightsResp, "follows"),
+
+		Views:             getMetricValue(insightsResp, "views"),
+		Plays:             getMetricValue(insightsResp, "plays"),
+		TotalInteractions: getMetricValue(insightsResp, "total_interactions"),
+
+		Raw: rawJSON,
+	}
+
+	// Calculate engagement rate
+	reach := 0
+	if analytics.Reach != nil {
+		reach = *analytics.Reach
+	} else if analytics.Impressions != nil {
+		reach = *analytics.Impressions // fallback
+	}
+
+	totalInteractions := 0
+	if analytics.TotalInteractions != nil {
+		totalInteractions = *analytics.TotalInteractions
+	} else {
+		// Fallback calculation
+		likes := 0
+		comments := 0
+		saves := 0
+		shares := 0
+		if analytics.Likes != nil {
+			likes = *analytics.Likes
 		}
-
-		// Map to analytics fields
-		switch insight.Name {
-		case "impressions":
-			analytics.Impressions = &intValue
-		case "reach":
-			analytics.Reach = &intValue
-		case "likes":
-			analytics.Likes = &intValue
-		case "comments":
-			analytics.Comments = &intValue
-		case "saved", "saves":
-			analytics.Saves = &intValue
-		case "shares":
-			analytics.Shares = &intValue
-		case "plays", "video_views":
-			analytics.VideoViews = &intValue
-		case "total_interactions":
-			// Total interactions is a sum of all engagement, we can skip or store separately
-			continue
+		if analytics.Comments != nil {
+			comments = *analytics.Comments
+		}
+		if analytics.Saves != nil {
+			saves = *analytics.Saves
+		}
+		if analytics.Shares != nil {
+			shares = *analytics.Shares
+		}
+		totalInteractions = likes + comments + saves + shares
+		if totalInteractions > 0 {
+			analytics.TotalInteractions = &totalInteractions
 		}
 	}
 
-	// Marshal raw data
-	rawData, _ := json.Marshal(insightsResp)
-	analytics.Raw = rawData
+	if reach > 0 && totalInteractions > 0 {
+		rate := (float64(totalInteractions) / float64(reach)) * 100
+		analytics.EngagementRate = &rate
+	}
 
-	// Upsert analytics
 	return repositories.UpsertInstagramPostAnalytics(ctx, analytics)
 }
 
-func processStoryInsights(ctx context.Context, post entities.Post, insightsResp *instagram.InsightsResponse) error {
+func processStoryInsights(ctx context.Context, channelID int64, post entities.Post, insightsResp *instagram.InsightsResponse) error {
+	rawJSON, _ := json.Marshal(insightsResp)
+
 	analytics := &entities.InstagramStoryAnalytics{
-		ChannelID: post.ChannelID,
-		PostID:    post.ID,
-		Date:      time.Now().Truncate(24 * time.Hour),
+		ChannelID:    channelID,
+		PostID:       post.ID,
+		Date:         time.Now(),
+		Impressions:  getMetricValue(insightsResp, "impressions"),
+		Reach:        getMetricValue(insightsResp, "reach"),
+		Exits:        getMetricValue(insightsResp, "exits"),
+		Replies:      getMetricValue(insightsResp, "replies"),
+		TapsForward:  getMetricValue(insightsResp, "taps_forward"),
+		TapsBackward: getMetricValue(insightsResp, "taps_back"),
+		Raw:          rawJSON,
 	}
 
-	// Extract metrics
-	for _, insight := range insightsResp.Data {
-		if len(insight.Values) == 0 {
-			continue
-		}
-
-		var intValue int
-		switch v := insight.Values[0].Value.(type) {
-		case float64:
-			intValue = int(v)
-		case int:
-			intValue = v
-		default:
-			continue
-		}
-
-		// Map to analytics fields
-		switch insight.Name {
-		case "impressions":
-			analytics.Impressions = &intValue
-		case "reach":
-			analytics.Reach = &intValue
-		case "exits":
-			analytics.Exits = &intValue
-		case "replies":
-			analytics.Replies = &intValue
-		case "taps_forward":
-			analytics.TapsForward = &intValue
-		case "taps_back":
-			analytics.TapsBackward = &intValue
-		}
-	}
-
-	// Marshal raw data
-	rawData, _ := json.Marshal(insightsResp)
-	analytics.Raw = rawData
-
-	// Upsert analytics
 	return repositories.UpsertInstagramStoryAnalytics(ctx, analytics)
 }

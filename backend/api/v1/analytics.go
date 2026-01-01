@@ -3,6 +3,7 @@ package apiv1
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/shekhar8352/PostEaze/entities/repositories"
@@ -197,4 +198,93 @@ func GetPostsOverviewHandler(c *gin.Context) {
 		"start_date": startDate.Format("2006-01-02"),
 		"end_date":   endDate.Format("2006-01-02"),
 	}, "Posts overview retrieved successfully")
+}
+
+// GetPostInsightsHandler godoc
+// @Summary      Get Single Post Insights
+// @Description  Get detailed historical analytics for a single post
+// @Tags         Analytics
+// @Param        channelId path int true "Channel ID"
+// @Param        postId path int true "Post ID"
+// @Param        days query int false "Days of history" default(7)
+// @Router       /channels/{channelId}/analytics/posts/{postId} [get]
+func GetPostInsightsHandler(c *gin.Context) {
+	_, err := strconv.ParseInt(c.Param("channelId"), 10, 64)
+	if err != nil {
+		utils.SendError(c, http.StatusBadRequest, "Invalid channel ID")
+		return
+	}
+	postID, err := strconv.ParseInt(c.Param("postId"), 10, 64)
+	if err != nil {
+		utils.SendError(c, http.StatusBadRequest, "Invalid post ID")
+		return
+	}
+
+	limit := 7
+	if lStr := c.Query("days"); lStr != "" {
+		if l, err := strconv.Atoi(lStr); err == nil && l > 0 {
+			limit = l
+		}
+	}
+
+	analytics, err := repositories.GetPostDetailedAnalytics(c.Request.Context(), postID, limit)
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, "Failed to fetch post insights: "+err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, gin.H{
+		"analytics": analytics,
+	}, "Post insights retrieved successfully")
+}
+
+// GetChannelDashboardHandler godoc
+// @Summary      Get Channel Dashboard
+// @Description  Get comprehensive channel dashboard metrics
+// @Router       /channels/{channelId}/analytics/dashboard [get]
+func GetChannelDashboardHandler(c *gin.Context) {
+	GetAnalyticsOverviewHandler(c)
+}
+
+// GetPeriodComparisonHandler godoc
+// @Summary      Get Period Comparison
+// @Description  Compare analytics between selected period and previous period
+// @Param        channelId path int true "Channel ID"
+// @Param        start_date query string false "Start date"
+// @Param        end_date query string false "End date"
+// @Router       /channels/{channelId}/analytics/comparison [get]
+func GetPeriodComparisonHandler(c *gin.Context) {
+	channelID, err := strconv.ParseInt(c.Param("channelId"), 10, 64)
+	if err != nil {
+		utils.SendError(c, http.StatusBadRequest, "Invalid channel ID")
+		return
+	}
+	startDate, endDate := utils.ParseDateRange(c)
+
+	currentPeriod, err := repositories.GetAggregatedProfileAnalytics(c.Request.Context(), channelID, startDate, endDate)
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, "Failed: "+err.Error())
+		return
+	}
+
+	duration := endDate.Sub(startDate)
+	prevStart := startDate.Add(-duration - 24*time.Hour) // simplistic logic
+	prevEnd := startDate.Add(-time.Hour * 24)
+
+	prevPeriod, err := repositories.GetAggregatedProfileAnalytics(c.Request.Context(), channelID, prevStart, prevEnd)
+	if err != nil {
+		// Just log error and return current? Or fail?
+		// Return current with empty comparison
+		utils.SendSuccess(c, gin.H{"current": currentPeriod, "previous": nil}, "Comparison retrieved (no previous data)")
+		return
+	}
+
+	utils.SendSuccess(c, gin.H{
+		"current":  currentPeriod,
+		"previous": prevPeriod,
+		"period": gin.H{
+			"start": startDate, "end": endDate,
+			"prev_start": prevStart, "prev_end": prevEnd,
+		},
+	}, "Comparison retrieved successfully")
 }
