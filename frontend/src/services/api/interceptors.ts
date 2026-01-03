@@ -13,6 +13,21 @@ apiClient.interceptors.request.use(
   (error: AxiosError) => Promise.reject(error)
 );
 
+let isRefreshing = false;
+let failedQueue: any[] = [];
+
+const processQueue = (error: any, token: string | null = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 // Response interceptor - Handle token refresh
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response,
@@ -21,7 +36,23 @@ apiClient.interceptors.response.use(
 
     // Only attempt refresh for 401 errors and if not already retried
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then((token) => {
+            if (originalRequest.headers) {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+            }
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         const refreshToken = localStorage.getItem('refresh_token');
@@ -48,6 +79,8 @@ apiClient.interceptors.response.use(
           localStorage.setItem('refresh_token', newRefreshToken);
         }
 
+        processQueue(null, newAccessToken);
+
         // Update authorization header and retry
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -56,6 +89,8 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
 
       } catch (refreshError) {
+        processQueue(refreshError, null);
+        
         // Refresh failed - clear auth and redirect
         console.error('Token refresh failed:', refreshError);
         
@@ -68,6 +103,8 @@ apiClient.interceptors.response.use(
         }
         
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false;
       }
     }
 

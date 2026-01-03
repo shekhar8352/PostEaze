@@ -33,7 +33,7 @@ export const useAuthInitialization = () => {
       // Don't clear auth storage here - let the interceptor handle token refresh failures
       // This prevents clearing valid tokens on temporary network issues or during initial load
       console.error('Failed to fetch user:', error);
-      dispatch(clearUser());
+      // dispatch(clearUser()); // Removed to allow interceptor to handle refresh
     }
   }, [user, error, dispatch]);
 
