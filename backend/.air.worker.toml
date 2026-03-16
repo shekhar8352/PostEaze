@@ -1,0 +1,23 @@
+root = "."
+tmp_dir = "tmp"
+
+[build]
+cmd = "go build -o ./tmp/posteaze-worker ./cmd/worker"
+bin = "./tmp/posteaze-worker"
+kill_delay = 500
+include_ext = ["go"]
+exclude_dir = ["vendor", "tmp", "docs"]
+full_bin = ""
+
+[log]
+time = true
+
+[color]
+main = "cyan"
+watcher = "yellow"
+build = "green"
+runner = "magenta"
+
+[misc]
+clean_on_exit = true
+
