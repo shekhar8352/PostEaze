@@ -34,6 +34,7 @@
 # === Docker ===
 *.env
 docker-compose.override.yml
+*.sh
 
 # === OS files ===
 .DS_Store
