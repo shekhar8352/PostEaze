@@ -1,7 +1,13 @@
 # PostEaze Backend Makefile
 # Provides convenient commands for testing, building, and development
 
-.PHONY: help test test-unit test-integration test-coverage test-verbose test-race test-bench clean build run dev lint fmt vet deps
+# Air binary (can be overridden: `make dev AIR=/path/to/air`)
+AIR ?= air
+
+.PHONY: help test test-unit test-integration test-coverage test-verbose test-race test-bench clean build run dev dev-worker lint fmt vet deps tidy run-api run-worker build-api build-worker
+
+GOPATH ?= $(shell go env GOPATH)
+AIR = $(GOPATH)/bin/air
 
 # Default target
 help: ## Show this help message
@@ -157,6 +163,52 @@ test-sqlite: ## Run integration tests with SQLite
 test-postgres: ## Run integration tests with PostgreSQL
 	@echo "Running integration tests with PostgreSQL..."
 	@./scripts/test.sh --type integration --database postgres
+
+###############################################################################
+# ─── Development (hot-reload) ────────────────────────────────────────────────
+###############################################################################
+
+## Run the API server with Air live-reload
+dev:
+	$(AIR)
+
+## Run the asynq worker with Air live-reload
+dev-worker:
+	$(AIR) -c .air.worker.toml
+
+###############################################################################
+# ─── Development (no reload) ─────────────────────────────────────────────────
+###############################################################################
+
+## Run the API server directly
+run-api:
+	go run ./main.go
+
+## Run the asynq worker directly
+run-worker:
+	go run ./cmd/worker/main.go
+
+###############################################################################
+# ─── Build ───────────────────────────────────────────────────────────────────
+###############################################################################
+
+## Build both binaries
+build: build-api build-worker
+
+build-api:
+	go build -o bin/api ./main.go
+
+build-worker:
+	go build -o bin/worker ./cmd/worker/main.go
+
+###############################################################################
+# ─── Maintenance ─────────────────────────────────────────────────────────────
+###############################################################################
+
+## Tidy module dependencies
+tidy:
+	go mod tidy
+
 
 # Output format tests
 test-json: ## Run tests with JSON output
