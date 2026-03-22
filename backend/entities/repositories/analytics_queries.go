@@ -2,23 +2,56 @@ package repositories
 
 import (
 	"context"
+	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
 
-// GetProfileAnalyticsByDateRange retrieves profile analytics for a channel within a date range
-func GetProfileAnalyticsByDateRange(ctx context.Context, channelID int64, startDate, endDate time.Time) ([]entities.InstagramProfileAnalytics, error) {
+// ProfileAnalyticsListFilters optional pagination for profile series.
+type ProfileAnalyticsListFilters struct {
+	Limit  int
+	Offset int
+}
+
+// PostAnalyticsListFilters optional post_type filter and pagination.
+type PostAnalyticsListFilters struct {
+	PostType *string
+	Limit    int
+	Offset   int
+}
+
+// CountProfileAnalyticsInRange returns total rows matching the date filter.
+func CountProfileAnalyticsInRange(ctx context.Context, channelID int64, startDate, endDate time.Time) (int, error) {
+	db := database.GetDB()
+	var n int
+	err := db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM instagram_profile_analytics
+		WHERE channel_id = $1 AND date >= $2::date AND date <= $3::date
+	`, channelID, startDate, endDate).Scan(&n)
+	return n, err
+}
+
+// GetProfileAnalyticsByDateRange retrieves profile analytics for a channel within a date range.
+func GetProfileAnalyticsByDateRange(ctx context.Context, channelID int64, startDate, endDate time.Time, f ProfileAnalyticsListFilters) ([]entities.InstagramProfileAnalytics, error) {
 	db := database.GetDB()
 	query := `
-		SELECT id, channel_id, date, follower_count, impressions, profile_views, reach, website_clicks, email_clicks, raw, created_at
+		SELECT id, channel_id, date, follower_count, impressions, profile_views, reach, website_clicks, email_clicks,
+		       views, accounts_engaged, total_interactions, bio_link_clicks, phone_call_clicks, text_message_clicks,
+		       get_directions_clicks, raw, created_at
 		FROM instagram_profile_analytics
-		WHERE channel_id = $1 AND date >= $2 AND date <= $3
+		WHERE channel_id = $1 AND date >= $2::date AND date <= $3::date
 		ORDER BY date DESC
 	`
+	args := []interface{}{channelID, startDate, endDate}
+	if f.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
+		args = append(args, f.Limit, f.Offset)
+	}
 
-	rows, err := db.QueryContext(ctx, query, channelID, startDate, endDate)
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -37,6 +70,13 @@ func GetProfileAnalyticsByDateRange(ctx context.Context, channelID int64, startD
 			&a.Reach,
 			&a.WebsiteClicks,
 			&a.EmailClicks,
+			&a.Views,
+			&a.AccountsEngaged,
+			&a.TotalInteractions,
+			&a.BioLinkClicks,
+			&a.PhoneCallClicks,
+			&a.TextMessageClicks,
+			&a.GetDirectionsClicks,
 			&a.Raw,
 			&a.CreatedAt,
 		)
@@ -49,18 +89,49 @@ func GetProfileAnalyticsByDateRange(ctx context.Context, channelID int64, startD
 	return analytics, rows.Err()
 }
 
-// GetPostAnalyticsByDateRange retrieves post analytics for a channel within a date range
-func GetPostAnalyticsByDateRange(ctx context.Context, channelID int64, startDate, endDate time.Time) ([]entities.InstagramPostAnalytics, error) {
+// CountPostAnalyticsInRange counts post analytics rows after optional post_type filter.
+func CountPostAnalyticsInRange(ctx context.Context, channelID int64, startDate, endDate time.Time, postType *string) (int, error) {
+	db := database.GetDB()
+	base := `
+		SELECT COUNT(*) FROM instagram_post_analytics pa
+		JOIN posts p ON p.id = pa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		WHERE pa.channel_id = $1 AND pa.date >= $2::date AND pa.date <= $3::date
+	`
+	args := []interface{}{channelID, startDate, endDate}
+	if postType != nil && *postType != "" {
+		base += ` AND COALESCE(p.post_type, '') = $4`
+		args = append(args, *postType)
+	}
+	var n int
+	err := db.QueryRowContext(ctx, base, args...).Scan(&n)
+	return n, err
+}
+
+// GetPostAnalyticsByDateRange retrieves post analytics for a channel within a date range.
+func GetPostAnalyticsByDateRange(ctx context.Context, channelID int64, startDate, endDate time.Time, f PostAnalyticsListFilters) ([]entities.InstagramPostAnalytics, error) {
 	db := database.GetDB()
 	query := `
-		SELECT pa.id, pa.channel_id, pa.post_id, pa.date, pa.impressions, pa.reach, pa.likes, pa.comments, 
-		       pa.saves, pa.shares, pa.video_views, pa.profile_visits, pa.follows, pa.raw, pa.created_at
+		SELECT pa.id, pa.channel_id, pa.post_id, pa.date, pa.impressions, pa.reach, pa.likes, pa.comments,
+		       pa.saves, pa.shares, pa.video_views, pa.profile_visits, pa.follows, pa.views, pa.total_interactions,
+		       pa.engagement_rate, pa.plays, pa.raw, pa.created_at
 		FROM instagram_post_analytics pa
-		WHERE pa.channel_id = $1 AND pa.date >= $2 AND pa.date <= $3
-		ORDER BY pa.date DESC
+		JOIN posts p ON p.id = pa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		WHERE pa.channel_id = $1 AND pa.date >= $2::date AND pa.date <= $3::date
 	`
+	args := []interface{}{channelID, startDate, endDate}
+	argN := 4
+	if f.PostType != nil && *f.PostType != "" {
+		query += fmt.Sprintf(" AND COALESCE(p.post_type, '') = $%d", argN)
+		args = append(args, *f.PostType)
+		argN++
+	}
+	query += " ORDER BY pa.date DESC, pa.id DESC"
+	if f.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", argN, argN+1)
+		args = append(args, f.Limit, f.Offset)
+	}
 
-	rows, err := db.QueryContext(ctx, query, channelID, startDate, endDate)
+	rows, err := db.QueryContext(ctx, query, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,6 +154,10 @@ func GetPostAnalyticsByDateRange(ctx context.Context, channelID int64, startDate
 			&a.VideoViews,
 			&a.ProfileVisits,
 			&a.Follows,
+			&a.Views,
+			&a.TotalInteractions,
+			&a.EngagementRate,
+			&a.Plays,
 			&a.Raw,
 			&a.CreatedAt,
 		)
@@ -126,7 +201,7 @@ func GetAggregatedProfileAnalytics(ctx context.Context, channelID int64, startDa
 			(SELECT follower_count FROM instagram_profile_analytics WHERE channel_id = $1 AND date >= $2 ORDER BY date ASC LIMIT 1) as start_followers,
 			(SELECT follower_count FROM instagram_profile_analytics WHERE channel_id = $1 AND date <= $3 ORDER BY date DESC LIMIT 1) as end_followers
 		FROM instagram_profile_analytics
-		WHERE channel_id = $1 AND date >= $2 AND date <= $3
+		WHERE channel_id = $1 AND date >= $2::date AND date <= $3::date
 	`
 
 	var agg AggregatedProfileAnalytics
@@ -213,42 +288,82 @@ type TopPost struct {
 	PostID      int64
 	PostType    string
 	Caption     string
-	PublishedAt time.Time
+	PublishedAt *time.Time
 	Impressions int
 	Reach       int
 	Likes       int
 	Comments    int
 	Saves       int
 	Shares      int
+	Plays       int
 	Engagement  int
 }
 
-// GetTopPosts returns top performing posts by engagement
-func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, endDate time.Time) ([]TopPost, error) {
-	db := database.GetDB()
-	query := `
-		SELECT 
-			p.id,
-			COALESCE(p.post_type, 'post') as post_type,
-			COALESCE(p.caption, '') as caption,
-			p.published_at,
-			COALESCE(pa.impressions, 0) as impressions,
-			COALESCE(pa.reach, 0) as reach,
-			COALESCE(pa.likes, 0) as likes,
-			COALESCE(pa.comments, 0) as comments,
-			COALESCE(pa.saves, 0) as saves,
-			COALESCE(pa.shares, 0) as shares,
-			COALESCE(pa.likes, 0) + COALESCE(pa.comments, 0) + COALESCE(pa.saves, 0) + COALESCE(pa.shares, 0) as engagement
-		FROM posts p
-		LEFT JOIN instagram_post_analytics pa ON p.id = pa.post_id
-		WHERE p.channel_ids @> jsonb_build_array($1::bigint) 
-			AND p.published_at >= $2 
-			AND p.published_at <= $3
-		ORDER BY engagement DESC
-		LIMIT $4
-	`
+// TopPostsSort controls ranking for GetTopPosts (whitelist).
+type TopPostsSort string
 
-	rows, err := db.QueryContext(ctx, query, channelID, startDate, endDate, limit)
+const (
+	TopPostsSortEngagement  TopPostsSort = "engagement"
+	TopPostsSortReach       TopPostsSort = "reach"
+	TopPostsSortImpressions TopPostsSort = "impressions"
+	TopPostsSortPlays       TopPostsSort = "plays"
+)
+
+// GetTopPosts returns top performing posts using the latest analytics row per post in the date window.
+func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, endDate time.Time, sort TopPostsSort, postType *string) ([]TopPost, error) {
+	orderClause := "engagement DESC NULLS LAST"
+	switch sort {
+	case TopPostsSortReach:
+		orderClause = "reach DESC NULLS LAST, engagement DESC NULLS LAST"
+	case TopPostsSortImpressions:
+		orderClause = "impressions DESC NULLS LAST, engagement DESC NULLS LAST"
+	case TopPostsSortPlays:
+		orderClause = "plays DESC NULLS LAST, engagement DESC NULLS LAST"
+	case TopPostsSortEngagement, "":
+		orderClause = "engagement DESC NULLS LAST"
+	}
+
+	db := database.GetDB()
+	query := fmt.Sprintf(`
+		WITH latest AS (
+			SELECT DISTINCT ON (pa.post_id)
+				pa.post_id,
+				pa.impressions,
+				pa.reach,
+				pa.likes,
+				pa.comments,
+				pa.saves,
+				pa.shares,
+				pa.plays
+			FROM instagram_post_analytics pa
+			WHERE pa.channel_id = $1 AND pa.date >= $2::date AND pa.date <= $3::date
+			ORDER BY pa.post_id, pa.date DESC
+		)
+		SELECT
+			p.id,
+			COALESCE(p.post_type, 'post') AS post_type,
+			COALESCE(p.caption, '') AS caption,
+			p.published_at,
+			COALESCE(latest.impressions, 0) AS impressions,
+			COALESCE(latest.reach, 0) AS reach,
+			COALESCE(latest.likes, 0) AS likes,
+			COALESCE(latest.comments, 0) AS comments,
+			COALESCE(latest.saves, 0) AS saves,
+			COALESCE(latest.shares, 0) AS shares,
+			COALESCE(latest.plays, 0) AS plays,
+			COALESCE(latest.likes, 0) + COALESCE(latest.comments, 0) + COALESCE(latest.saves, 0) + COALESCE(latest.shares, 0) AS engagement
+		FROM posts p
+		INNER JOIN latest ON latest.post_id = p.id
+		WHERE p.channel_ids @> jsonb_build_array($1::bigint)
+			AND p.published_at IS NOT NULL
+			AND (p.published_at AT TIME ZONE 'UTC')::date >= $2::date
+			AND (p.published_at AT TIME ZONE 'UTC')::date <= $3::date
+			AND ($4::text IS NULL OR $4::text = '' OR COALESCE(p.post_type, '') = $4)
+		ORDER BY %s
+		LIMIT $5
+	`, orderClause)
+
+	rows, err := db.QueryContext(ctx, query, channelID, startDate, endDate, nullableString(postType), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -257,26 +372,55 @@ func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, end
 	var topPosts []TopPost
 	for rows.Next() {
 		var tp TopPost
+		var pubAt sql.NullTime
 		err := rows.Scan(
 			&tp.PostID,
 			&tp.PostType,
 			&tp.Caption,
-			&tp.PublishedAt,
+			&pubAt,
 			&tp.Impressions,
 			&tp.Reach,
 			&tp.Likes,
 			&tp.Comments,
 			&tp.Saves,
 			&tp.Shares,
+			&tp.Plays,
 			&tp.Engagement,
 		)
 		if err != nil {
 			return nil, err
 		}
+		if pubAt.Valid {
+			t := pubAt.Time
+			tp.PublishedAt = &t
+		}
 		topPosts = append(topPosts, tp)
 	}
 
 	return topPosts, rows.Err()
+}
+
+func nullableString(s *string) interface{} {
+	if s == nil {
+		return nil
+	}
+	return *s
+}
+
+func previousCalendarPeriod(startDate, endDate time.Time) (prevStart, prevEnd time.Time) {
+	startDate = startDate.UTC()
+	endDate = endDate.UTC()
+	days := int(endDate.Sub(startDate).Hours()/24) + 1
+	if days < 1 {
+		days = 1
+	}
+	prevEnd = startDate.AddDate(0, 0, -1)
+	prevStart = prevEnd.AddDate(0, 0, -(days - 1))
+	y, m, d := prevStart.Date()
+	prevStart = time.Date(y, m, d, 0, 0, 0, 0, time.UTC)
+	y2, m2, d2 := prevEnd.Date()
+	prevEnd = time.Date(y2, m2, d2, 0, 0, 0, 0, time.UTC)
+	return prevStart, prevEnd
 }
 
 // PostsOverview represents aggregated posts activity metrics
@@ -299,11 +443,14 @@ type PostsOverview struct {
 func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate time.Time) (*PostsOverview, error) {
 	db := database.GetDB()
 
-	// Get new posts count
+	// Get new posts count (calendar-day inclusive range in UTC)
 	newPostsQuery := `
 		SELECT COUNT(*) 
 		FROM posts 
-		WHERE channel_ids @> jsonb_build_array($1::bigint) AND published_at >= $2 AND published_at <= $3
+		WHERE channel_ids @> jsonb_build_array($1::bigint)
+			AND published_at IS NOT NULL
+			AND (published_at AT TIME ZONE 'UTC')::date >= $2::date
+			AND (published_at AT TIME ZONE 'UTC')::date <= $3::date
 	`
 
 	// Get total posts count
@@ -328,18 +475,12 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 				pa.post_id, pa.likes, pa.comments, pa.saves, pa.shares, pa.reach, pa.impressions
 			FROM instagram_post_analytics pa
 			JOIN posts p ON p.id = pa.post_id
-			WHERE pa.channel_id = $1 AND pa.date >= $2 AND pa.date <= $3
+			WHERE pa.channel_id = $1 AND pa.date >= $2::date AND pa.date <= $3::date
 			ORDER BY pa.post_id, pa.date DESC
 		) ipa
 	`
 
-	// Note: I kept pa.channel_id = $1 because analytics are still per-channel in the table.
-	// The previous code had `WHERE channel_id = $1`. PA table has channel_id. So no change needed there.
-
-	// Get previous period analytics for comparison
-	duration := endDate.Sub(startDate)
-	prevStartDate := startDate.Add(-duration - 24*time.Hour)
-	prevEndDate := startDate.Add(-time.Second)
+	prevStartDate, prevEndDate := previousCalendarPeriod(startDate, endDate)
 
 	prevAnalyticsQuery := `
 		SELECT 
@@ -351,7 +492,7 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 			SELECT DISTINCT ON (post_id) 
 				post_id, likes, comments, saves, shares
 			FROM instagram_post_analytics
-			WHERE channel_id = $1 AND date >= $2 AND date <= $3
+			WHERE channel_id = $1 AND date >= $2::date AND date <= $3::date
 			ORDER BY post_id, date DESC
 		) ipa
 	`
@@ -382,7 +523,7 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 		return nil, err
 	}
 
-	err = db.QueryRowContext(ctx, prevAnalyticsQuery, channelID, prevStartDate, prevEndDate).Scan(
+	err = db.QueryRowContext(ctx, prevAnalyticsQuery, channelID, prevStartDate.UTC(), prevEndDate.UTC()).Scan(
 		&prevLikes,
 		&prevComments,
 		&prevSaves,
@@ -399,6 +540,94 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 	overview.NewShares = overview.TotalShares - prevShares
 
 	return &overview, nil
+}
+
+// StoryAnalyticsJoinedRow is one story snapshot joined with post metadata.
+type StoryAnalyticsJoinedRow struct {
+	entities.InstagramStoryAnalytics
+	Caption     string
+	PostType    string
+	PublishedAt *time.Time
+}
+
+// CountStoryAnalyticsInRange returns rows matching filters.
+func CountStoryAnalyticsInRange(ctx context.Context, channelID int64, startDate, endDate time.Time, postID *int64) (int, error) {
+	db := database.GetDB()
+	q := `
+		SELECT COUNT(*) FROM instagram_story_analytics sa
+		JOIN posts p ON p.id = sa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		WHERE sa.channel_id = $1 AND sa.date >= $2::date AND sa.date <= $3::date
+	`
+	args := []interface{}{channelID, startDate, endDate}
+	if postID != nil {
+		q += ` AND sa.post_id = $4`
+		args = append(args, *postID)
+	}
+	var n int
+	err := db.QueryRowContext(ctx, q, args...).Scan(&n)
+	return n, err
+}
+
+// GetStoryAnalyticsJoined returns story analytics with post caption/type, paginated.
+func GetStoryAnalyticsJoined(ctx context.Context, channelID int64, startDate, endDate time.Time, postID *int64, limit, offset int) ([]StoryAnalyticsJoinedRow, error) {
+	db := database.GetDB()
+	q := `
+		SELECT sa.id, sa.channel_id, sa.post_id, sa.date, sa.impressions, sa.reach, sa.exits, sa.forwards,
+		       sa.replies, sa.taps_forward, sa.taps_backward, sa.taps_exit, sa.raw, sa.created_at,
+		       COALESCE(p.caption, ''), COALESCE(p.post_type, ''), p.published_at
+		FROM instagram_story_analytics sa
+		JOIN posts p ON p.id = sa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		WHERE sa.channel_id = $1 AND sa.date >= $2::date AND sa.date <= $3::date
+	`
+	args := []interface{}{channelID, startDate, endDate}
+	argN := 4
+	if postID != nil {
+		q += fmt.Sprintf(" AND sa.post_id = $%d", argN)
+		args = append(args, *postID)
+		argN++
+	}
+	q += fmt.Sprintf(" ORDER BY sa.date DESC, sa.id DESC LIMIT $%d OFFSET $%d", argN, argN+1)
+	args = append(args, limit, offset)
+
+	rows, err := db.QueryContext(ctx, q, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []StoryAnalyticsJoinedRow
+	for rows.Next() {
+		var r StoryAnalyticsJoinedRow
+		var pubAt sql.NullTime
+		err := rows.Scan(
+			&r.ID,
+			&r.ChannelID,
+			&r.PostID,
+			&r.Date,
+			&r.Impressions,
+			&r.Reach,
+			&r.Exits,
+			&r.Forwards,
+			&r.Replies,
+			&r.TapsForward,
+			&r.TapsBackward,
+			&r.TapsExit,
+			&r.Raw,
+			&r.CreatedAt,
+			&r.Caption,
+			&r.PostType,
+			&pubAt,
+		)
+		if err != nil {
+			return nil, err
+		}
+		if pubAt.Valid {
+			t := pubAt.Time
+			r.PublishedAt = &t
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
 }
 
 // UpsertAnalyticsSnapshot upserts an analytics snapshot
