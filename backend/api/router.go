@@ -148,6 +148,7 @@ func addV1PostRoutes(v1 *gin.RouterGroup) {
 
 func addV1AnalyticsRoutes(v1 *gin.RouterGroup) {
 	analyticsv1 := v1.Group("/channels/:channelId/analytics")
+	analyticsv1.Use(middleware.AuthMiddleware(), middleware.RequireInstagramChannelAnalyticsAccess())
 	{
 		analyticsv1.GET("/profile", apiv1.GetProfileAnalyticsHandler)
 		analyticsv1.GET("/posts", apiv1.GetPostAnalyticsHandler)
@@ -155,9 +156,9 @@ func addV1AnalyticsRoutes(v1 *gin.RouterGroup) {
 		analyticsv1.GET("/top-posts", apiv1.GetTopPostsHandler)
 		analyticsv1.GET("/posts-overview", apiv1.GetPostsOverviewHandler)
 
-		// New endpoints
 		analyticsv1.GET("/posts/:postId", apiv1.GetPostInsightsHandler)
 		analyticsv1.GET("/dashboard", apiv1.GetChannelDashboardHandler)
 		analyticsv1.GET("/comparison", apiv1.GetPeriodComparisonHandler)
+		analyticsv1.GET("/stories", apiv1.GetStoryAnalyticsHandler)
 	}
 }

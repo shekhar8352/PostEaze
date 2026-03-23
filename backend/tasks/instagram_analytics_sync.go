@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/hibiken/asynq"
@@ -13,6 +14,8 @@ import (
 	"github.com/shekhar8352/PostEaze/utils"
 	"github.com/shekhar8352/PostEaze/utils/encryption"
 )
+
+const postInsightsWorkerCount = 5
 
 // HandleSyncInstagramAnalyticsTask syncs Instagram analytics for all active channels
 func HandleSyncInstagramAnalyticsTask(ctx context.Context, t *asynq.Task) error {
@@ -128,16 +131,11 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 
 			analytics := metricsByDate[dateKey]
 
-			// Extract value
-			var intValue int
-			switch v := value.Value.(type) {
-			case float64:
-				intValue = int(v)
-			case int:
-				intValue = v
-			default:
+			v64, ok := instagram.ParseScalarInsightValue(value.Value)
+			if !ok {
 				continue
 			}
+			intValue := int(v64)
 
 			// Set the appropriate field based on metric name
 			switch insight.Name {
@@ -157,11 +155,9 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 		}
 	}
 
-	// Marshal raw data and upsert all analytics
-	rawData, _ := json.Marshal(insightsResp)
 	utils.Logger.Info(ctx, fmt.Sprintf("Upserting profile analytics for %d dates", len(metricsByDate)))
 	for _, analytics := range metricsByDate {
-		analytics.Raw = rawData
+		analytics.Raw = nil
 		utils.Logger.Info(ctx, fmt.Sprintf("Upserting analytics for date %s: reach=%v, profile_views=%v, follower_count=%v, website_clicks=%v",
 			analytics.Date.Format("2006-01-02"),
 			analytics.Reach,
@@ -185,66 +181,75 @@ func syncPostsAnalytics(ctx context.Context, provider instagram.InstagramProvide
 		return fmt.Errorf("failed to get posts: %w", err)
 	}
 
-	utils.Logger.Info(ctx, fmt.Sprintf("Syncing analytics for %d posts", len(posts)))
+	utils.Logger.Info(ctx, fmt.Sprintf("Syncing analytics for %d posts with %d workers", len(posts), postInsightsWorkerCount))
 
-	for _, post := range posts {
-		// Determine if it's a story (stories expire after 24 hours)
-		isStory := post.PostType != nil && *post.PostType == "story"
-
-		// Skip stories older than 24 hours
-		if isStory && post.PublishedAt != nil && time.Since(*post.PublishedAt) > 24*time.Hour {
-			continue
-		}
-
-		// Fetch insights based on post type
-		var insightsResp *instagram.InsightsResponse
-		var err error
-
-		// Get Instagram post ID from JSONB
-		instagramPostID := repositories.GetInstagramPostID(&post)
-
-		if isStory {
-			if instagramPostID == "" {
-				utils.Logger.Error(ctx, fmt.Sprintf("Skipping story analytics for post %d: instagram_post_id is nil", post.ID))
-				continue
-			}
-			insightsResp, err = provider.GetStoryInsights(accessToken, instagramPostID)
-		} else {
-			// Determine metrics based on post type
-			// Valid metrics from API: impressions, reach, likes, comments, saved, shares, plays, total_interactions
-			var metrics []string
-			if post.PostType != nil && (*post.PostType == "video" || *post.PostType == "reel") {
-				// Video/Reel metrics
-				metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "plays", "total_interactions"}
-			} else {
-				// Image/Carousel metrics
-				metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "total_interactions"}
-			}
-			if instagramPostID == "" {
-				utils.Logger.Error(ctx, fmt.Sprintf("Skipping post analytics for post %d: instagram_post_id is nil", post.ID))
-				continue
-			}
-			insightsResp, err = provider.GetMediaInsights(accessToken, instagramPostID, metrics)
-		}
-
-		if err != nil {
-			utils.Logger.Error(ctx, fmt.Sprintf("Failed to fetch insights for post %s: %v", instagramPostID, err))
-			continue
-		}
-
-		// Process insights
-		if isStory {
-			if err := processStoryInsights(ctx, channelID, post, insightsResp); err != nil {
-				utils.Logger.Error(ctx, fmt.Sprintf("Failed to process story insights: %v", err))
-			}
-		} else {
-			if err := processPostInsights(ctx, channelID, post, insightsResp); err != nil {
-				utils.Logger.Error(ctx, fmt.Sprintf("Failed to process post insights: %v", err))
-			}
-		}
+	jobs := make(chan entities.Post, len(posts))
+	for _, p := range posts {
+		jobs <- p
 	}
+	close(jobs)
+
+	var wg sync.WaitGroup
+	for w := 0; w < postInsightsWorkerCount; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for post := range jobs {
+				syncSinglePostInsights(ctx, provider, channelID, accessToken, post)
+			}
+		}()
+	}
+	wg.Wait()
 
 	return nil
+}
+
+func syncSinglePostInsights(ctx context.Context, provider instagram.InstagramProvider, channelID int64, accessToken string, post entities.Post) {
+	isStory := post.PostType != nil && *post.PostType == "story"
+
+	if isStory && post.PublishedAt != nil && time.Since(*post.PublishedAt) > 24*time.Hour {
+		return
+	}
+
+	var insightsResp *instagram.InsightsResponse
+	var err error
+
+	instagramPostID := repositories.GetInstagramPostID(&post)
+
+	if isStory {
+		if instagramPostID == "" {
+			utils.Logger.Error(ctx, fmt.Sprintf("Skipping story analytics for post %d: instagram_post_id is nil", post.ID))
+			return
+		}
+		insightsResp, err = provider.GetStoryInsights(accessToken, instagramPostID)
+	} else {
+		var metrics []string
+		if post.PostType != nil && (*post.PostType == "video" || *post.PostType == "reel") {
+			metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "plays", "total_interactions"}
+		} else {
+			metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "total_interactions"}
+		}
+		if instagramPostID == "" {
+			utils.Logger.Error(ctx, fmt.Sprintf("Skipping post analytics for post %d: instagram_post_id is nil", post.ID))
+			return
+		}
+		insightsResp, err = provider.GetMediaInsights(accessToken, instagramPostID, metrics)
+	}
+
+	if err != nil {
+		utils.Logger.Error(ctx, fmt.Sprintf("Failed to fetch insights for post %s: %v", instagramPostID, err))
+		return
+	}
+
+	if isStory {
+		if err := processStoryInsights(ctx, channelID, post, insightsResp); err != nil {
+			utils.Logger.Error(ctx, fmt.Sprintf("Failed to process story insights: %v", err))
+		}
+	} else {
+		if err := processPostInsights(ctx, channelID, post, insightsResp); err != nil {
+			utils.Logger.Error(ctx, fmt.Sprintf("Failed to process post insights: %v", err))
+		}
+	}
 }
 
 // getMetricValue is a helper function to extract a specific metric value from InsightsResponse.
@@ -252,16 +257,10 @@ func getMetricValue(insightsResp *instagram.InsightsResponse, metricName string)
 	for _, insight := range insightsResp.Data {
 		if insight.Name == metricName {
 			if len(insight.Values) > 0 {
-				var intValue int
-				switch v := insight.Values[0].Value.(type) {
-				case float64:
-					intValue = int(v)
-				case int:
-					intValue = v
-				default:
-					return nil
+				if v64, ok := instagram.ParseScalarInsightValue(insight.Values[0].Value); ok {
+					i := int(v64)
+					return &i
 				}
-				return &intValue
 			}
 		}
 	}
@@ -274,7 +273,7 @@ func processPostInsights(ctx context.Context, channelID int64, post entities.Pos
 	analytics := &entities.InstagramPostAnalytics{
 		ChannelID:     channelID,
 		PostID:        post.ID,
-		Date:          time.Now(),
+		Date:          utils.ToUTCDate(time.Now()),
 		Impressions:   getMetricValue(insightsResp, "impressions"),
 		Reach:         getMetricValue(insightsResp, "reach"),
 		Likes:         getMetricValue(insightsResp, "likes"),
@@ -341,7 +340,7 @@ func processStoryInsights(ctx context.Context, channelID int64, post entities.Po
 	analytics := &entities.InstagramStoryAnalytics{
 		ChannelID:    channelID,
 		PostID:       post.ID,
-		Date:         time.Now(),
+		Date:         utils.ToUTCDate(time.Now()),
 		Impressions:  getMetricValue(insightsResp, "impressions"),
 		Reach:        getMetricValue(insightsResp, "reach"),
 		Exits:        getMetricValue(insightsResp, "exits"),
