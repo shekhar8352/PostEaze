@@ -339,12 +339,12 @@ func (p *InstagramProviderImpl) GetMediaInsights(accessToken string, mediaID str
 		return nil, fmt.Errorf("failed to get media insights: %s, body: %s", resp.Status, string(body))
 	}
 
-	var insightsResp InsightsResponse
-	if err := json.Unmarshal(body, &insightsResp); err != nil {
+	insightsResp, err := DecodeInsightsResponseJSON(body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse insights response: %w", err)
 	}
 
-	return &insightsResp, nil
+	return insightsResp, nil
 }
 
 // GetStoryInsights fetches insights for a story
@@ -385,10 +385,10 @@ func (p *InstagramProviderImpl) GetProfileInsights(accessToken string, igUserID 
 		return nil, fmt.Errorf("failed to get profile insights: %s, body: %s", resp.Status, string(body))
 	}
 
-	var insightsResp InsightsResponse
-	if err := json.Unmarshal(body, &insightsResp); err != nil {
+	insightsResp, err := DecodeInsightsResponseJSON(body)
+	if err != nil {
 		return nil, fmt.Errorf("failed to parse profile insights response: %w", err)
 	}
 
-	return &insightsResp, nil
+	return insightsResp, nil
 }
