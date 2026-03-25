@@ -1,28 +1,28 @@
-/* Shared auth form surface — warm paper on dark shell */
+/* Auth form surface — neutral card, blue accent (matches --pe-accent family) */
 .surface {
-  --auth-surface-ink: #1a1d24;
-  --auth-surface-muted: #5c6270;
-  --auth-surface-border: rgba(26, 29, 36, 0.1);
-  --auth-surface-accent: #ff5c3d;
+  --auth-surface-ink: #0f172a;
+  --auth-surface-muted: #64748b;
+  --auth-surface-border: rgba(15, 23, 42, 0.1);
+  --auth-surface-accent: #2563eb;
   --auth-font-display: 'Syne', system-ui, sans-serif;
   --auth-font-body: 'IBM Plex Sans', system-ui, sans-serif;
 
-  background: #faf7f0;
-  border-radius: 20px;
-  padding: clamp(1.5rem, 3vw, 2.25rem);
+  background: #ffffff;
+  border-radius: 16px;
+  padding: clamp(1.5rem, 3vw, 2rem);
   border: 1px solid var(--auth-surface-border);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.7) inset,
-    0 24px 48px -24px rgba(0, 0, 0, 0.45);
+    0 1px 0 rgba(255, 255, 255, 0.8) inset,
+    0 20px 40px -28px rgba(15, 23, 42, 0.35);
   font-family: var(--auth-font-body);
 }
 
 .title {
   font-family: var(--auth-font-display);
   font-weight: 700;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
   letter-spacing: -0.03em;
-  line-height: 1.2;
+  line-height: 1.25;
   color: var(--auth-surface-ink);
   text-align: center;
   margin-bottom: 0.25rem;
@@ -30,17 +30,16 @@
 
 .lede {
   text-align: center;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   color: var(--auth-surface-muted);
-  margin-bottom: 1.25rem;
-  line-height: 1.5;
+  margin-bottom: 1.15rem;
+  line-height: 1.55;
 }
 
-/* Mantine input overrides via global class hooks */
 .surface :global(.mantine-TextInput-label),
 .surface :global(.mantine-PasswordInput-label) {
   font-family: var(--auth-font-body);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -50,8 +49,8 @@
 .surface :global(.mantine-TextInput-input),
 .surface :global(.mantine-PasswordInput-input) {
   font-family: var(--auth-font-body);
-  background: rgba(255, 255, 255, 0.85);
-  border-radius: 12px;
+  background: #f8fafc;
+  border-radius: 10px;
   border: 1px solid var(--auth-surface-border);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
@@ -59,7 +58,7 @@
 .surface :global(.mantine-TextInput-input:focus),
 .surface :global(.mantine-PasswordInput-input:focus) {
   border-color: var(--auth-surface-accent);
-  box-shadow: 0 0 0 3px rgba(255, 92, 61, 0.18);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
 
 .surface :global(.mantine-PasswordInput-innerInput) {
@@ -69,16 +68,16 @@
 .primaryButton {
   font-family: var(--auth-font-body);
   font-weight: 600;
-  border-radius: 12px;
-  height: 46px;
-  background: linear-gradient(135deg, #ff5c3d 0%, #e8482f 100%) !important;
+  border-radius: 10px;
+  height: 44px;
+  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
   color: #fff !important;
   border: none !important;
-  transition: transform 0.15s ease, filter 0.15s ease;
+  transition: filter 0.15s ease, transform 0.15s ease;
 }
 
 .primaryButton:hover:not(:disabled) {
-  filter: brightness(1.05);
+  filter: brightness(1.04);
   transform: translateY(-1px);
 }
 
@@ -89,8 +88,8 @@
 
 .divider :global(.mantine-Divider-label) {
   font-family: var(--auth-font-body);
-  font-size: 0.75rem;
-  letter-spacing: 0.08em;
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--auth-surface-muted);
 }
@@ -98,15 +97,15 @@
 .socialButton {
   font-family: var(--auth-font-body);
   font-weight: 500;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.65);
+  border-radius: 10px;
+  background: #f8fafc;
   border: 1px solid var(--auth-surface-border);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .socialButton:hover:not(:disabled) {
   background: #fff;
-  border-color: rgba(26, 29, 36, 0.18);
+  border-color: rgba(15, 23, 42, 0.14);
 }
 
 .footer {
@@ -125,9 +124,9 @@
 }
 
 .alert {
-  border-radius: 12px;
-  border: 1px solid rgba(255, 92, 61, 0.25);
-  background: rgba(255, 92, 61, 0.06);
+  border-radius: 10px;
+  border: 1px solid rgba(37, 99, 235, 0.2);
+  background: rgba(37, 99, 235, 0.05);
 }
 
 .alert :global(.mantine-Alert-message) {
@@ -146,4 +145,12 @@
 .linkMuted :global(.mantine-Anchor-root) {
   color: var(--auth-surface-accent);
   font-weight: 600;
+}
+
+.centerStack {
+  text-align: center;
+}
+
+.centerStack :global(.mantine-Alert-root) {
+  text-align: left;
 }

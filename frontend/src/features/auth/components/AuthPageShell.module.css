@@ -1,15 +1,11 @@
-/* Midnight editorial studio — scoped auth layout tokens */
+/* B2B auth shell — restrained palette aligned with workspace tokens */
 .root {
-  --auth-bg-deep: #07080c;
-  --auth-ink: #f7f4ee;
-  --auth-ink-muted: #9aa0ae;
-  --auth-accent: #ff5c3d;
-  --auth-accent-hover: #ff7a5c;
-  --auth-glow: rgba(255, 92, 61, 0.22);
-  --auth-card: #faf7f0;
-  --auth-card-ink: #1a1d24;
-  --auth-card-muted: #5c6270;
-  --auth-border: rgba(255, 255, 255, 0.08);
+  --auth-bg-deep: #0b0f14;
+  --auth-ink: #f1f5f9;
+  --auth-ink-muted: #94a3b8;
+  --auth-accent: #3b82f6;
+  --auth-accent-soft: rgba(59, 130, 246, 0.2);
+  --auth-border: rgba(148, 163, 184, 0.12);
   --auth-font-display: 'Syne', system-ui, sans-serif;
   --auth-font-body: 'IBM Plex Sans', system-ui, sans-serif;
 
@@ -20,22 +16,20 @@
   font-family: var(--auth-font-body);
 }
 
-/* Soft aurora + grain */
 .backdrop {
   pointer-events: none;
   position: fixed;
   inset: 0;
   background:
-    radial-gradient(ellipse 80% 55% at 15% 20%, rgba(255, 92, 61, 0.14), transparent 55%),
-    radial-gradient(ellipse 60% 45% at 85% 75%, rgba(120, 180, 200, 0.08), transparent 50%),
-    radial-gradient(ellipse 50% 40% at 70% 15%, rgba(255, 200, 120, 0.06), transparent 45%);
+    radial-gradient(ellipse 70% 50% at 12% 18%, rgba(59, 130, 246, 0.09), transparent 55%),
+    radial-gradient(ellipse 55% 40% at 88% 80%, rgba(30, 64, 175, 0.07), transparent 50%);
 }
 
 .grain {
   pointer-events: none;
   position: fixed;
   inset: 0;
-  opacity: 0.35;
+  opacity: 0.12;
   mix-blend-mode: overlay;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-size: 200px 200px;
@@ -77,7 +71,7 @@
 .wordmark {
   font-family: var(--auth-font-display);
   font-weight: 800;
-  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-size: clamp(1.65rem, 3.5vw, 2.5rem);
   letter-spacing: -0.04em;
   line-height: 1.05;
   color: var(--auth-ink);
@@ -88,39 +82,39 @@
 }
 
 .kicker {
-  margin-top: clamp(2rem, 6vh, 4rem);
-  font-size: 0.72rem;
+  margin-top: clamp(1.75rem, 5vh, 3rem);
+  font-size: 0.7rem;
   font-weight: 600;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--auth-accent);
 }
 
 .headline {
-  margin-top: 0.85rem;
+  margin-top: 0.75rem;
   font-family: var(--auth-font-display);
   font-weight: 700;
-  font-size: clamp(1.5rem, 3.2vw, 2.25rem);
+  font-size: clamp(1.35rem, 2.8vw, 2rem);
   letter-spacing: -0.03em;
-  line-height: 1.15;
+  line-height: 1.2;
   color: var(--auth-ink);
-  max-width: 18ch;
+  max-width: 22ch;
 }
 
 .subline {
-  margin-top: 1rem;
-  font-size: clamp(0.95rem, 1.5vw, 1.05rem);
-  line-height: 1.65;
+  margin-top: 0.85rem;
+  font-size: clamp(0.9rem, 1.4vw, 1rem);
+  line-height: 1.6;
   color: var(--auth-ink-muted);
-  max-width: 36ch;
+  max-width: 38ch;
 }
 
 .meta {
   margin-top: auto;
   padding-top: 2rem;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   color: var(--auth-ink-muted);
-  line-height: 1.5;
+  line-height: 1.55;
 }
 
 .meta strong {
@@ -129,11 +123,11 @@
 }
 
 .stripe {
-  margin-top: 1.25rem;
-  height: 3px;
-  width: min(100%, 120px);
+  margin-top: 1.1rem;
+  height: 2px;
+  width: min(100%, 96px);
   background: linear-gradient(90deg, var(--auth-accent), transparent);
-  border-radius: 2px;
+  border-radius: 1px;
 }
 
 .main {
@@ -141,7 +135,7 @@
   align-items: center;
   justify-content: center;
   padding: clamp(1.5rem, 4vw, 3rem);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 40%);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 42%);
 }
 
 @media (max-width: 900px) {
@@ -153,13 +147,13 @@
 .card {
   width: 100%;
   max-width: 440px;
-  animation: cardIn 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: cardIn 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @keyframes cardIn {
   from {
     opacity: 0;
-    transform: translateY(14px);
+    transform: translateY(10px);
   }
   to {
     opacity: 1;
