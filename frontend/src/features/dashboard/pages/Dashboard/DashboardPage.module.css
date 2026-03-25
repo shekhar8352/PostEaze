@@ -1,0 +1,108 @@
+.hero {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-lg);
+  box-shadow: var(--pe-shadow-sm);
+  padding: clamp(1.5rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--pe-accent);
+  border-radius: 2px 0 0 2px;
+}
+
+.heroInner {
+  position: relative;
+  padding-left: 0.5rem;
+}
+
+.heroTitle {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--pe-text);
+  font-size: clamp(1.5rem, 2.5vw, 1.875rem);
+  line-height: 1.25;
+}
+
+.heroSubtitle {
+  color: var(--pe-text-muted);
+  font-size: 1rem;
+  line-height: 1.55;
+  margin-top: 0.5rem;
+  max-width: 42rem;
+}
+
+.section {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-lg);
+  box-shadow: var(--pe-shadow-sm);
+}
+
+.statCard {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md);
+  box-shadow: var(--pe-shadow-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.statCard:hover {
+  border-color: var(--pe-border-strong);
+  box-shadow: var(--pe-shadow-md);
+}
+
+.statIcon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pe-accent-subtle);
+  color: var(--pe-accent);
+}
+
+.channelCard {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md);
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.channelCard:hover {
+  border-color: var(--pe-border-strong);
+  box-shadow: var(--pe-shadow-md);
+}
+
+.channelIcon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--pe-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+
+.sectionTitle {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pe-text);
+}
+
+.sectionDesc {
+  color: var(--pe-text-muted);
+  font-size: 0.9375rem;
+}

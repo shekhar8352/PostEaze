@@ -1,66 +1,84 @@
-import { Container, Title, Text, Button, Stack, Paper, SimpleGrid, Card, Group, Box, RingProgress, Loader, Center } from '@mantine/core';
+import {
+    Container,
+    Title,
+    Text,
+    Button,
+    Stack,
+    Paper,
+    SimpleGrid,
+    Card,
+    Group,
+    Box,
+    Badge,
+    Loader,
+    Center,
+} from '@mantine/core';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
 import { Icons } from '@/app/theme';
+import { CHANNEL_COLORS } from '@/app/theme';
 import { useChannels } from '@/features/channels';
+import dashStyles from './DashboardPage.module.css';
+
+const CHANNEL_ICON_BG: Record<string, string> = {
+    instagram: CHANNEL_COLORS.instagram.solid,
+    facebook: CHANNEL_COLORS.facebook.solid,
+    youtube: CHANNEL_COLORS.youtube.solid,
+};
 
 const DashboardPage = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
     const { data: connectedChannels, isLoading } = useChannels();
 
+    const displayName = user?.name || user?.email?.split('@')[0] || 'there';
+
     const channels = [
         {
             name: 'Instagram',
             icon: Icons.Instagram,
-            gradient: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
+            provider: 'instagram' as const,
             path: '/channels/instagram',
-            connected: connectedChannels?.some(ch => ch.provider === 'instagram') || false,
+            connected: connectedChannels?.some((ch) => ch.provider === 'instagram') || false,
         },
         {
             name: 'Facebook',
             icon: Icons.Facebook,
-            gradient: 'linear-gradient(135deg, #1877F2 0%, #0C63D4 100%)',
+            provider: 'facebook' as const,
             path: '/channels/facebook',
-            connected: connectedChannels?.some(ch => ch.provider === 'facebook') || false,
+            connected: connectedChannels?.some((ch) => ch.provider === 'facebook') || false,
         },
         {
             name: 'YouTube',
             icon: Icons.YouTube,
-            gradient: 'linear-gradient(135deg, #FF0000 0%, #CC0000 100%)',
+            provider: 'youtube' as const,
             path: '/channels/youtube',
-            connected: connectedChannels?.some(ch => ch.provider === 'youtube') || false,
+            connected: connectedChannels?.some((ch) => ch.provider === 'youtube') || false,
         },
     ];
 
     const stats = [
         {
-            title: 'Connected Accounts',
-            value: connectedChannels?.length || 0,
+            title: 'Connected accounts',
+            value: connectedChannels?.length ?? 0,
             icon: Icons.User,
-            color: '#667eea',
-            gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
         },
         {
-            title: 'Scheduled Posts',
+            title: 'Scheduled posts',
             value: 0,
             icon: Icons.Calendar,
-            color: '#11998e',
-            gradient: 'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
         },
         {
-            title: 'Published Today',
+            title: 'Published today',
             value: 0,
             icon: Icons.CheckCircle,
-            color: '#f093fb',
-            gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
         },
     ];
 
     if (isLoading) {
         return (
-            <Center style={{ height: '80vh' }}>
-                <Loader size="xl" color="blue" variant="bars" />
+            <Center style={{ minHeight: '60vh' }}>
+                <Loader size="md" color="blue" type="bars" />
             </Center>
         );
     }
@@ -68,185 +86,123 @@ const DashboardPage = () => {
     return (
         <Container size="xl" className="fade-in">
             <Stack gap="xl">
-                {/* Welcome Banner with Gradient */}
-                <Paper
-                    p="xl"
-                    radius="lg"
-                    style={{
-                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                        color: 'white',
-                        position: 'relative',
-                        overflow: 'hidden',
-                    }}
-                    className="shadow-lift"
-                >
-                    <Box
-                        style={{
-                            position: 'absolute',
-                            top: -50,
-                            right: -50,
-                            width: 200,
-                            height: 200,
-                            borderRadius: '50%',
-                            background: 'rgba(255, 255, 255, 0.1)',
-                            filter: 'blur(40px)',
-                        }}
-                    />
-                    <Stack gap="md" style={{ position: 'relative', zIndex: 1 }}>
-                        <Title order={1} style={{ fontSize: '2.5rem', fontWeight: 800 }}>
-                            Welcome back, {user?.name || user?.email?.split('@')[0]}! 👋
+                <Paper className={dashStyles.hero} shadow="none" radius="lg" withBorder={false}>
+                    <Box className={dashStyles.heroInner}>
+                        <Title order={1} className={dashStyles.heroTitle}>
+                            Welcome back, {displayName}
                         </Title>
-                        <Text size="lg" style={{ opacity: 0.95 }}>
-                            Manage all your social media posts from one beautiful dashboard
+                        <Text className={dashStyles.heroSubtitle}>
+                            Overview of connected channels and publishing activity. Connect accounts to
+                            start scheduling from one workspace.
                         </Text>
-                    </Stack>
+                    </Box>
                 </Paper>
 
-                {/* Enhanced Stats Cards */}
-                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
+                <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
                     {stats.map((stat) => {
                         const Icon = stat.icon;
                         return (
                             <Card
                                 key={stat.title}
-                                shadow="md"
-                                padding="xl"
-                                radius="lg"
-                                withBorder
-                                className="shadow-lift"
-                                style={{
-                                    background: 'white',
-                                    border: '1px solid rgba(102, 126, 234, 0.1)',
-                                }}
+                                padding="lg"
+                                radius="md"
+                                withBorder={false}
+                                className={dashStyles.statCard}
                             >
-                                <Group justify="space-between" mb="md">
-                                    <Box
-                                        style={{
-                                            width: 60,
-                                            height: 60,
-                                            borderRadius: '12px',
-                                            background: stat.gradient,
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            boxShadow: `0 8px 16px ${stat.color}40`,
-                                        }}
-                                    >
-                                        <Icon size={28} color="white" />
-                                    </Box>
-                                    <RingProgress
-                                        size={60}
-                                        thickness={6}
-                                        sections={[{ value: 0, color: stat.color }]}
-                                        label={
-                                            <Text size="xs" ta="center" fw={700}>
-                                                0%
-                                            </Text>
-                                        }
-                                    />
+                                <Group justify="space-between" align="flex-start" wrap="nowrap">
+                                    <div>
+                                        <Text size="xs" tt="uppercase" fw={600} c="dimmed" mb={6}>
+                                            {stat.title}
+                                        </Text>
+                                        <Text size="xl" fw={700} c="var(--pe-text)">
+                                            {stat.value}
+                                        </Text>
+                                    </div>
+                                    <div className={dashStyles.statIcon}>
+                                        <Icon size={22} stroke={1.75} />
+                                    </div>
                                 </Group>
-                                <Text size="sm" c="dimmed" fw={600} tt="uppercase" mb={4}>
-                                    {stat.title}
-                                </Text>
-                                <Title order={2} style={{ fontSize: '2.5rem', fontWeight: 800 }}>
-                                    {stat.value}
-                                </Title>
                             </Card>
                         );
                     })}
                 </SimpleGrid>
 
-                {/* Enhanced Channel Cards */}
                 <Paper
                     p="xl"
                     radius="lg"
-                    shadow="sm"
-                    withBorder
-                    style={{
-                        background: 'white',
-                        border: '1px solid rgba(102, 126, 234, 0.1)',
-                    }}
+                    withBorder={false}
+                    className={dashStyles.section}
                 >
-                    <Stack gap="xl">
-                        <Group justify="space-between" align="center">
-                            <div>
-                                <Title order={2} mb={4}>
-                                    Connect Your Channels
-                                </Title>
-                                <Text c="dimmed">
-                                    Link your social media accounts to start managing posts
-                                </Text>
-                            </div>
-                        </Group>
+                    <Stack gap="lg">
+                        <div>
+                            <Title order={2} className={dashStyles.sectionTitle} mb={6}>
+                                Channels
+                            </Title>
+                            <Text className={dashStyles.sectionDesc}>
+                                Link social accounts your team is approved to manage.
+                            </Text>
+                        </div>
 
-                        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="lg">
-                            {channels.map((channel, index) => {
+                        <SimpleGrid cols={{ base: 1, sm: 3 }} spacing="md">
+                            {channels.map((channel) => {
                                 const Icon = channel.icon;
+                                const bg = CHANNEL_ICON_BG[channel.provider];
                                 return (
                                     <Card
-                                        key={index}
-                                        shadow="md"
-                                        padding="xl"
-                                        radius="lg"
-                                        withBorder
-                                        className="shadow-lift"
-                                        style={{
-                                            cursor: 'pointer',
-                                            background: 'white',
-                                            border: '2px solid transparent',
-                                            backgroundImage: `linear-gradient(white, white), ${channel.gradient}`,
-                                            backgroundOrigin: 'border-box',
-                                            backgroundClip: 'padding-box, border-box',
-                                            transition: 'all 0.3s ease',
-                                        }}
+                                        key={channel.path}
+                                        padding="lg"
+                                        radius="md"
+                                        withBorder={false}
+                                        className={dashStyles.channelCard}
                                         onClick={() => navigate(channel.path)}
-                                        onMouseEnter={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(-4px)';
-                                            e.currentTarget.style.boxShadow = '0 12px 24px rgba(0,0,0,0.1)';
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' || e.key === ' ') {
+                                                e.preventDefault();
+                                                navigate(channel.path);
+                                            }
                                         }}
-                                        onMouseLeave={(e) => {
-                                            e.currentTarget.style.transform = 'translateY(0)';
-                                            e.currentTarget.style.boxShadow = '';
-                                        }}
+                                        tabIndex={0}
+                                        role="button"
+                                        aria-label={`Open ${channel.name}`}
                                     >
-                                        <Stack gap="lg" align="center">
-                                            <Box
-                                                style={{
-                                                    width: 80,
-                                                    height: 80,
-                                                    borderRadius: '20px',
-                                                    background: channel.gradient,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    boxShadow: '0 12px 24px rgba(0,0,0,0.15)',
-                                                }}
-                                            >
-                                                <Icon size={40} color="white" />
-                                            </Box>
-                                            <div style={{ textAlign: 'center' }}>
-                                                <Text fw={700} size="xl" mb={4}>
+                                        <Stack gap="md">
+                                            <Group justify="space-between" wrap="nowrap">
+                                                <div
+                                                    className={dashStyles.channelIcon}
+                                                    style={{ background: bg }}
+                                                >
+                                                    <Icon size={26} />
+                                                </div>
+                                                <Badge
+                                                    size="sm"
+                                                    variant="light"
+                                                    color={channel.connected ? 'green' : 'gray'}
+                                                >
+                                                    {channel.connected ? 'Connected' : 'Not connected'}
+                                                </Badge>
+                                            </Group>
+                                            <div>
+                                                <Text fw={600} size="lg" c="var(--pe-text)">
                                                     {channel.name}
                                                 </Text>
-                                                <Text size="sm" c="dimmed">
-                                                    {channel.connected ? 'Connected' : 'Not connected'}
+                                                <Text size="sm" c="dimmed" mt={4}>
+                                                    Manage integration and content
                                                 </Text>
                                             </div>
                                             <Button
-                                                leftSection={channel.connected ? <Icons.Settings size={18} /> : <Icons.Plus size={18} />}
                                                 fullWidth
-                                                size="md"
-                                                radius="md"
-                                                style={{
-                                                    background: channel.gradient,
-                                                    border: 'none',
-                                                }}
-                                                styles={{
-                                                    root: {
-                                                        '&:hover': {
-                                                            transform: 'scale(1.02)',
-                                                        },
-                                                    },
+                                                variant="light"
+                                                color="blue"
+                                                leftSection={
+                                                    channel.connected ? (
+                                                        <Icons.Settings size={18} />
+                                                    ) : (
+                                                        <Icons.Plus size={18} />
+                                                    )
+                                                }
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    navigate(channel.path);
                                                 }}
                                             >
                                                 {channel.connected ? 'Manage' : 'Connect'}
