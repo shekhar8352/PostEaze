@@ -194,7 +194,7 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
                 </Field>
               </Box>
 
-              <Alert variant="light" color="orange" icon={<IconInfoCircle size="1rem" />} className={authForm.alert}>
+              <Alert variant="light" color="blue" icon={<IconInfoCircle size="1rem" />} className={authForm.alert}>
                 <Text size="sm" c="inherit">
                   <strong>Next step:</strong> After you register, check your inbox and verify your email before signing in.
                 </Text>

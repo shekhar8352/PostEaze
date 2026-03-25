@@ -1,6 +1,5 @@
-// src/features/auth/pages/EmailVerification/index.tsx
-import { Container, Center, Box } from '@mantine/core';
 import { EmailVerificationScreen } from '../../components/EmailVerificationScreen';
+import { AuthPageShell } from '../../components/AuthPageShell';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 
@@ -16,7 +15,6 @@ const EmailVerificationPage = () => {
   const state = location.state as LocationState;
 
   useEffect(() => {
-    // Redirect to login if no email is provided
     if (!state?.email) {
       navigate('/login');
     }
@@ -33,27 +31,14 @@ const EmailVerificationPage = () => {
   }
 
   return (
-    <Box
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      <Container size="sm" py="xl">
-        <Center>
-          <Box style={{ width: '100%', maxWidth: '450px' }}>
-            <EmailVerificationScreen
-              email={state.email}
-              password={state.password || ''}
-              onBack={handleBack}
-              onVerified={handleVerified}
-            />
-          </Box>
-        </Center>
-      </Container>
-    </Box>
+    <AuthPageShell variant="verify">
+      <EmailVerificationScreen
+        email={state.email}
+        password={state.password || ''}
+        onBack={handleBack}
+        onVerified={handleVerified}
+      />
+    </AuthPageShell>
   );
 };
 

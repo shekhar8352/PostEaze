@@ -159,7 +159,7 @@ export const LoginForm = ({
 
       <Alert 
         variant="light" 
-        color="orange" 
+        color="blue" 
         icon={<IconAlertTriangle size="1rem" />}
         mb="lg"
         className={authForm.alert}

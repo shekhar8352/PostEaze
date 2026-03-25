@@ -1,20 +1,11 @@
-// src/features/auth/components/signUp/ForgotPasswordForm.tsx
 import { useState } from 'react';
 import { Formik, Form, Field } from 'formik';
-import { 
-  Paper, 
-  TextInput, 
-  Button, 
-  Title, 
-  Text, 
-  Stack,
-  Box,
-  Alert,
-} from '@mantine/core';
+import { TextInput, Button, Text, Stack, Box, Alert } from '@mantine/core';
 import { IconMail, IconArrowLeft } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useForgotPassword } from '../services/authQueries';
 import { forgotPasswordSchema } from '../validation/authSchema';
+import authForm from './authForm.module.css';
 
 interface ForgotPasswordFormProps {
   onBack?: () => void;
@@ -36,13 +27,13 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
       setEmailSent(true);
       
       notifications.show({
-        title: 'Reset Email Sent',
-        message: 'Please check your email for password reset instructions.',
+        title: 'Reset email sent',
+        message: 'Check your inbox for password reset instructions.',
         color: 'green',
       });
     } catch (error: any) {
       notifications.show({
-        title: 'Reset Failed',
+        title: 'Request failed',
         message: error.message || 'Unable to send reset email. Please try again.',
         color: 'red',
       });
@@ -51,25 +42,25 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
 
   if (emailSent) {
     return (
-      <Paper radius="md" p="xl" withBorder shadow="sm">
+      <Box className={`${authForm.surface} ${authForm.centerStack}`}>
         <Stack align="center" gap="md">
-          <IconMail size={48} color="var(--mantine-color-blue-6)" />
+          <IconMail size={44} color="var(--auth-surface-accent)" stroke={1.5} />
           
-          <Title order={2} ta="center">
-            Check Your Email
-          </Title>
+          <Text component="h2" className={authForm.title}>
+            Check your email
+          </Text>
 
           <Alert color="green" variant="light" style={{ width: '100%' }}>
-            <Text ta="center">
-              We've sent password reset instructions to:
+            <Text ta="center" size="sm">
+              We sent instructions to:
             </Text>
-            <Text fw={600} ta="center" mt="xs">
+            <Text fw={600} ta="center" mt="xs" size="sm">
               {sentEmail}
             </Text>
           </Alert>
 
           <Text c="dimmed" size="sm" ta="center">
-            Didn't receive the email? Check your spam folder or try again.
+            Did not receive it? Check spam or contact your IT team.
           </Text>
 
           <Stack gap="sm" style={{ width: '100%' }}>
@@ -82,32 +73,32 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
                 setSentEmail('');
               }}
             >
-              Try Different Email
+              Try a different email
             </Button>
             
             {onBack && (
               <Button 
-                variant="outline" 
+                variant="default" 
                 fullWidth
                 onClick={onBack}
               >
-                Back to Login
+                Back to sign in
               </Button>
             )}
           </Stack>
         </Stack>
-      </Paper>
+      </Box>
     );
   }
 
   return (
-    <Paper radius="md" p="xl" withBorder shadow="sm">
-      <Title order={2} ta="center" mb="md">
-        Reset Your Password
-      </Title>
+    <Box className={authForm.surface}>
+      <Text component="h2" className={authForm.title}>
+        Reset password
+      </Text>
 
-      <Text c="dimmed" size="sm" ta="center" mb="lg">
-        Enter your email address and we'll send you instructions to reset your password.
+      <Text className={authForm.lede}>
+        Enter your work email. We will send a secure link that expires automatically.
       </Text>
 
       <Formik
@@ -123,8 +114,8 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
                   {({ field }: any) => (
                     <TextInput
                       {...field}
-                      label="Email Address"
-                      placeholder="Enter your email"
+                      label="Email address"
+                      placeholder="you@company.com"
                       size="md"
                       leftSection={<IconMail size="1rem" />}
                       error={touched.email && errors.email ? errors.email : null}
@@ -142,8 +133,10 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
                 size="md"
                 loading={forgotPassword.isPending || isSubmitting}
                 fullWidth
+                variant="filled"
+                classNames={{ root: authForm.primaryButton }}
               >
-                Send Reset Instructions
+                Send reset link
               </Button>
 
               {onBack && (
@@ -155,13 +148,13 @@ export const ForgotPasswordForm = ({ onBack }: ForgotPasswordFormProps) => {
                   onClick={onBack}
                   type="button"
                 >
-                  Back to Login
+                  Back to sign in
                 </Button>
               )}
             </Stack>
           </Form>
         )}
       </Formik>
-    </Paper>
+    </Box>
   );
 };

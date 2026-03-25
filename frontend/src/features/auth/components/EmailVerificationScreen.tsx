@@ -1,14 +1,12 @@
-// src/features/auth/components/signUp/EmailVerificationScreen.tsx
 import { useState, useEffect } from 'react';
 import { 
-  Paper, 
-  Title, 
   Text, 
   Stack, 
   Button, 
   Alert,
   Progress,
-  Anchor
+  Anchor,
+  Box,
 } from '@mantine/core';
 import { IconMail, IconCheck, IconAlertCircle, IconRefresh } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
@@ -17,6 +15,7 @@ import {
   useCheckEmailVerification,
   useCompleteRegistration
 } from '../services/authQueries';
+import authForm from './authForm.module.css';
 
 interface EmailVerificationScreenProps {
   email: string;
@@ -39,7 +38,6 @@ export const EmailVerificationScreen = ({
   const checkVerification = useCheckEmailVerification();
   const completeRegistration = useCompleteRegistration();
 
-  // Countdown timer for resend button
   useEffect(() => {
     if (countdown > 0) {
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
@@ -49,10 +47,9 @@ export const EmailVerificationScreen = ({
     }
   }, [countdown]);
 
-  // Auto-check verification status every 10 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      handleCheckVerification(false); // Silent check
+      handleCheckVerification(false);
     }, 10000);
 
     return () => clearInterval(interval);
@@ -63,8 +60,8 @@ export const EmailVerificationScreen = ({
       await resendEmail.mutateAsync({ email, password });
       
       notifications.show({
-        title: 'Email Sent',
-        message: 'Verification email has been sent again. Please check your inbox.',
+        title: 'Email sent',
+        message: 'Verification message sent again. Please check your inbox.',
         color: 'green',
       });
       
@@ -72,8 +69,8 @@ export const EmailVerificationScreen = ({
       setCanResend(false);
     } catch (error: any) {
       notifications.show({
-        title: 'Resend Failed',
-        message: error.message || 'Failed to send verification email.',
+        title: 'Resend failed',
+        message: error.message || 'Could not send verification email.',
         color: 'red',
       });
     }
@@ -87,20 +84,19 @@ export const EmailVerificationScreen = ({
       if (result.isVerified) {
         if (showNotification) {
           notifications.show({
-            title: 'Email Verified!',
-            message: 'Completing your registration...',
+            title: 'Verified',
+            message: 'Completing registration…',
             color: 'green',
           });
         }
         
-        // Complete the registration process
         await completeRegistration.mutateAsync({ email, password });
         onVerified?.();
       } else {
         if (showNotification) {
           notifications.show({
-            title: 'Not Verified Yet',
-            message: 'Please check your email and click the verification link.',
+            title: 'Not verified yet',
+            message: 'Open the link in your email to continue.',
             color: 'orange',
           });
         }
@@ -108,8 +104,8 @@ export const EmailVerificationScreen = ({
     } catch (error: any) {
       if (showNotification) {
         notifications.show({
-          title: 'Verification Check Failed',
-          message: error.message || 'Unable to check verification status.',
+          title: 'Check failed',
+          message: error.message || 'Unable to verify status.',
           color: 'red',
         });
       }
@@ -119,26 +115,25 @@ export const EmailVerificationScreen = ({
   };
 
   return (
-    <Paper radius="md" p="xl" withBorder shadow="sm">
+    <Box className={`${authForm.surface} ${authForm.centerStack}`}>
       <Stack align="center" gap="md">
-        <IconMail size={48} color="var(--mantine-color-blue-6)" />
+        <IconMail size={44} color="var(--auth-surface-accent)" stroke={1.5} />
         
-        <Title order={2} ta="center">
-          Verify Your Email
-        </Title>
+        <Text component="h2" className={authForm.title}>
+          Verify your email
+        </Text>
 
         <Text c="dimmed" size="sm" ta="center" maw={400}>
-          We've sent a verification email to:
+          We sent a message to:
         </Text>
         
-        <Text fw={600} ta="center" size="lg">
+        <Text fw={600} ta="center" size="md" c="var(--auth-surface-ink)">
           {email}
         </Text>
 
-        <Alert color="blue" variant="light" style={{ width: '100%' }}>
+        <Alert color="blue" variant="light" style={{ width: '100%' }} className={authForm.alert}>
           <Text size="sm">
-            <strong>Important:</strong> You must verify your email before you can access PostEaze. 
-            Click the verification link in your email to complete registration.
+            <strong>Required:</strong> Open the verification link in that email before you can sign in.
           </Text>
         </Alert>
 
@@ -149,8 +144,9 @@ export const EmailVerificationScreen = ({
             loading={isChecking || completeRegistration.isPending}
             variant="filled"
             fullWidth
+            classNames={{ root: authForm.primaryButton }}
           >
-            {isChecking ? 'Checking...' : 'I\'ve Verified My Email'}
+            {isChecking ? 'Checking…' : 'I have verified my email'}
           </Button>
 
           <Button 
@@ -161,17 +157,17 @@ export const EmailVerificationScreen = ({
             variant="light"
             fullWidth
           >
-            {canResend ? 'Resend Verification Email' : `Resend in ${countdown}s`}
+            {canResend ? 'Resend email' : `Resend in ${countdown}s`}
           </Button>
 
           {!canResend && (
-            <Progress value={((60 - countdown) / 60) * 100} size="xs" />
+            <Progress value={((60 - countdown) / 60) * 100} size="xs" color="blue" />
           )}
         </Stack>
 
         <Alert color="yellow" variant="light" icon={<IconAlertCircle size="1rem" />}>
           <Text size="sm">
-            <strong>Don't see the email?</strong> Check your spam folder. The email might take a few minutes to arrive.
+            <strong>No message?</strong> Check spam and allow a few minutes for delivery.
           </Text>
         </Alert>
 
@@ -180,11 +176,12 @@ export const EmailVerificationScreen = ({
             component="button" 
             size="sm"
             onClick={onBack}
+            className={authForm.footer}
           >
-            ← Back to Registration
+            ← Back to sign in
           </Anchor>
         )}
       </Stack>
-    </Paper>
+    </Box>
   );
 };
