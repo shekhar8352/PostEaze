@@ -1,11 +1,9 @@
-// src/features/auth/components/signUp/RegisterForm.tsx
+// src/features/auth/components/RegisterForm.tsx
 import { Formik, Form, Field } from 'formik';
 import { 
-  Paper, 
   TextInput, 
   PasswordInput, 
   Button, 
-  Title, 
   Text, 
   Stack, 
   Group, 
@@ -14,7 +12,8 @@ import {
   Alert,
   Anchor
 } from '@mantine/core';
-import { IconInfoCircle } from '@tabler/icons-react';
+import { IconBrandFacebook, IconBrandGoogle, IconInfoCircle } from '@tabler/icons-react';
+import authForm from './authForm.module.css';
 import { notifications } from '@mantine/notifications';
 import { 
   useRegister, 
@@ -27,7 +26,7 @@ import type { RegisterFormData } from '../types';
 interface RegisterFormProps {
   onToggleMode?: () => void;
   onSuccess?: () => void;
-  onEmailSent?: (email: string, password: string, name: string) => void;
+  onEmailSent?: (email: string, password: string, name?: string) => void;
 }
 
 export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterFormProps) => {
@@ -106,10 +105,13 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
   };
 
   return (
-    <Paper radius="md" p="xl" withBorder shadow="sm">
-      <Title order={2} ta="center" mb="lg">
-        Join PostEaze Today
-      </Title>
+    <Box className={authForm.surface}>
+      <Text component="h2" className={authForm.title}>
+        Create your account
+      </Text>
+      <Text className={authForm.lede}>
+        We'll send one verification email—then you're in.
+      </Text>
 
       <Formik
         initialValues={initialValues}
@@ -192,10 +194,9 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
                 </Field>
               </Box>
 
-              <Alert variant="light" color="orange" icon={<IconInfoCircle size="1rem" />}>
-                <Text size="sm">
-                  <strong>Important:</strong> After clicking "Create Account", we'll send you a verification email. 
-                  You must verify your email before you can log in to PostEaze.
+              <Alert variant="light" color="orange" icon={<IconInfoCircle size="1rem" />} className={authForm.alert}>
+                <Text size="sm" c="inherit">
+                  <strong>Next step:</strong> After you register, check your inbox and verify your email before signing in.
                 </Text>
               </Alert>
 
@@ -204,11 +205,13 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
                 size="md"
                 loading={register.isPending || isSubmitting}
                 fullWidth
+                variant="filled"
+                classNames={{ root: authForm.primaryButton }}
               >
-                Create Account & Send Verification Email
+                Create account & send link
               </Button>
 
-              <Divider label="Or continue with" labelPosition="center" my="lg" />
+              <Divider className={authForm.divider} label="Or continue with" labelPosition="center" my="lg" />
 
               <Group grow>
                 <Button
@@ -217,7 +220,8 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
                   loading={googleAuth.isPending}
                   onClick={handleGoogleRegister}
                   type="button"
-                  leftSection={<span>🔍</span>}
+                  leftSection={<IconBrandGoogle size={18} />}
+                  classNames={{ root: authForm.socialButton }}
                 >
                   Google
                 </Button>
@@ -227,21 +231,22 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
                   loading={facebookAuth.isPending}
                   onClick={handleFacebookRegister}
                   type="button"
-                  leftSection={<span>📘</span>}
+                  leftSection={<IconBrandFacebook size={18} />}
+                  classNames={{ root: authForm.socialButton }}
                 >
                   Facebook
                 </Button>
               </Group>
 
               {onToggleMode && (
-                <Text c="dimmed" size="sm" ta="center" mt="md">
+                <Text className={authForm.footer} mt="md">
                   Already have an account?{' '}
                   <Anchor 
                     component="button" 
                     onClick={onToggleMode}
                     type="button"
                   >
-                    Sign in here
+                    Sign in
                   </Anchor>
                 </Text>
               )}
@@ -249,6 +254,6 @@ export const RegisterForm = ({ onToggleMode, onSuccess, onEmailSent }: RegisterF
           </Form>
         )}
       </Formik>
-    </Paper>
+    </Box>
   );
 };

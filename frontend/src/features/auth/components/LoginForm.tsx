@@ -1,11 +1,9 @@
-// src/features/auth/components/signUp/LoginForm.tsx
+// src/features/auth/components/LoginForm.tsx
 import { Formik, Form, Field } from 'formik';
 import { 
-  Paper, 
   TextInput, 
   PasswordInput, 
   Button, 
-  Title, 
   Text, 
   Stack, 
   Group, 
@@ -14,7 +12,8 @@ import {
   Box,
   Alert
 } from '@mantine/core';
-import { IconAlertTriangle } from '@tabler/icons-react';
+import { IconAlertTriangle, IconBrandFacebook, IconBrandGoogle } from '@tabler/icons-react';
+import authForm from './authForm.module.css';
 import { notifications } from '@mantine/notifications';
 import { 
   useLogin, 
@@ -150,20 +149,23 @@ export const LoginForm = ({
   };
 
   return (
-    <Paper radius="md" p="xl" withBorder shadow="sm">
-      <Title order={2} ta="center" mb="lg">
-        Welcome back to PostEaze!
-      </Title>
+    <Box className={authForm.surface}>
+      <Text component="h2" className={authForm.title}>
+        Sign in
+      </Text>
+      <Text className={authForm.lede}>
+        Use your verified email and password, or continue with a provider.
+      </Text>
 
-      {/* Email Verification Warning */}
       <Alert 
         variant="light" 
-        color="blue" 
+        color="orange" 
         icon={<IconAlertTriangle size="1rem" />}
         mb="lg"
+        className={authForm.alert}
       >
-        <Text size="sm">
-          <strong>Email verification required:</strong> You must verify your email address before you can log in.
+        <Text size="sm" c="inherit">
+          <strong>Email verification required:</strong> You must verify your email before you can log in.
         </Text>
       </Alert>
 
@@ -211,7 +213,7 @@ export const LoginForm = ({
                 </Field>
               </Box>
 
-              <Group justify="flex-end">
+              <Group justify="flex-end" className={authForm.linkMuted}>
                 <Anchor 
                   component="button" 
                   size="sm" 
@@ -224,7 +226,7 @@ export const LoginForm = ({
                     }
                   }}
                 >
-                  Forgot your password?
+                  Forgot password?
                 </Anchor>
               </Group>
 
@@ -233,11 +235,13 @@ export const LoginForm = ({
                 size="md"
                 loading={login.isPending || isSubmitting}
                 fullWidth
+                variant="filled"
+                classNames={{ root: authForm.primaryButton }}
               >
-                Sign In
+                Sign in
               </Button>
 
-              <Divider label="Or continue with" labelPosition="center" my="lg" />
+              <Divider className={authForm.divider} label="Or continue with" labelPosition="center" my="lg" />
 
               <Group grow>
                 <Button
@@ -246,7 +250,8 @@ export const LoginForm = ({
                   loading={googleAuth.isPending}
                   onClick={handleGoogleAuth}
                   type="button"
-                  leftSection={<span>🔍</span>}
+                  leftSection={<IconBrandGoogle size={18} />}
+                  classNames={{ root: authForm.socialButton }}
                 >
                   Google
                 </Button>
@@ -256,14 +261,15 @@ export const LoginForm = ({
                   loading={facebookAuth.isPending}
                   onClick={handleFacebookAuth}
                   type="button"
-                  leftSection={<span>📘</span>}
+                  leftSection={<IconBrandFacebook size={18} />}
+                  classNames={{ root: authForm.socialButton }}
                 >
                   Facebook
                 </Button>
               </Group>
 
               {onToggleMode && (
-                <Text c="dimmed" size="sm" ta="center" mt="md">
+                <Text className={authForm.footer} mt="md">
                   New to PostEaze?{' '}
                   <Anchor 
                     component="button" 
@@ -278,6 +284,6 @@ export const LoginForm = ({
           </Form>
         )}
       </Formik>
-    </Paper>
+    </Box>
   );
 };

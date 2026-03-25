@@ -1,6 +1,6 @@
 // src/features/auth/pages/Register/index.tsx
-import { Container, Center, Box } from '@mantine/core';
 import { RegisterForm } from '../../components/RegisterForm';
+import { AuthPageShell } from '../../components/AuthPageShell';
 import { useNavigate } from 'react-router-dom';
 
 const RegisterPage = () => {
@@ -12,33 +12,20 @@ const RegisterPage = () => {
     navigate('/dashboard');
   };
 
-  const handleEmailSent = (email: string, password: string,) => {
+  const handleEmailSent = (email: string, password: string) => {
     navigate('/email-verify', { 
       state: { email, password }
     });
   };
 
   return (
-    <Box
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      <Container size="sm" py="xl">
-        <Center>
-          <Box style={{ width: '100%', maxWidth: '450px' }}>
-            <RegisterForm 
-              onToggleMode={switchToLogin}
-              onSuccess={handleAuthSuccess}
-              onEmailSent={handleEmailSent}
-            />
-          </Box>
-        </Center>
-      </Container>
-    </Box>
+    <AuthPageShell variant="register">
+      <RegisterForm 
+        onToggleMode={switchToLogin}
+        onSuccess={handleAuthSuccess}
+        onEmailSent={handleEmailSent}
+      />
+    </AuthPageShell>
   );
 };
 

@@ -1,0 +1,149 @@
+/* Shared auth form surface — warm paper on dark shell */
+.surface {
+  --auth-surface-ink: #1a1d24;
+  --auth-surface-muted: #5c6270;
+  --auth-surface-border: rgba(26, 29, 36, 0.1);
+  --auth-surface-accent: #ff5c3d;
+  --auth-font-display: 'Syne', system-ui, sans-serif;
+  --auth-font-body: 'IBM Plex Sans', system-ui, sans-serif;
+
+  background: #faf7f0;
+  border-radius: 20px;
+  padding: clamp(1.5rem, 3vw, 2.25rem);
+  border: 1px solid var(--auth-surface-border);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.7) inset,
+    0 24px 48px -24px rgba(0, 0, 0, 0.45);
+  font-family: var(--auth-font-body);
+}
+
+.title {
+  font-family: var(--auth-font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: var(--auth-surface-ink);
+  text-align: center;
+  margin-bottom: 0.25rem;
+}
+
+.lede {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--auth-surface-muted);
+  margin-bottom: 1.25rem;
+  line-height: 1.5;
+}
+
+/* Mantine input overrides via global class hooks */
+.surface :global(.mantine-TextInput-label),
+.surface :global(.mantine-PasswordInput-label) {
+  font-family: var(--auth-font-body);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--auth-surface-muted);
+}
+
+.surface :global(.mantine-TextInput-input),
+.surface :global(.mantine-PasswordInput-input) {
+  font-family: var(--auth-font-body);
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  border: 1px solid var(--auth-surface-border);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.surface :global(.mantine-TextInput-input:focus),
+.surface :global(.mantine-PasswordInput-input:focus) {
+  border-color: var(--auth-surface-accent);
+  box-shadow: 0 0 0 3px rgba(255, 92, 61, 0.18);
+}
+
+.surface :global(.mantine-PasswordInput-innerInput) {
+  font-family: var(--auth-font-body);
+}
+
+.primaryButton {
+  font-family: var(--auth-font-body);
+  font-weight: 600;
+  border-radius: 12px;
+  height: 46px;
+  background: linear-gradient(135deg, #ff5c3d 0%, #e8482f 100%) !important;
+  color: #fff !important;
+  border: none !important;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.primaryButton:hover:not(:disabled) {
+  filter: brightness(1.05);
+  transform: translateY(-1px);
+}
+
+.divider {
+  margin-top: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.divider :global(.mantine-Divider-label) {
+  font-family: var(--auth-font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--auth-surface-muted);
+}
+
+.socialButton {
+  font-family: var(--auth-font-body);
+  font-weight: 500;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.65);
+  border: 1px solid var(--auth-surface-border);
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.socialButton:hover:not(:disabled) {
+  background: #fff;
+  border-color: rgba(26, 29, 36, 0.18);
+}
+
+.footer {
+  font-size: 0.875rem;
+  color: var(--auth-surface-muted);
+  text-align: center;
+}
+
+.footer :global(.mantine-Anchor-root) {
+  color: var(--auth-surface-accent);
+  font-weight: 600;
+}
+
+.footer :global(.mantine-Anchor-root):hover {
+  text-decoration: underline;
+}
+
+.alert {
+  border-radius: 12px;
+  border: 1px solid rgba(255, 92, 61, 0.25);
+  background: rgba(255, 92, 61, 0.06);
+}
+
+.alert :global(.mantine-Alert-message) {
+  font-family: var(--auth-font-body);
+  font-size: 0.85rem;
+  line-height: 1.5;
+  color: var(--auth-surface-ink);
+}
+
+.linkMuted {
+  font-family: var(--auth-font-body);
+  font-size: 0.85rem;
+  color: var(--auth-surface-muted);
+}
+
+.linkMuted :global(.mantine-Anchor-root) {
+  color: var(--auth-surface-accent);
+  font-weight: 600;
+}

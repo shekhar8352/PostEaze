@@ -1,6 +1,6 @@
 // src/features/auth/pages/Login/index.tsx
-import { Container, Center, Box } from '@mantine/core';
 import { LoginForm } from '../../components/LoginForm';
+import { AuthPageShell } from '../../components/AuthPageShell';
 import { useNavigate } from 'react-router-dom';
 import { getRedirectPath } from '../../utils';
 
@@ -22,27 +22,14 @@ const LoginPage = () => {
   };
 
   return (
-    <Box
-      style={{
-        minHeight: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        display: 'flex',
-        alignItems: 'center',
-      }}
-    >
-      <Container size="sm" py="xl">
-        <Center>
-          <Box style={{ width: '100%', maxWidth: '450px' }}>
-            <LoginForm
-              onToggleMode={switchToRegister}
-              onForgotPassword={switchToForgotPassword}
-              onSuccess={handleAuthSuccess}
-              onEmailNotVerified={handleEmailNotVerified}
-            />
-          </Box>
-        </Center>
-      </Container>
-    </Box>
+    <AuthPageShell variant="login">
+      <LoginForm
+        onToggleMode={switchToRegister}
+        onForgotPassword={switchToForgotPassword}
+        onSuccess={handleAuthSuccess}
+        onEmailNotVerified={handleEmailNotVerified}
+      />
+    </AuthPageShell>
   );
 };
 
