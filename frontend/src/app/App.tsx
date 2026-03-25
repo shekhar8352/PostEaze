@@ -8,6 +8,7 @@ import "@mantine/core/styles.css";
 import { Notifications } from '@mantine/notifications';
 import "@mantine/notifications/styles.css";
 import { AuthProvider } from "@/features/auth";
+import "./shell/tokens.css";
 import "./styles/global.css";
 // Initialize API interceptors for auth token handling
 import "@/services/api/interceptors";

@@ -19,7 +19,7 @@ body {
     font-size: 16px;
     line-height: 1.55;
     color: var(--mantine-color-text);
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    background: var(--pe-bg-app, #f1f4f8);
     min-height: 100vh;
 }
 
@@ -34,12 +34,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: var(--pe-border-strong, #cbd5e1);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    background: var(--pe-text-muted, #64748b);
 }
 
 /* === TYPOGRAPHY === */
@@ -334,7 +334,7 @@ h6 {
 
 /* === FOCUS STATES === */
 *:focus-visible {
-    outline: 2px solid #667eea;
+    outline: 2px solid var(--pe-accent, #1d4ed8);
     outline-offset: 2px;
     border-radius: 4px;
 }
