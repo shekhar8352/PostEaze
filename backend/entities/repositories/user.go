@@ -10,14 +10,6 @@ import (
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
 
-func CreateUser(ctx context.Context, tx database.Database, user entities.User) (*entities.User, error) {
-	err := tx.QueryRaw(ctx, &user, entities.CreateUser)
-	if err != nil {
-		return nil, err
-	}
-	return &user, nil
-}
-
 func InsertRefreshTokenOfUser(ctx context.Context, userID, refreshToken string, expireAt time.Time) error {
 	data := entities.User{
 		ID:           userID,

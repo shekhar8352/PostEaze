@@ -2,14 +2,14 @@ package entities
 
 import (
 	"time"
+
 	"github.com/lib/pq"
 	"github.com/shekhar8352/PostEaze/constants"
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
 
 const (
-	CreateUser = iota
-	CreateUserWithFirebase
+	CreateUserWithFirebase = iota
 	InsertRefreshToken
 	GetUserByEmail
 	GetUserByToken
@@ -21,25 +21,19 @@ const (
 )
 
 type User struct {
-	ID           string    `json:"id"`
-	FirebaseID   string    `json:"firebase_id"`
-	Name         string    `json:"name"`
-	Email        string    `json:"email"`
-	Password     string    `json:"-"`
-	UserType     string    `json:"user_type"`
+	ID           string         `json:"id"`
+	FirebaseID   string         `json:"firebase_id"`
+	Name         string         `json:"name"`
+	Email        string         `json:"email"`
 	Platforms    pq.StringArray `json:"platforms" db:"platforms"`
-	CreatedAt    time.Time `json:"created_at"`
-	UpdatedAt    time.Time `json:"updated_at"`
-	RefreshToken string    `json:"refresh_token"`
-	ExpiresAt    time.Time `json:"expire_at"`
+	CreatedAt    time.Time      `json:"created_at"`
+	UpdatedAt    time.Time      `json:"updated_at"`
+	RefreshToken string         `json:"refresh_token"`
+	ExpiresAt    time.Time      `json:"expire_at"`
 }
 
 func (o *User) GetQuery(code int) string {
 	switch code {
-	case CreateUser:
-		return `INSERT INTO users (name, email, password, user_type) 
-		        VALUES ($1, $2, $3, $4) 
-		        RETURNING id, created_at, updated_at;`
 	case CreateUserWithFirebase:
 		return `INSERT INTO users (firebase_id, name, email, platforms) 
 		        VALUES ($1, $2, $3, $4) 
@@ -48,7 +42,7 @@ func (o *User) GetQuery(code int) string {
 		return `INSERT INTO refresh_tokens (user_id, token, expires_at, revoked) 
 		        VALUES ($1, $2, $3, $4);`
 	case GetUserByEmail:
-		return `SELECT id, firebase_id, name, password, user_type, created_at, updated_at 
+		return `SELECT id, firebase_id, name, email, platforms, created_at, updated_at 
 		        FROM users WHERE email = $1;`
 	case GetUserByToken:
 		return `SELECT user_id FROM refresh_tokens 
@@ -74,8 +68,6 @@ func (o *User) GetQuery(code int) string {
 
 func (o *User) GetQueryValues(code int) []any {
 	switch code {
-	case CreateUser:
-		return []any{o.Name, o.Email, o.Password, o.UserType}
 	case CreateUserWithFirebase:
 		return []any{o.FirebaseID, o.Name, o.Email, pq.Array(o.Platforms)}
 	case InsertRefreshToken:
@@ -89,7 +81,7 @@ func (o *User) GetQueryValues(code int) []any {
 	case GetUserByFirebaseID:
 		return []any{o.FirebaseID}
 	case UpdateUserPlatforms:
-		return []any{pq.Array(o.Platforms), o.ID}
+		return []any{o.ID, pq.Array(o.Platforms)}
 	case UpdateUser:
 		return []any{o.ID, o.Email}
 	case RevokeTokens:
@@ -116,14 +108,11 @@ func (o *User) GetNextRaw() database.RawEntity {
 
 func (o *User) BindRawRow(code int, row database.Scanner) error {
 	switch code {
-	case CreateUser:
-		return row.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
-
 	case CreateUserWithFirebase:
 		return row.Scan(&o.ID, &o.CreatedAt, &o.UpdatedAt)
 
 	case GetUserByEmail:
-		return row.Scan(&o.ID, &o.FirebaseID, &o.Name, &o.Password, &o.UserType, &o.CreatedAt, &o.UpdatedAt)
+		return row.Scan(&o.ID, &o.FirebaseID, &o.Name, &o.Email, &o.Platforms, &o.CreatedAt, &o.UpdatedAt)
 
 	case GetUserByToken:
 		return row.Scan(&o.ID)
@@ -143,7 +132,6 @@ func (o *User) BindRawRow(code int, row database.Scanner) error {
 	}
 	return nil
 }
-
 
 func (o *User) GetExec(code int) string {
 	switch code {

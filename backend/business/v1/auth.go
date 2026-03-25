@@ -159,13 +159,7 @@ func RefreshToken(ctx context.Context, token string) (map[string]string, error) 
 		return nil, err
 	}
 
-	// For Firebase users, use "individual" as default user type
-	userType := "individual"
-	if user.UserType != "" {
-		userType = user.UserType
-	}
-
-	newAccess, err := utils.GenerateAccessToken(user.ID, userType)
+	newAccess, err := utils.GenerateAccessToken(user.ID, "individual")
 	if err != nil {
 		return nil, err
 	}
