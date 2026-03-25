@@ -40,7 +40,11 @@ export const InstagramChannelCard = ({ channel }: InstagramChannelCardProps) => 
             padding="lg"
             radius="md"
             withBorder
-            className="shadow-lift"
+            style={{
+                borderColor: 'var(--pe-border)',
+                background: 'var(--pe-bg-elevated)',
+                boxShadow: 'var(--pe-shadow-sm)',
+            }}
         >
             <Stack gap="md">
                 <Group justify="space-between">
@@ -50,8 +54,7 @@ export const InstagramChannelCard = ({ channel }: InstagramChannelCardProps) => 
                             size="lg"
                             radius="xl"
                             style={{
-                                border: '2px solid',
-                                borderImage: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%) 1',
+                                border: '2px solid var(--pe-border-strong)',
                             }}
                         >
                             <Icons.Instagram size={24} />

@@ -2,6 +2,8 @@
 export { default as channelRoutes } from './channelRoutes';
 
 // Components
+export { ChannelPageHeader } from './components/ChannelPageHeader';
+export { EmptyChannelPanel } from './components/EmptyChannelPanel';
 export { InstagramChannelCard } from './components/InstagramChannelCard';
 export { InstagramChannelList } from './components/InstagramChannelList';
 export { InstagramChannelForm } from './components/InstagramChannelForm';

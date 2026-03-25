@@ -1,0 +1,32 @@
+.paper {
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-lg);
+  box-shadow: var(--pe-shadow-sm);
+  border-left-width: 4px;
+  padding: clamp(1.25rem, 2vw, 1.75rem) clamp(1.25rem, 2.5vw, 2rem);
+}
+
+.iconWrap {
+  width: 56px;
+  height: 56px;
+  border-radius: var(--pe-radius-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.title {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pe-text);
+}
+
+.subtitle {
+  color: var(--pe-text-muted);
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  margin-top: 0.25rem;
+}

@@ -1,6 +1,7 @@
-import { SimpleGrid, Box, Text, Stack } from '@mantine/core';
+import { SimpleGrid, Box, Text } from '@mantine/core';
 import { Icons } from '@/app/theme';
 import { InstagramChannelCard } from './InstagramChannelCard';
+import { EmptyChannelPanel } from './EmptyChannelPanel';
 import type { InstagramChannelDisplay } from '../types/instagram.types';
 
 interface InstagramChannelListProps {
@@ -8,62 +9,37 @@ interface InstagramChannelListProps {
     isLoading?: boolean;
 }
 
-export const InstagramChannelList = ({
-    channels,
-    isLoading,
-}: InstagramChannelListProps) => {
-    // Loading State
+export const InstagramChannelList = ({ channels, isLoading }: InstagramChannelListProps) => {
     if (isLoading) {
         return (
             <Box
                 p="xl"
                 style={{
                     textAlign: 'center',
-                    borderRadius: '12px',
-                    background:
-                        'linear-gradient(135deg, rgba(240, 148, 51, 0.05) 0%, rgba(188, 24, 136, 0.05) 100%)',
+                    borderRadius: 'var(--pe-radius-md)',
+                    background: 'var(--pe-bg-subtle)',
+                    border: '1px solid var(--pe-border)',
                 }}
             >
-                <Text c="dimmed" size="lg" fw={500}>
-                    Loading channels...
+                <Text c="dimmed" size="sm" fw={500}>
+                    Loading channels…
                 </Text>
             </Box>
         );
     }
 
-    // Empty State
     if (!channels || channels.length === 0) {
         return (
-            <Box
-                p="xl"
-                style={{
-                    textAlign: 'center',
-                    borderRadius: '12px',
-                    background:
-                        'linear-gradient(135deg, rgba(240, 148, 51, 0.05) 0%, rgba(188, 24, 136, 0.05) 100%)',
-                }}
-            >
-                <Stack align="center" gap="md">
-                    <Icons.Instagram
-                        size={64}
-                        style={{ opacity: 0.3 }}
-                    />
-                    <div>
-                        <Text c="dimmed" size="lg" fw={500}>
-                            No Instagram accounts connected yet
-                        </Text>
-                        <Text c="dimmed" size="sm" mt="xs">
-                            Click "Connect Account" above to get started
-                        </Text>
-                    </div>
-                </Stack>
-            </Box>
+            <EmptyChannelPanel
+                icon={<Icons.Instagram size={56} />}
+                title="No Instagram accounts connected yet"
+                hint='Use "Connect account" above to get started.'
+            />
         );
     }
 
-    // Channel List
     return (
-        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="lg">
+        <SimpleGrid cols={{ base: 1, sm: 2, md: 3 }} spacing="md">
             {channels.map((channel) => (
                 <InstagramChannelCard key={channel.id} channel={channel} />
             ))}
