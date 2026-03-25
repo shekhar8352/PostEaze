@@ -46,16 +46,20 @@ AWSRegionKey = "AWS_REGION"                  // AWS region setting
 ```
 
 ### API Routes (`router.go`)
-Route path constants for consistent API endpoint definitions:
+Route path constants for consistent API endpoint definitions (non-exhaustive):
 ```go
-ApiRoute = "/api"           // Base API route
-V1Route = "/v1"            // API version 1
-AuthRoute = "/auth"        // Authentication endpoints
-SignUpRoute = "/signup"    // User registration
-LogInRoute = "/login"      // User authentication
-RefreshRoute = "/refresh"  // Token refresh
-LogOutRoute = "/logout"    // User logout
-LogRoute = "/log"          // Logging endpoints
+ApiRoute      = "/api"
+V1Route       = "/v1"
+AuthRoute     = "/auth"
+Authenticate  = "/authenticate" // POST — Firebase sign-in
+RefreshRoute  = "/refresh"
+LogOutRoute     = "/logout"
+LogRoute      = "/log"
+UserRoute     = "/user"
+TeamRoute     = "/team"
+MetaRoute     = "/meta"
+ChannelRoute  = "/channels"
+// ... see router.go for log paths, webhooks, etc.
 ```
 
 ## Usage Patterns
@@ -68,13 +72,8 @@ configName := constants.DatabaseConfig
 driverKey := constants.DatabaseDriverNameConfigKey
 ```
 
-### Route Definition
-Router constants ensure consistent API paths:
-```go
-// Example usage in route setup
-authGroup := router.Group(constants.ApiRoute + constants.V1Route + constants.AuthRoute)
-authGroup.POST(constants.SignUpRoute, handlers.SignUp)
-```
+### Route definition
+Router constants group paths consistently, e.g. `ApiRoute` + `V1Route` + `AuthRoute` for `/api/v1/auth`, then `Authenticate` for `POST /authenticate`.
 
 ### Flag Processing
 Flag constants provide consistent command-line interface:

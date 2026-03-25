@@ -270,9 +270,9 @@ tail -f backend/logs/app-$(date +%Y-%m-%d).log
 cat backend/logs/app-2025-08-04.log | jq empty
 ```
 
-## Related Documentation
+## Related documentation
 
-- [Logger Implementation](../utils/logger.go) - Core logging utility
+- [Logger implementation](../utils/logger.go) — core logging utility
 - [Log Middleware](../middleware/README.md) - HTTP request logging middleware
 - [Application Configuration](../utils/configs/README.md) - Configuration management
 - [Docker Setup](../../docker-compose.yml) - Container log volume configuration

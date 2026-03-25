@@ -1,100 +1,35 @@
-# Business Logic Layer
+# Business logic layer
 
-The business logic layer contains the core application logic and business rules for PostEaze. This layer acts as an intermediary between the API handlers and the data access layer, implementing the business processes and domain-specific operations.
+Orchestrates domain rules between HTTP handlers and repositories. Stateless functions take `context.Context` first; database work uses `utils/database` transactions where needed.
 
-## Architecture
+## Responsibilities
 
-The business layer follows a service-oriented architecture pattern where:
+- **Firebase authentication** — Validate Firebase ID tokens, upsert users by `firebase_id`, issue JWT access/refresh tokens, refresh and logout.
+- **Users & teams** — User lookup/update; team create, list, update, status.
+- **Channels** — Instagram channel creation and related flows (via services/repositories).
+- **Logs** — Read structured log files for admin/debug (`ReadLogsByDate`, `ReadLogsByLogID`).
 
-- **Service Functions**: Stateless functions that implement specific business operations
-- **Transaction Management**: Handles database transactions for complex operations
-- **Business Rule Enforcement**: Validates business constraints and rules
-- **Domain Logic**: Implements core application functionality independent of external interfaces
+## Patterns
 
-## Key Components
-
-- **Authentication Services**: User registration, login, token management, and logout operations
-- **Logging Services**: Log retrieval and filtering operations for system monitoring
-- **Transaction Coordination**: Manages database transactions across multiple repository operations
-
-## Service Layer Patterns
-
-### Function-Based Services
-The business layer uses function-based services rather than class-based services:
-
-```go
-func Signup(ctx context.Context, params modelsv1.SignupParams) (map[string]interface{}, error)
-func Login(ctx context.Context, params modelsv1.LoginParams) (map[string]interface{}, error)
-```
-
-### Context Propagation
-All business functions accept a `context.Context` as the first parameter for:
-- Request tracing and logging correlation
-- Timeout and cancellation handling
-- Database transaction context
-
-### Transaction Management
-Complex operations use database transactions to ensure data consistency:
-
-```go
-tx, err := database.GetTx(ctx, nil)
-// ... perform multiple repository operations
-err = database.CommitTx(tx)
-```
-
-### Error Handling
-Business functions return errors that are:
-- Logged with appropriate context
-- Propagated to the API layer for proper HTTP response handling
-- Wrapped with additional business context when needed
-
-## Business Rules Implementation
-
-### User Registration
-- Password hashing before storage
-- Team creation for team-type users
-- Automatic admin role assignment for team creators
-- Token generation for immediate authentication
-
-### Authentication Flow
-- Email-based user lookup
-- Password verification using secure hashing
-- JWT token generation (access and refresh tokens)
-- Token storage and management
-
-### Logging Operations
-- Multi-day log file reading
-- Log filtering by correlation ID
-- Chronological sorting of log entries
+- **Functions** — e.g. `AuthenticateWithFirebase`, `GetUserById`, `CreateTeam` (see `v1/`).
+- **Context** — Passed through for cancellation and logging.
+- **Transactions** — `database.GetTx` / `CommitTx` / `RollbackTx` when multiple writes must stay consistent.
+- **Errors** — Returned to API layer for HTTP mapping; security-sensitive paths return generic messages.
 
 ## Dependencies
 
-The business layer depends on:
-- **Models**: Data structures and validation (`models/v1`)
-- **Repositories**: Data access layer (`entities/repositories`)
-- **Utilities**: Common functions for hashing, tokens, logging (`utils`)
-- **Database**: Transaction management (`utils/database`)
+- `models/v1` — Request/response types
+- `entities/repositories` — SQL access
+- `utils` — JWT, Firebase client, logging, hashing where applicable
+- `utils/database` — Pool and transactions
 
-## Usage Patterns
+## Layout
 
-Business functions are called from API handlers:
+- **`v1/`** — Current implementation (`auth.go`, `user.go`, `team.go`, `channel.go`, `log.go`)
 
-```go
-// In API handler
-user, err := businessv1.Signup(c.Request.Context(), signupParams)
-if err != nil {
-    // Handle error and return appropriate HTTP response
-}
-```
+## Related documentation
 
-## Version Organization
-
-The business layer is organized by API version:
-- **v1/**: Version 1 business logic implementation
-
-## Related Documentation
-
-- [API Layer](../api/README.md) - HTTP handlers that call business services
-- [Entities](../entities/README.md) - Data models and repository interfaces
-- [Models](../models/README.md) - Request/response data structures
-- [Utils](../utils/README.md) - Shared utility functions
+- [API v1](../api/v1/README.md)
+- [Business v1](./v1/README.md)
+- [Entities](../entities/README.md)
+- [Repositories](../entities/repositories/README.md)

@@ -1,132 +1,55 @@
-# API Layer
+# API layer
 
-The API layer serves as the HTTP interface for the PostEaze backend, handling REST API requests and routing them to appropriate business logic handlers. Built using the Gin web framework, this layer provides a clean separation between HTTP concerns and business logic.
+HTTP interface for the PostEaze backend: Gin router, versioned REST handlers under `/api/v1`, Swagger, and Instagram webhook routes.
 
-## Architecture
-
-The API layer follows a versioned REST architecture with the following structure:
+## Layout
 
 ```
-/api
-├── router.go          # Main router configuration and route registration
-└── v1/                # Version 1 API endpoints
-    ├── auth.go        # Authentication endpoints
-    └── log.go         # Logging endpoints
+api/
+├── router.go       # Gin engine, CORS, middleware, route groups, Swagger
+├── v1/             # Version 1 handlers (auth, user, team, channel, log, meta, posts, analytics, dev, cron)
+└── webhooks/       # Instagram webhook verify + POST handler
 ```
 
-## Key Components
+## Router (`router.go`)
 
-- **router.go**: Central router configuration that initializes the Gin server, applies middleware, and registers all API routes
-- **v1/**: Version 1 API handlers organized by feature domain
-- **Route Groups**: Logical grouping of related endpoints (auth, logs, etc.)
+1. **CORS** — Allowed origins include local Vite and configured dev hosts; methods `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`; `Authorization` allowed.
+2. **`GinLoggingMiddleware`** — Request/response logging (global).
+3. **Groups** — `GET /api/health`; ` /api/v1` registers auth, logs, user, team, meta, channels (+ webhooks path), dev, cron, posts, analytics.
+4. **Swagger** — `GET /api/swagger/*` via `gin-swagger`; `docs.SwaggerInfo` uses `API_HOST` and base path `/api/v1`.
 
-## Router Configuration
+## Route registration (v1)
 
-The main router (`router.go`) handles:
+| Registration | Base under `/api/v1` |
+|--------------|----------------------|
+| `addV1UserAuthRoutes` | `/auth` — authenticate, refresh, logout, `/me` |
+| `addV1LogRoutes` | `/log` |
+| `addV1UserRoutes` | `/user` |
+| `addV1TeamRoutes` | `/team` |
+| `addV1MetaRoutes` | `/meta` |
+| `addV1ChannelRoutes` | `/channels`, `/webhooks` |
+| `addV1DevRoutes` | `/dev` |
+| `addV1CronRoutes` | `/cron` |
+| `addV1PostRoutes` | `/posts` |
+| `addV1AnalyticsRoutes` | `/channels/:channelId/analytics` |
 
-### Server Initialization
-- Creates Gin server instance with default configuration
-- Applies global middleware (logging, CORS, etc.)
-- Configures route groups for API versioning
+Protected routes use `middleware.AuthMiddleware()`; analytics also uses `middleware.RequireInstagramChannelAnalyticsAccess()`.
 
-### Route Structure
-All API routes follow the pattern: `/api/v{version}/{feature}/{endpoint}`
+## Error handling
 
-Example routes:
-- `/api/health` - Health check endpoint
-- `/api/v1/auth/signup` - User registration
-- `/api/v1/auth/login` - User authentication
-- `/api/v1/log/byDate/:date` - Retrieve logs by date
-
-### Middleware Integration
-- **GinLoggingMiddleware**: Request/response logging
-- **AuthMiddleware**: JWT token validation for protected routes
-- Applied selectively based on endpoint security requirements
-
-## Route Registration
-
-Routes are organized into logical groups using Gin's RouterGroup:
-
-```go
-api := s.Group(constants.ApiRoute)           // /api
-v1 := api.Group(constants.V1Route)           // /api/v1
-authv1 := v1.Group(constants.AuthRoute)      // /api/v1/auth
-logv1 := v1.Group(constants.LogRoute)        // /api/v1/log
-```
-
-### Authentication Routes
-- `POST /signup` - User registration
-- `POST /login` - User authentication  
-- `POST /refresh` - Token refresh (protected)
-- `POST /logout` - User logout (protected)
-
-### Logging Routes
-- `GET /byDate/:date` - Retrieve logs by date
-- `GET /byId/:log_id` - Retrieve specific log entry
-
-## Error Handling
-
-The API layer uses consistent error handling patterns:
-- HTTP status codes follow REST conventions
-- Error responses include descriptive messages
-- Logging for debugging and monitoring
-- Graceful handling of validation errors
+Handlers typically use `utils.SendError` / `utils.SendSuccess` with appropriate HTTP status codes. Validation errors return 400; auth failures 401; channel analytics access 403/404 as applicable.
 
 ## Dependencies
 
-- **Gin Framework**: HTTP router and middleware
-- **Business Layer**: Core application logic
-- **Models**: Request/response data structures
-- **Middleware**: Authentication and logging
-- **Constants**: Route definitions and configuration
-- **Utils**: Response formatting and logging utilities
+- **Gin** — Routing and middleware
+- **`business/v1`** — Business logic
+- **`models/v1`** — Request/response shapes
+- **`middleware`** — Auth, logging, analytics access
+- **`constants`** — Path segments
 
-## Usage Example
+## Related documentation
 
-```go
-// Adding new route group
-func addV1NewFeatureRoutes(v1 *gin.RouterGroup) {
-    featurev1 := v1.Group(constants.NewFeatureRoute)
-    featurev1.GET("/endpoint", handler.NewFeatureHandler)
-}
-
-// Register in Init() function
-addV1NewFeatureRoutes(v1)
-```
-
-## Related Documentation
-
-- [API v1 Documentation](./v1/README.md) - Detailed endpoint documentation
-### Channels (`/api/v1/channels`)
-
-#### Instagram Channel Management
-- **POST** `/instagram/create` - Create a new Instagram channel
-  - **Auth**: Required (JWT)
-  - **Body**: `{ "code": "auth_code", "channel_name": "name", "metadata": {...} }`
-  - **Returns**: Channel ID and name
-
-- **GET** `/` - Get all channels for authenticated user
-  - **Auth**: Required (JWT)
-  - **Query Params**: `provider` (optional) - Filter by provider (e.g., `instagram`)
-  - **Returns**: List of channels with metadata
-
-- **GET** `/details` - Get Instagram page details for a channel
-  - **Auth**: Required (JWT)
-  - **Query Params**: `channel_id` (required)
-  - **Returns**: Live Instagram profile data (username, followers, bio, etc.)
-
-### Webhooks
-For detailed webhook documentation, see [Webhooks Documentation](webhooks/README.md).
-
-### Development (`/api/v1/dev`) - Dev Mode Only
-
-- **POST** `/generate-token` - Generate test JWT token
-  - **Auth**: None
-  - **Body**: `{ "user_id": "uuid" }`
-  - **Returns**: JWT token valid for 30 days
-  - **Note**: Only available when `ENV=development` or `ENV=dev`
-
----
-- [Business Layer](../business/README.md) - Business logic implementation
-- [Middleware](../middleware/README.md) - Request processing middleware
-- [Models](../models/README.md) - Data structures and validation
+- [API v1 handlers](./v1/README.md)
+- [Webhooks](./webhooks/README.md)
+- [Middleware](../middleware/README.md)
+- [Business layer](../business/README.md)

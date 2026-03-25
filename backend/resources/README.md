@@ -8,11 +8,12 @@ The resources directory is organized to support multiple deployment environments
 
 ```
 resources/
-└── configs/           # Configuration files organized by environment
-    ├── dev/          # Development environment configurations
-    ├── prod/         # Production environment configurations
-    └── cug/          # Customer User Group (staging) environment configurations
+└── configs/
+    ├── dev/          # Local development
+    ├── prod/         # Production
+    └── cug/          # Staging / CUG
 ```
+Each environment contains `application.yml`, `database.yml`, and `api.yml` (YAML extension `.yml`).
 
 ## Resource Organization
 

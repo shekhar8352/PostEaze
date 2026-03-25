@@ -18,39 +18,34 @@ All entities implement the `database.RawEntity` interface which provides:
 - `BindRawRow(code int, row Scanner)` - Binds database row results to entity fields
 - `GetNextRaw()` - Returns a new instance for result scanning
 
-## Key Files
+## Key files
 
-- **user.go**: User entity with authentication and profile management queries
-- **team.go**: Team entity with team creation and member management queries
-- **repositories/**: Repository pattern implementations for data access
+- **user.go** — User row + refresh-token helpers (Firebase identity, `platforms` array)
+- **team.go** — Team and membership queries
+- **channel.go** (and related) — Social channel + token storage
+- **repositories/** — Repository functions calling `QueryRaw` / transactions
 
-## Entity Structure
+## Entity structure
 
-### User Entity
+### User entity
 
-The User entity handles user authentication, profile management, and refresh token operations:
+Users are keyed by internal UUID and `firebase_id`; there is no password column.
 
 ```go
 type User struct {
-    ID           string    `json:"id"`
-    Name         string    `json:"name"`
-    Email        string    `json:"email"`
-    Password     string    `json:"-"`          // Hidden from JSON serialization
-    UserType     string    `json:"user_type"`
-    CreatedAt    time.Time `json:"created_at"`
-    UpdatedAt    time.Time `json:"updated_at"`
-    RefreshToken string    `json:"refresh_token"`
-    ExpiresAt    time.Time `json:"expire_at"`
+    ID           string         `json:"id"`
+    FirebaseID   string         `json:"firebase_id"`
+    Name         string         `json:"name"`
+    Email        string         `json:"email"`
+    Platforms    pq.StringArray `json:"platforms"`
+    CreatedAt    time.Time      `json:"created_at"`
+    UpdatedAt    time.Time      `json:"updated_at"`
+    RefreshToken string         `json:"refresh_token"` // used when binding token flows
+    ExpiresAt    time.Time      `json:"expire_at"`
 }
 ```
 
-**Supported Operations:**
-- `CreateUser` - Insert new user record
-- `InsertRefreshToken` - Store refresh token for authentication
-- `GetUserByEmail` - Retrieve user by email address
-- `GetUserByToken` - Validate and retrieve user by refresh token
-- `GetUserByID` - Retrieve user by ID
-- `RevokeTokens` - Invalidate all refresh tokens for a user
+**Operation codes (see `user.go`):** `CreateUserWithFirebase`, `InsertRefreshToken`, `GetUserByEmail`, `GetUserByToken`, `GetUserByID`, `GetUserByFirebaseID`, `UpdateUserPlatforms`, `UpdateUser`, `RevokeTokens`
 
 ### Team Entity
 
@@ -75,43 +70,20 @@ type Team struct {
 
 Each entity uses integer constants to identify different database operations:
 
-```go
-const (
-    CreateUser = iota
-    InsertRefreshToken
-    GetUserByEmail
-    // ... more operations
-)
-```
+Operation constants are defined per entity (e.g. `CreateUserWithFirebase = iota` in `user.go`). `GetQuery` / `GetQueryValues` / `BindRawRow` implement `database.RawEntity`.
 
-The `GetQuery()` method returns the appropriate SQL query based on the operation code:
+## Usage examples
 
-```go
-func (o *User) GetQuery(code int) string {
-    switch code {
-    case CreateUser:
-        return `INSERT INTO users (name, email, password, user_type) 
-                VALUES ($1, $2, $3, $4) 
-                RETURNING id, created_at, updated_at;`
-    // ... more cases
-    }
-}
-```
-
-## Usage Examples
-
-### Creating a User
+### Creating a user (Firebase)
 
 ```go
 user := entities.User{
-    Name:     "John Doe",
-    Email:    "john@example.com",
-    Password: "hashedpassword",
-    UserType: "individual",
+    FirebaseID: "firebase-uid",
+    Name:       "Jane",
+    Email:      "jane@example.com",
+    Platforms:  pq.StringArray{"web"},
 }
-
-err := db.QueryRaw(ctx, &user, entities.CreateUser)
-// user.ID, user.CreatedAt, user.UpdatedAt are populated from RETURNING clause
+err := db.QueryRaw(ctx, &user, entities.CreateUserWithFirebase)
 ```
 
 ### Retrieving a User

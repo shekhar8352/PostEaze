@@ -40,13 +40,7 @@ func (o *User) BindRawRow(code int, row Scanner) error { ... }
 ## Repository Files
 
 ### user.go
-Contains user-related data access functions:
-
-- **CreateUser**: Creates new user records with transaction support
-- **GetUserByEmail**: Retrieves user by email for authentication
-- **GetUserbyToken**: Fetches user information using refresh tokens
-- **InsertRefreshTokenOfUser**: Manages JWT refresh token storage
-- **RevokeTokenForUser**: Handles token revocation for logout
+User and refresh-token access aligned with Firebase auth (see `entities.User` operations): create user with Firebase ID, lookup by email/Firebase ID, refresh token insert/revoke, etc.
 
 ### team.go
 Contains team-related data access functions:
@@ -55,30 +49,29 @@ Contains team-related data access functions:
 - **AddListOfUsersToTeam**: Bulk addition of users to teams with role assignment
 
 ### channel.go
-Contains channel-related data access functions:
+Channel CRUD, tokens, and Instagram-specific helpers (see source for full list).
 
-- **CreateChannel**: Creates new channel records with transaction support
-- **GetChannelByID**: Retrieves channel by ID
-- **GetChannelsByUserID**: Fetches all channels for a user with optional provider filter
-- **GetAllActiveInstagramChannels**: Retrieves all active Instagram channels for sync jobs
-- **UpdateChannelMetadata**: Updates channel metadata (JSONB field)
-- **CreateChannelToken**: Stores encrypted access tokens for channels
-- **GetLatestTokenByChannelID**: Retrieves the most recent non-revoked token
+### post.go
+Post storage and listing (`posts` table), filters by channel, provider post IDs.
+
+### channel_access.go / post_access.go
+Authorization helpers (`UserCanAccessChannel`, post/channel membership checks) used by middleware and handlers.
+
+### analytics_queries.go / instagram_analytics.go
+Instagram post and story analytics reads/writes for dashboards and reports.
+
+### teamMembers.go
+Team membership operations alongside `team.go`.
 
 ## Usage Patterns
 
 ### Basic Repository Function
 
 ```go
-func CreateUser(ctx context.Context, tx database.Database, user modelsv1.User) (*entities.User, error) {
-    data := entities.User{
-        Name:     user.Name,
-        Email:    user.Email,
-        UserType: string(user.UserType),
-        Password: user.Password,
-    }
-    err := tx.QueryRaw(ctx, &data, entities.CreateUser)
-    return &data, err
+func ExampleCreate(ctx context.Context, tx database.Database) error {
+    data := entities.User{}
+    // Populate FirebaseID, Name, Email, Platforms, then:
+    return tx.QueryRaw(ctx, &data, entities.CreateUserWithFirebase)
 }
 ```
 

@@ -24,44 +24,39 @@ Models are organized by API version to support:
 
 The models are organized into logical categories:
 
-1. **User Models** (`v1/user.go`): User authentication, profiles, and team management
-2. **Token Models** (`v1/tokens.go`): JWT refresh tokens and authentication state
-3. **Log Models** (`v1/log.go`): Application logging and audit trail structures
+1. **User / auth** (`v1/user.go`): Firebase auth params, user DTOs, updates
+2. **Token models** (`v1/tokens.go`): Refresh token payloads
+3. **Log models** (`v1/log.go`): Log API shapes
+4. **Team, channel, analytics** — see files under `v1/`
 
-## Key Features
+## Key features
 
-### Validation Tags
-Models use Go struct tags for validation:
+### Validation tags
+Example (see source for current fields):
+
 ```go
-type SignupParams struct {
-    Name     string   `json:"name" binding:"required,min=2"`
-    Email    string   `json:"email" binding:"required,email"`
-    Password string   `json:"password" binding:"required,min=8"`
+type FirebaseAuthParams struct {
+    FirebaseID    string `json:"firebase_id" binding:"required"`
+    FirebaseToken string `json:"firebase_token" binding:"required"`
+    Platform      string `json:"platform" binding:"required,oneof=email google facebook microsoft"`
 }
 ```
 
-### JSON Serialization
-All models include JSON tags for API serialization:
-- Standard fields are serialized normally
-- Sensitive fields (like passwords) use `json:"-"` to exclude from output
-- Optional fields use `omitempty` to reduce payload size
+### JSON serialization
+- Sensitive fields use `json:"-"` where needed
+- Optional fields often use `omitempty`
 
-### Database Integration
-Models include GORM tags for database mapping:
-```go
-type RefreshToken struct {
-    ID        uuid.UUID `gorm:"type:uuid;default:gen_random_uuid();primaryKey"`
-    UserID    uuid.UUID `gorm:"type:uuid;index"`
-}
-```
+### Database integration
+
+Most persistence uses raw SQL via `entities` and `repositories`. A few structs in `models/v1` still carry `gorm` struct tags for historical or auxiliary use; the primary path is not GORM-backed in runtime code—prefer entities for DB shape.
 
 ## Usage Patterns
 
 ### Request/Response Models
 Models are used for:
-- **API Request Validation**: Input parameters with validation rules
-- **API Response Serialization**: Structured output with proper JSON formatting
-- **Database Operations**: Entity definitions with ORM mappings
+- **API request validation** — binding tags on request bodies
+- **API response serialization** — response DTOs
+- **Persistence** — usually via `entities` / SQL, not ORM
 
 ### Model Relationships
 The models define clear relationships:

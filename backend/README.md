@@ -1,286 +1,151 @@
 # PostEaze Backend
 
-The PostEaze backend is a Go-based REST API server that provides authentication, logging, and social media management functionality. Built with the Gin web framework, it follows a layered architecture pattern with clear separation of concerns between API routing, business logic, data access, and infrastructure components.
+Go REST API for PostEaze: Firebase-based authentication, teams, Instagram channels, webhooks, background jobs (Asynq/Redis), and analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
 
-## Architecture Overview
-
-The backend follows a clean architecture approach with the following layers:
+## Architecture overview
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                     API Layer (Gin Router)                  │
-│                    /api/v1/* endpoints                      │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
-│                  Middleware Layer                           │
-│            Authentication, Logging, CORS                    │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
-│                  Business Logic Layer                       │
-│              Service implementations (v1)                   │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
-│                   Data Access Layer                         │
-│            Entities, Repositories, Models                   │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
-│                  Infrastructure Layer                       │
-│          Database, Config, Utils, Constants                 │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
-│                   Provider Layer                            │
-│              External Service Providers (Meta)              │
-└─────────────────────┬───────────────────────────────────────┘
-                      │
-┌─────────────────────▼───────────────────────────────────────┐
-│                  Task Queue (Asynq)                         │
-│          Producer (Client) & Consumer (Worker)              │
-└─────────────────────────────────────────────────────────────┘
+│                     API (Gin) — /api/*                       │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│  Middleware — CORS, request logging, JWT, channel analytics   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│  Business — business/v1 (auth, user, team, channel, log)    │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│  Data — entities, repositories, models/v1                   │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│  Infrastructure — configs, Redis, encryption, Firebase      │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│  Providers — Meta, Instagram                                  │
+│  Tasks — Asynq client (API) + worker (cmd/worker)             │
+└───────────────────────────────────────────────────────────────┘
 ```
 
-## Request Flow
+## Request flow
 
-1. **HTTP Request** → Gin Router (`api/router.go`)
-2. **Middleware Processing** → Authentication, Logging (`middleware/`)
-3. **Route Matching** → API v1 handlers (`api/v1/`)
-4. **Business Logic** → Service layer (`business/v1/`)
-5. **Data Access** → Repository pattern (`entities/repositories/`)
-6. **Database** → PostgreSQL via `lib/pq` driver
+1. **HTTP** → `api/router.go` (`api.Init`)
+2. **Middleware** → CORS, `GinLoggingMiddleware`, route-specific `AuthMiddleware` / `RequireInstagramChannelAnalyticsAccess`
+3. **Handlers** → `api/v1/*.go`
+4. **Business** → `business/v1/`
+5. **Repositories** → `entities/repositories/` → PostgreSQL
 
-## Key Components
+## Key directories
 
-### Core Application Files
-- **`main.go`** - Application entry point and service initialization
-- **`go.mod`** - Go module definition and dependencies
-- **`Dockerfile`** - Container configuration for deployment
+| Path | Role |
+|------|------|
+| `main.go` | Startup: env, configs, DB, Redis, encryption, Firebase, Asynq client, router, HTTP client |
+| `api/` | Router, Swagger, `v1` handlers, Instagram webhooks |
+| `business/v1/` | Domain logic (Firebase auth, users, teams, channels, logs) |
+| `entities/` | `RawEntity` SQL patterns; `repositories/` data access |
+| `models/v1/` | Request/response and shared structs |
+| `migrations/` | Numbered `*.up.sql` / `*.down.sql` |
+| `middleware/` | Logging, JWT auth, roles, Instagram analytics access |
+| `provider/` | Meta Graph API, Instagram OAuth |
+| `services/` | Email, Redis, Meta, Instagram orchestration |
+| `tasks/` | Asynq task definitions, handlers, scheduler |
+| `cmd/worker/` | Standalone worker process |
+| `utils/` | Config, DB, env, flags, HTTP, JWT, Firebase, Redis, encryption |
+| `resources/configs/` | Per-environment YAML (`dev/`, `cug/`, `prod/`) |
 
-### Architecture Layers
+## Service initialization (`main.go`)
 
-#### API Layer (`api/`)
-- **`router.go`** - Main router configuration and route grouping
-- **`v1/`** - Version 1 API handlers and endpoints
-- Handles HTTP request/response processing and routing
+Order: `initEnv` → `initConfigs` → `initDatabase` → `initRedis` → `initEncryption` → `initFirebase` → `initAsynq` → `initRouter` → `initHttp`.
 
-#### Business Logic (`business/`)
-- **`v1/`** - Version 1 business logic implementations
-- Contains service layer with core application logic
-- Orchestrates data operations and business rules
+- **Configs**: `dev` uses `resources/configs/dev` (override with `-base-config-path`); `release` uses AWS App Config.
+- **Database**: PostgreSQL URL from config + `utils/env` substitution.
+- **Asynq**: Client only in the API process; run `cmd/worker` for consumers.
 
-#### Data Layer
-- **`entities/`** - Domain entities and repository interfaces
-- **`models/`** - Data models and structures (versioned)
-- **`migrations/`** - Database schema migrations
+## API surface (summary)
 
-#### Infrastructure
-- **`middleware/`** - HTTP middleware components (auth, logging)
-- **`utils/`** - Utility functions and helper modules
-- **`constants/`** - Application constants and configuration keys
-- **`resources/`** - Configuration files and static resources
+Base path: `/api/v1` unless noted.
 
-#### Provider Layer (`provider/`)
-- **`meta/`** - Meta (Facebook/Instagram) integration provider
-- **`instagram/`** - Instagram Basic Display API provider
-- Handles external API interactions
+| Area | Methods | Notes |
+|------|---------|--------|
+| Health | `GET /api/health` | No version prefix |
+| Swagger | `GET /api/swagger/*` | UI at `/api/swagger/index.html` |
+| Auth | `POST /auth/authenticate`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me` | Firebase ID token + platform; JWT for API |
+| Logs | `GET /log/byDate/:date`, `GET /log/byId/:log_id` | |
+| User | `GET /user/:user_id`, `PUT /user/:user_id` | |
+| Team | `POST /team/create`, `GET /team/all`, `GET /team/:id`, `GET /team/owner/:id`, `PUT /team/update`, `PUT /team/update-status` | |
+| Meta | `POST /meta/callback` | OAuth callback |
+| Channels | `GET /channels`, `GET /channels/details`, `POST /channels/instagram/create`, `POST /channels/instagram/subscribe-webhooks` | Most require JWT |
+| Webhooks | `GET`, `POST /webhooks/instagram` | Meta verification + events |
+| Posts | `GET /posts` | JWT |
+| Analytics | `GET /channels/:channelId/analytics/...` | JWT + `RequireInstagramChannelAnalyticsAccess` (profile, posts, overview, dashboard, etc.) |
+| Dev | `POST /dev/generate-token` | Test JWT helpers when `ENV=development` / `dev` |
+| Cron (dev-oriented) | `POST /cron/trigger-instagram-sync`, `.../trigger-instagram-posts`, `.../trigger-instagram-analytics` | Guarded by `ENV` in handlers |
 
-#### Services Layer (`services/`)
-- **`email_service/`** - Email sending via SMTP
-- **`redis_service/`** - Redis caching operations
-- **`meta_service/`** - Meta OAuth and page fetching
-- **`instagram_service/`** - Instagram channel creation and token management
-- Business service implementations
+See [`api/v1/README.md`](api/v1/README.md) and [`api/webhooks/README.md`](api/webhooks/README.md) for detail.
 
-#### Utilities (`utils/`)
-- **`encryption/`** - AES-GCM encryption for sensitive data (tokens)
-- **`database/`** - Database connection and query utilities
-- **`redis/`** - Redis client initialization
-- Various helper functions
+## Dependencies (high level)
 
-#### Task Queue (`tasks/`)
-- **`definitions.go`** - Task types and payloads
-- **`client.go`** - Task producer (enqueue)
-- **`server.go`** - Task consumer (worker)
-- **`handlers.go`** - Task processing logic
-- **`scheduler.go`** - Periodic task scheduler
+- **Web**: `gin-gonic/gin`, `gin-contrib/cors`, `swaggo` (Swagger UI)
+- **DB**: `lib/pq`
+- **Auth**: `golang-jwt/jwt/v5`, Firebase Admin SDK (`firebase.google.com/go/v4`)
+- **Cache / queue**: `redis/go-redis`, `hibiken/asynq`
+- **Config**: `sinhashubham95/go-config-client`, `joho/godotenv`
 
-#### Worker (`cmd/worker/`)
-- **`main.go`** - Entry point for the background worker process
+## Local development
 
-## Service Initialization
+**Prerequisites:** Go 1.23+, PostgreSQL, Redis (for Asynq), `.env` aligned with `resources/configs/dev`.
 
-The `main.go` file initializes services in the following order:
-
-```go
-func main() {
-    ctx := context.Background()
-    initEnv()        // Load environment variables
-    initConfigs(ctx) // Initialize configuration management
-    initDatabase(ctx)// Set up database connection pool
-    initRouter(ctx)  // Configure HTTP router and start server
-    initHttp(ctx)    // Initialize HTTP client utilities
-}
-```
-
-### Environment & Configuration
-- **Environment Variables**: Loaded via `utils/env` package
-- **Configuration Management**: Multi-environment config support (dev/release)
-- **AWS Integration**: Supports AWS AppConfig and Secrets Manager in release mode
-
-### Database Connection
-- **Driver**: PostgreSQL (`lib/pq`)
-- **Connection Pooling**: Configurable max connections and timeouts
-- **Configuration**: Database URL and connection parameters from config files
-
-### HTTP Server
-- **Framework**: Gin web framework
-- **Middleware**: Logging and authentication middleware applied globally
-- **Routing**: Grouped routes with versioning (`/api/v1/*`)
-
-## Key Dependencies
-
-### Core Framework
-- **`gin-gonic/gin`** - HTTP web framework
-- **`lib/pq`** - PostgreSQL driver
-
-### Authentication & Security
-- **`golang-jwt/jwt/v5`** - JWT token handling
-- **`google/uuid`** - UUID generation
-
-### Configuration & Environment
-- **`joho/godotenv`** - Environment variable loading
-- **`sinhashubham95/go-config-client`** - Advanced configuration management
-- **AWS SDK v2** - Cloud configuration and secrets management
-
-## API Endpoints
-
-### Health Check
-- **GET** `/api/health` - Service health status
-
-### Authentication (`/api/v1/auth`)
-- **POST** `/signup` - User registration
-- **POST** `/login` - User authentication
-- **POST** `/refresh` - Token refresh (requires auth)
-- **POST** `/logout` - User logout (requires auth)
-
-### Logging (`/api/v1/log`)
-- **GET** `/byDate/:date` - Retrieve logs by date
-- **GET** `/byId/:log_id` - Retrieve specific log entry
-
-### Meta Integration (`/api/v1/meta`)
-- **POST** `/callback` - Exchange auth code for pages
-
-#### Channels
-- `POST /api/v1/channels/instagram/create` - Create Instagram channel (requires auth)
-- `GET /api/v1/channels` - Get all channels for authenticated user (optional `?provider=instagram` filter)
-- `GET /api/v1/channels/details?channel_id={id}` - Get Instagram page details for a channel (requires auth)
-
-#### Webhooks
-- `GET /api/v1/webhooks/instagram` - Instagram webhook verification
-- `POST /api/v1/webhooks/instagram` - Instagram webhook event receiver
-
-#### Development (Dev Mode Only)
-- `POST /api/v1/dev/generate-token` - Generate test JWT token (30-day validity)
-
-## Development Setup
-
-### Prerequisites
-- Go 1.23 or higher
-- PostgreSQL database
-- Environment variables configured (see `.env` file)
-
-### Running the Application
 ```bash
-# Install dependencies
+cd backend
 go mod download
-
-# Run database migrations
-# (See migrations/ folder for SQL files)
-
-# Start the server
-go run main.go
+# Apply SQL in migrations/ in order (see migrations/README.md)
+go run .
 ```
 
-## API Documentation
+Flags: `-mode` (`dev` | `release`), `-port`, `-base-config-path` (default `resources/configs/dev`).
 
-The API is documented using Swagger/OpenAPI. Once the server is running, you can access the interactive API documentation at:
+## Swagger
 
-**Swagger UI**: `http://localhost:8080/api/swagger/index.html`
+Regenerate after changing handler comments:
 
-To regenerate Swagger documentation after making changes to API endpoints:
 ```bash
-# Install swag CLI tool (one-time setup)
 go install github.com/swaggo/swag/cmd/swag@latest
-
-# Generate/update Swagger docs
-~/go/bin/swag init
+cd backend && swag init
 ```
 
-### Configuration
-The application supports two modes:
-- **Development Mode**: Uses local config files from `resources/configs/`
-- **Release Mode**: Uses AWS AppConfig and environment variables
+Swagger host comes from `API_HOST` (see `api/router.go`). Open `http://<API_HOST>/api/swagger/index.html` (scheme/path must match your deployment).
 
-### Environment Variables
-Key environment variables required:
-- `INSTAGRAM_APP_ID` - Instagram app credentials
-- `INSTAGRAM_APP_SECRET` - Instagram app secret
-- `INSTAGRAM_REDIRECT_URI` - OAuth redirect URI
-- `META_APP_ID` - Meta (Facebook) app credentials
-- `META_APP_SECRET` - Meta app secret
-- `ENCRYPTION_KEY` - Base64-encoded 32-byte AES key for token encryption
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_EMAIL`, `SMTP_PASSWORD` - Email service config
+## Environment variables (common)
 
-Generate encryption key:
-```bash
-openssl rand -base64 32
-```
+| Variable | Purpose |
+|----------|---------|
+| `ENV` | `development` / `dev` vs production behavior (e.g. dev-only routes) |
+| `API_HOST` | Swagger `Host` field |
+| Firebase / `GOOGLE_APPLICATION_CREDENTIALS` | Firebase Admin (see `utils/firebase.go`) |
+| `ENCRYPTION_KEY` | Base64 32-byte key for channel tokens |
+| `INSTAGRAM_*`, `META_*` | Instagram/Meta app and webhooks |
+| `REDIS_ADDR` | Asynq broker (worker + API) |
+| `SMTP_*` | Email (if used) |
 
-## Security Features
+Generate encryption key: `openssl rand -base64 32`
 
-- **JWT Authentication**: Stateless token-based authentication
-- **Middleware Protection**: Routes protected by authentication middleware
-- **Environment Variable Security**: Sensitive data loaded from environment
-- **Database Connection Security**: Connection pooling with timeout controls
+## Security
+
+- JWT on protected routes via `Authorization: Bearer <access_token>`
+- Firebase ID tokens verified on `/auth/authenticate`
+- Instagram webhooks: `X-Hub-Signature-256` verification
 
 ## Logging
 
-- **Request Logging**: All HTTP requests logged via Gin middleware
-- **Application Logging**: Structured logging with date-based log files
-- **Log Storage**: Daily log files in `logs/` directory
-- **Log API**: Endpoints to retrieve and query log data
+Structured logs under `logs/` (see [`logs/README.md`](logs/README.md)); HTTP logging middleware attaches request correlation IDs.
 
-## Related Documentation
+## Related docs
 
-- [`api/`](api/) - API layer and routing documentation
-- [`business/`](business/) - Business logic layer documentation
-- [`entities/`](entities/) - Data models and repository patterns
-- [`middleware/`](middleware/) - HTTP middleware components
-- [`utils/`](utils/) - Utility functions and helpers
-- [`migrations/`](migrations/) - Database schema and migration procedures
-- [`provider/`](provider/) - External service providers documentation
-- [`services/`](services/) - Business services documentation
-- [`scripts/`](scripts/) - Utility scripts and test runners
-
----
-
-## Background Tasks
-
-The application uses [Asynq](https://github.com/hibiken/asynq) for background task processing and scheduling.
-
-### Task Queue
-- Processes webhook events asynchronously
-- Handles email delivery
-- Manages Instagram profile synchronization
-
-### Periodic Tasks
-- **Instagram Profile Sync**: Runs every 6 hours to update channel metadata with latest Instagram profile data
-
-For detailed information about tasks, see [Tasks Documentation](tasks/README.md).
-
----
-
-For detailed information about webhooks, see [Webhooks Documentation](api/webhooks/README.md).
+- [`api/README.md`](api/README.md), [`api/v1/README.md`](api/v1/README.md)
+- [`business/README.md`](business/README.md), [`tasks/README.md`](tasks/README.md)
+- [`migrations/README.md`](migrations/README.md), [`middleware/README.md`](middleware/README.md)
+- [`docs/firebase-authentication.md`](docs/firebase-authentication.md)
