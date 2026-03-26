@@ -155,11 +155,13 @@ func MapTopPostItems(items []repositories.TopPost) []modelsv1.TopPostItem {
 	out := make([]modelsv1.TopPostItem, 0, len(items))
 	for _, tp := range items {
 		out = append(out, modelsv1.TopPostItem{
-			PostID:      tp.PostID,
-			PostType:    tp.PostType,
-			Caption:     tp.Caption,
-			PublishedAt: FormatAnalyticsTimePtr(tp.PublishedAt),
-			Impressions: tp.Impressions,
+			PostID:       tp.PostID,
+			PostType:     tp.PostType,
+			Caption:      tp.Caption,
+			PublishedAt:  FormatAnalyticsTimePtr(tp.PublishedAt),
+			ThumbnailURL: tp.ThumbnailURL,
+			Permalink:    tp.Permalink,
+			Impressions:  tp.Impressions,
 			Reach:       tp.Reach,
 			Likes:       tp.Likes,
 			Comments:    tp.Comments,

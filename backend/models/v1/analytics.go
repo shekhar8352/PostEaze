@@ -93,11 +93,13 @@ type OverviewResponse struct {
 
 // TopPostItem is a ranked post with latest metrics in range.
 type TopPostItem struct {
-	PostID      int64   `json:"post_id"`
-	PostType    string  `json:"post_type"`
-	Caption     string  `json:"caption"`
-	PublishedAt *string `json:"published_at,omitempty"`
-	Impressions int     `json:"impressions"`
+	PostID       int64   `json:"post_id"`
+	PostType     string  `json:"post_type"`
+	Caption      string  `json:"caption"`
+	PublishedAt  *string `json:"published_at,omitempty"`
+	ThumbnailURL *string `json:"thumbnail_url,omitempty"`
+	Permalink    *string `json:"permalink,omitempty"`
+	Impressions  int     `json:"impressions"`
 	Reach       int     `json:"reach"`
 	Likes       int     `json:"likes"`
 	Comments    int     `json:"comments"`

@@ -105,8 +105,9 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 			// Create media JSON
 			mediaJSON, err := json.Marshal([]map[string]string{
 				{
-					"url":  media.MediaURL,
-					"type": media.MediaType,
+					"url":       media.MediaURL,
+					"type":      media.MediaType,
+					"permalink": media.Permalink,
 				},
 			})
 			if err != nil {

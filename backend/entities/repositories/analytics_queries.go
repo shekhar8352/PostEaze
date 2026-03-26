@@ -285,18 +285,20 @@ func GetPostDetailedAnalytics(ctx context.Context, postID int64, limit int) ([]e
 
 // TopPost represents a post with its analytics
 type TopPost struct {
-	PostID      int64
-	PostType    string
-	Caption     string
-	PublishedAt *time.Time
-	Impressions int
-	Reach       int
-	Likes       int
-	Comments    int
-	Saves       int
-	Shares      int
-	Plays       int
-	Engagement  int
+	PostID       int64
+	PostType     string
+	Caption      string
+	PublishedAt  *time.Time
+	ThumbnailURL *string
+	Permalink    *string
+	Impressions  int
+	Reach        int
+	Likes        int
+	Comments     int
+	Saves        int
+	Shares       int
+	Plays        int
+	Engagement   int
 }
 
 // TopPostsSort controls ranking for GetTopPosts (whitelist).
@@ -344,6 +346,8 @@ func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, end
 			COALESCE(p.post_type, 'post') AS post_type,
 			COALESCE(p.caption, '') AS caption,
 			p.published_at,
+			NULLIF(TRIM(COALESCE(p.media->0->>'url', p.media->0->>'media_url', '')), '') AS thumbnail_url,
+			NULLIF(TRIM(COALESCE(p.media->0->>'permalink', '')), '') AS permalink,
 			COALESCE(latest.impressions, 0) AS impressions,
 			COALESCE(latest.reach, 0) AS reach,
 			COALESCE(latest.likes, 0) AS likes,
@@ -373,11 +377,14 @@ func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, end
 	for rows.Next() {
 		var tp TopPost
 		var pubAt sql.NullTime
+		var thumb, link sql.NullString
 		err := rows.Scan(
 			&tp.PostID,
 			&tp.PostType,
 			&tp.Caption,
 			&pubAt,
+			&thumb,
+			&link,
 			&tp.Impressions,
 			&tp.Reach,
 			&tp.Likes,
@@ -393,6 +400,14 @@ func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, end
 		if pubAt.Valid {
 			t := pubAt.Time
 			tp.PublishedAt = &t
+		}
+		if thumb.Valid && thumb.String != "" {
+			s := thumb.String
+			tp.ThumbnailURL = &s
+		}
+		if link.Valid && link.String != "" {
+			s := link.String
+			tp.Permalink = &s
 		}
 		topPosts = append(topPosts, tp)
 	}
