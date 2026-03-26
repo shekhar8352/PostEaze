@@ -241,10 +241,6 @@ run: ## Run the application
 	@echo "Running application..."
 	@go run main.go
 
-dev: ## Run application in development mode
-	@echo "Running application in development mode..."
-	@MODE=dev go run main.go
-
 # Code quality commands
 lint: ## Run linter
 	@echo "Running linter..."
