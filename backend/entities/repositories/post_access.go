@@ -13,7 +13,7 @@ func PostBelongsToChannel(ctx context.Context, postID, channelID int64) (bool, e
 	err := db.QueryRowContext(ctx, `
 		SELECT EXISTS (
 			SELECT 1 FROM posts
-			WHERE id = $1 AND channel_ids @> jsonb_build_array($2::bigint)
+			WHERE id = $1 AND $2 = ANY(channel_ids)
 		)
 	`, postID, channelID).Scan(&ok)
 	return ok, err

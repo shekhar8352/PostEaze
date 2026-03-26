@@ -94,7 +94,7 @@ func CountPostAnalyticsInRange(ctx context.Context, channelID int64, startDate, 
 	db := database.GetDB()
 	base := `
 		SELECT COUNT(*) FROM instagram_post_analytics pa
-		JOIN posts p ON p.id = pa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		JOIN posts p ON p.id = pa.post_id AND $1 = ANY(p.channel_ids)
 		WHERE pa.channel_id = $1 AND pa.date >= $2::date AND pa.date <= $3::date
 	`
 	args := []interface{}{channelID, startDate, endDate}
@@ -115,7 +115,7 @@ func GetPostAnalyticsByDateRange(ctx context.Context, channelID int64, startDate
 		       pa.saves, pa.shares, pa.video_views, pa.profile_visits, pa.follows, pa.views, pa.total_interactions,
 		       pa.engagement_rate, pa.plays, pa.raw, pa.created_at
 		FROM instagram_post_analytics pa
-		JOIN posts p ON p.id = pa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		JOIN posts p ON p.id = pa.post_id AND $1 = ANY(p.channel_ids)
 		WHERE pa.channel_id = $1 AND pa.date >= $2::date AND pa.date <= $3::date
 	`
 	args := []interface{}{channelID, startDate, endDate}
@@ -354,7 +354,7 @@ func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, end
 			COALESCE(latest.likes, 0) + COALESCE(latest.comments, 0) + COALESCE(latest.saves, 0) + COALESCE(latest.shares, 0) AS engagement
 		FROM posts p
 		INNER JOIN latest ON latest.post_id = p.id
-		WHERE p.channel_ids @> jsonb_build_array($1::bigint)
+		WHERE $1 = ANY(p.channel_ids)
 			AND p.published_at IS NOT NULL
 			AND (p.published_at AT TIME ZONE 'UTC')::date >= $2::date
 			AND (p.published_at AT TIME ZONE 'UTC')::date <= $3::date
@@ -447,7 +447,7 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 	newPostsQuery := `
 		SELECT COUNT(*) 
 		FROM posts 
-		WHERE channel_ids @> jsonb_build_array($1::bigint)
+		WHERE $1 = ANY(channel_ids)
 			AND published_at IS NOT NULL
 			AND (published_at AT TIME ZONE 'UTC')::date >= $2::date
 			AND (published_at AT TIME ZONE 'UTC')::date <= $3::date
@@ -457,7 +457,7 @@ func GetPostsOverview(ctx context.Context, channelID int64, startDate, endDate t
 	totalPostsQuery := `
 		SELECT COUNT(*) 
 		FROM posts 
-		WHERE channel_ids @> jsonb_build_array($1::bigint)
+		WHERE $1 = ANY(channel_ids)
 	`
 
 	// Get aggregated analytics for the date range from instagram_post_analytics
@@ -555,7 +555,7 @@ func CountStoryAnalyticsInRange(ctx context.Context, channelID int64, startDate,
 	db := database.GetDB()
 	q := `
 		SELECT COUNT(*) FROM instagram_story_analytics sa
-		JOIN posts p ON p.id = sa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		JOIN posts p ON p.id = sa.post_id AND $1 = ANY(p.channel_ids)
 		WHERE sa.channel_id = $1 AND sa.date >= $2::date AND sa.date <= $3::date
 	`
 	args := []interface{}{channelID, startDate, endDate}
@@ -576,7 +576,7 @@ func GetStoryAnalyticsJoined(ctx context.Context, channelID int64, startDate, en
 		       sa.replies, sa.taps_forward, sa.taps_backward, sa.taps_exit, sa.raw, sa.created_at,
 		       COALESCE(p.caption, ''), COALESCE(p.post_type, ''), p.published_at
 		FROM instagram_story_analytics sa
-		JOIN posts p ON p.id = sa.post_id AND p.channel_ids @> jsonb_build_array($1::bigint)
+		JOIN posts p ON p.id = sa.post_id AND $1 = ANY(p.channel_ids)
 		WHERE sa.channel_id = $1 AND sa.date >= $2::date AND sa.date <= $3::date
 	`
 	args := []interface{}{channelID, startDate, endDate}
