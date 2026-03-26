@@ -30,10 +30,13 @@ var profileInsightsMetricBatches = [][]string{
 	{"accounts_engaged", "total_interactions", "views"},
 }
 
-// Lifetime audience breakdowns (Graph API period=lifetime). Batched so one failing metric does not block others.
-var audienceInsightMetricBatches = [][]string{
-	{"audience_city", "audience_country"},
-	{"audience_gender_age", "audience_locale"},
+// Lifetime audience breakdowns (Graph API period=lifetime). One request per metric so failures are isolated
+// and logs name the failing metric. Meta often returns HTTP 200 with an empty "data" array if unavailable.
+var audienceInsightMetrics = []string{
+	"audience_city",
+	"audience_country",
+	"audience_gender_age",
+	"audience_locale",
 }
 
 // HandleSyncInstagramAnalyticsTask syncs Instagram analytics for all active channels
@@ -147,22 +150,27 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 }
 
 func syncAudienceInsights(ctx context.Context, provider instagram.InstagramProvider, channelID int64, igUserID, accessToken string) error {
+	utils.Logger.Info(ctx, fmt.Sprintf("Fetching Instagram audience insights (lifetime demographics) for channel %d", channelID))
+
 	var merged []instagram.InsightData
-	for _, batch := range audienceInsightMetricBatches {
-		resp, err := provider.GetAudienceInsights(accessToken, igUserID, batch)
+	for _, metric := range audienceInsightMetrics {
+		resp, err := provider.GetAudienceInsights(accessToken, igUserID, []string{metric})
 		if err != nil {
 			var gerr *instagram.GraphAPIError
 			if errors.As(err, &gerr) {
-				utils.Logger.Warn(ctx, fmt.Sprintf("Audience insights batch skipped for channel %d metrics=%v: %s", channelID, batch, gerr.Message))
+				utils.Logger.Warn(ctx, fmt.Sprintf("Audience metric %q unavailable for channel %d: %s", metric, channelID, gerr.Message))
 			} else {
-				utils.Logger.Warn(ctx, fmt.Sprintf("Audience insights batch failed for channel %d metrics=%v: %v", channelID, batch, err))
+				utils.Logger.Warn(ctx, fmt.Sprintf("Audience metric %q request failed for channel %d: %v", metric, channelID, err))
 			}
+			continue
+		}
+		if len(resp.Data) == 0 {
 			continue
 		}
 		merged = append(merged, resp.Data...)
 	}
 	if len(merged) == 0 {
-		utils.Logger.Info(ctx, fmt.Sprintf("No audience demographic data stored for channel %d (ineligible or unavailable from Instagram)", channelID))
+		utils.Logger.Info(ctx, fmt.Sprintf("No audience snapshot stored for channel %d: Instagram returned no lifetime demographic data (professional account required; audience_* metrics often need 100+ followers and insights permissions)", channelID))
 		return nil
 	}
 	wrapped := struct {
