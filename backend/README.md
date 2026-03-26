@@ -71,7 +71,7 @@ Base path: `/api/v1` unless noted.
 
 | Area | Methods | Notes |
 |------|---------|--------|
-| Health | `GET /api/health` | No version prefix |
+| Health | `GET /api/health` (liveness), `GET /api/health/postgres`, `GET /api/health/redis`, `GET /api/health/ready` | No version prefix; `ready` returns 503 if PG or Redis unavailable |
 | Swagger | `GET /api/swagger/*` | UI at `/api/swagger/index.html` |
 | Auth | `POST /auth/authenticate`, `POST /auth/refresh`, `POST /auth/logout`, `GET /auth/me` | Firebase ID token + platform; JWT for API |
 | Logs | `GET /log/byDate/:date`, `GET /log/byId/:log_id` | |

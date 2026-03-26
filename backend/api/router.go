@@ -52,11 +52,7 @@ func Init() error {
 
 	api := s.Group(constants.ApiRoute)
 
-	api.GET("/health", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"status": "ok",
-		})
-	})
+	registerHealthRoutes(api)
 
 	v1 := api.Group(constants.V1Route)
 	{

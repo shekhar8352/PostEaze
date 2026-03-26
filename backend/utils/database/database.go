@@ -58,6 +58,9 @@ func Close() error {
 
 // Ping is used to check the connectivity to the database instance.
 func Ping(ctx context.Context) error {
+	if db == nil {
+		return errors.New("database not initialized")
+	}
 	return db.PingContext(ctx)
 }
 

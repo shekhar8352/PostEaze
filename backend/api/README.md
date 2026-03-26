@@ -7,6 +7,7 @@ HTTP interface for the PostEaze backend: Gin router, versioned REST handlers und
 ```
 api/
 ├── router.go       # Gin engine, CORS, middleware, route groups, Swagger
+├── health.go       # Liveness + Postgres/Redis checks + readiness aggregate
 ├── v1/             # Version 1 handlers (auth, user, team, channel, log, meta, posts, analytics, dev, cron)
 └── webhooks/       # Instagram webhook verify + POST handler
 ```
@@ -15,7 +16,7 @@ api/
 
 1. **CORS** — Allowed origins include local Vite and configured dev hosts; methods `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`; `Authorization` allowed.
 2. **`GinLoggingMiddleware`** — Request/response logging (global).
-3. **Groups** — `GET /api/health`; ` /api/v1` registers auth, logs, user, team, meta, channels (+ webhooks path), dev, cron, posts, analytics.
+3. **Groups** — Health: `GET /api/health` (liveness), `GET /api/health/postgres`, `GET /api/health/redis`, `GET /api/health/ready` (503 if PG or Redis down). `/api/v1` registers auth, logs, user, team, meta, channels (+ webhooks path), dev, cron, posts, analytics.
 4. **Swagger** — `GET /api/swagger/*` via `gin-swagger`; `docs.SwaggerInfo` uses `API_HOST` and base path `/api/v1`.
 
 ## Route registration (v1)

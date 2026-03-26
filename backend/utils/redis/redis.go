@@ -61,3 +61,11 @@ func Init(ctx context.Context) error {
 func GetClient() *redis.Client {
 	return client
 }
+
+// Ping checks connectivity to Redis (PING command).
+func Ping(ctx context.Context) error {
+	if client == nil {
+		return fmt.Errorf("redis not initialized")
+	}
+	return client.Ping(ctx).Err()
+}
