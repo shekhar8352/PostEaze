@@ -159,12 +159,12 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 	utils.Logger.Info(ctx, fmt.Sprintf("Upserting profile analytics for %d dates", len(metricsByDate)))
 	for _, analytics := range metricsByDate {
 		analytics.Raw = nil
-		utils.Logger.Info(ctx, fmt.Sprintf("Upserting analytics for date %s: reach=%v, profile_views=%v, follower_count=%v, website_clicks=%v",
+		utils.Logger.Info(ctx, fmt.Sprintf("Upserting analytics for date %s: reach=%s, profile_views=%s, follower_count=%s, website_clicks=%s",
 			analytics.Date.Format("2006-01-02"),
-			analytics.Reach,
-			analytics.ProfileViews,
-			analytics.FollowerCount,
-			analytics.WebsiteClicks))
+			formatIntPtr(analytics.Reach),
+			formatIntPtr(analytics.ProfileViews),
+			formatIntPtr(analytics.FollowerCount),
+			formatIntPtr(analytics.WebsiteClicks)))
 		if err := repositories.UpsertInstagramProfileAnalytics(ctx, analytics); err != nil {
 			utils.Logger.Error(ctx, fmt.Sprintf("Failed to upsert profile analytics: %v", err))
 		} else {
@@ -173,6 +173,13 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 	}
 
 	return nil
+}
+
+func formatIntPtr(p *int) string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%d", *p)
 }
 
 func syncPostsAnalytics(ctx context.Context, provider instagram.InstagramProvider, channelID int64, accessToken string) error {

@@ -7,6 +7,15 @@ import (
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
 
+// jsonbOrEmpty avoids pq sending an empty string for nil/empty []byte, which PostgreSQL
+// rejects for JSONB ("invalid input syntax for type json").
+func jsonbOrEmpty(b []byte) []byte {
+	if len(b) == 0 {
+		return []byte("{}")
+	}
+	return b
+}
+
 // UpsertInstagramPostAnalytics inserts or updates Instagram post analytics
 func UpsertInstagramPostAnalytics(ctx context.Context, analytics *entities.InstagramPostAnalytics) error {
 	db := database.GetDB()
@@ -49,7 +58,7 @@ func UpsertInstagramPostAnalytics(ctx context.Context, analytics *entities.Insta
 		analytics.TotalInteractions,
 		analytics.EngagementRate,
 		analytics.Plays,
-		analytics.Raw,
+		jsonbOrEmpty(analytics.Raw),
 	).Scan(&analytics.ID, &analytics.CreatedAt)
 }
 
@@ -85,7 +94,7 @@ func UpsertInstagramStoryAnalytics(ctx context.Context, analytics *entities.Inst
 		analytics.TapsForward,
 		analytics.TapsBackward,
 		analytics.TapsExit,
-		analytics.Raw,
+		jsonbOrEmpty(analytics.Raw),
 	).Scan(&analytics.ID, &analytics.CreatedAt)
 }
 
@@ -130,6 +139,6 @@ func UpsertInstagramProfileAnalytics(ctx context.Context, analytics *entities.In
 		analytics.PhoneCallClicks,
 		analytics.TextMessageClicks,
 		analytics.GetDirectionsClicks,
-		analytics.Raw,
+		jsonbOrEmpty(analytics.Raw),
 	).Scan(&analytics.ID, &analytics.CreatedAt)
 }
