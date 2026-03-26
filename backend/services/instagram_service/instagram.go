@@ -132,7 +132,7 @@ func (s *InstagramServiceImpl) CreateChannel(ctx context.Context, code string, c
 	err = s.provider.SubscribeToWebhooks(longTokenResp.AccessToken, fmt.Sprintf("%d", shortTokenResp.UserID), webhookFields)
 	if err != nil {
 		// Webhooks are not compulsory as of now, so we just log the error and proceed
-		utils.Logger.Warn(ctx, "Warning: failed to subscribe to webhooks: ", err)
+		utils.Logger.Warn(ctx, "Warning: failed to subscribe to webhooks: %v", err)
 	}
 
 	// 9. Commit transaction

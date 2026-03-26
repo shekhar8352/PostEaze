@@ -33,7 +33,7 @@ func HandleEmailDeliveryTask(ctx context.Context, t *asynq.Task) error {
 	if err := json.Unmarshal(t.Payload(), &p); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
-	utils.Logger.Info(ctx, "Sending Email to User: ", p.UserID, ", Subject: ", p.Subject)
+	utils.Logger.Info(ctx, "Sending email to user %s, subject %s", p.UserID, p.Subject)
 	// Logic to send email would go here
 	return nil
 }
@@ -44,7 +44,7 @@ func HandleLogMessageTask(ctx context.Context, t *asynq.Task) error {
 	if err := json.Unmarshal(t.Payload(), &p); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
-	utils.Logger.Info(ctx, "Log Task: ", p.Message)
+	utils.Logger.Info(ctx, "Log task: %s", p.Message)
 	return nil
 }
 
@@ -54,7 +54,7 @@ func HandleInstagramCommentTask(ctx context.Context, t *asynq.Task) error {
 	if err := json.Unmarshal(t.Payload(), &change); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
-	utils.Logger.Info(ctx, "Processing Instagram Comment: ", change)
+	utils.Logger.Info(ctx, "Processing Instagram comment: %v", change)
 	// TODO: Implement comment processing logic (e.g., save to DB, notify user)
 	return nil
 }
@@ -65,7 +65,7 @@ func HandleInstagramMentionTask(ctx context.Context, t *asynq.Task) error {
 	if err := json.Unmarshal(t.Payload(), &change); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
-	utils.Logger.Info(ctx, "Processing Instagram Mention: ", change)
+	utils.Logger.Info(ctx, "Processing Instagram mention: %v", change)
 	// TODO: Implement mention processing logic
 	return nil
 }
@@ -76,7 +76,7 @@ func HandleInstagramStoryInsightTask(ctx context.Context, t *asynq.Task) error {
 	if err := json.Unmarshal(t.Payload(), &change); err != nil {
 		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
 	}
-	utils.Logger.Info(ctx, "Processing Instagram Story Insight: ", change)
+	utils.Logger.Info(ctx, "Processing Instagram story insight: %v", change)
 	// TODO: Implement story insight processing logic
 	return nil
 }
@@ -88,17 +88,17 @@ func HandleSyncInstagramProfilesTask(ctx context.Context, t *asynq.Task) error {
 	// Fetch all active Instagram channels
 	channels, err := repositories.GetAllActiveInstagramChannels(ctx)
 	if err != nil {
-		utils.Logger.Error(ctx, "Failed to fetch Instagram channels: ", err)
+		utils.Logger.Error(ctx, "Failed to fetch Instagram channels: %v", err)
 		return err
 	}
 
-	utils.Logger.Info(ctx, "Found ", len(channels), " active Instagram channels to sync")
+	utils.Logger.Info(ctx, "Found %d active Instagram channels to sync", len(channels))
 
 	// Process each channel
 	for _, channel := range channels {
 		if err := syncChannelProfile(ctx, channel); err != nil {
 			// Log error and continue with next channel
-			utils.Logger.Error(ctx, "Failed to sync channel ", channel.ID, ": ", err)
+			utils.Logger.Error(ctx, "Failed to sync channel %d: %v", channel.ID, err)
 			continue
 		}
 	}
@@ -160,6 +160,6 @@ func syncChannelProfile(ctx context.Context, channel entities.Channel) error {
 		return fmt.Errorf("failed to update channel metadata: %w", err)
 	}
 
-	utils.Logger.Info(ctx, "Successfully synced profile for channel ", channel.ID)
+	utils.Logger.Info(ctx, "Successfully synced profile for channel %d", channel.ID)
 	return nil
 }

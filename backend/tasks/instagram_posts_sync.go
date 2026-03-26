@@ -22,7 +22,7 @@ func HandleSyncInstagramPostsTask(ctx context.Context, t *asynq.Task) error {
 	// Fetch all active Instagram channels
 	channels, err := repositories.GetAllActiveInstagramChannels(ctx)
 	if err != nil {
-		utils.Logger.Error(ctx, "Failed to fetch Instagram channels: ", err)
+		utils.Logger.Error(ctx, "Failed to fetch Instagram channels: %v", err)
 		return err
 	}
 
@@ -70,7 +70,8 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 	// Fetch media from Instagram
 	provider := instagram.NewInstagramProvider()
 	after := ""
-	totalSynced := 0
+	totalNew := 0
+	totalRefreshed := 0
 
 	for {
 		mediaResp, err := provider.GetMedia(decryptedToken, igUserID, after)
@@ -80,18 +81,6 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 
 		// Process each media item
 		for _, media := range mediaResp.Data {
-			// Check if post already exists
-			existingPost, err := repositories.GetPostByProviderID(ctx, channel.ID, media.ID)
-			if err != nil {
-				utils.Logger.Error(ctx, fmt.Sprintf("Error checking existing post: %v", err))
-				continue
-			}
-
-			if existingPost != nil {
-				// Post already exists, skip
-				continue
-			}
-
 			// Parse timestamp (Instagram format: "2020-08-09T04:12:37+0000")
 			publishedAt, err := time.Parse("2006-01-02T15:04:05-0700", media.Timestamp)
 			if err != nil {
@@ -99,10 +88,7 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 				publishedAt = time.Now()
 			}
 
-			// Determine post type
 			postType := getPostType(media.MediaType)
-
-			// Create media JSON
 			mediaJSON, err := json.Marshal([]map[string]string{
 				{
 					"url":       media.MediaURL,
@@ -115,15 +101,27 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 				mediaJSON = []byte("[]")
 			}
 
-			// Create provider_post_ids JSONB
+			existingPost, err := repositories.GetPostByProviderID(ctx, channel.ID, media.ID)
+			if err != nil {
+				utils.Logger.Error(ctx, fmt.Sprintf("Error checking existing post: %v", err))
+				continue
+			}
+
+			if existingPost != nil {
+				if err := repositories.UpdatePostFromInstagramSync(ctx, existingPost.ID, &postType, &media.Caption, mediaJSON, &publishedAt); err != nil {
+					utils.Logger.Error(ctx, fmt.Sprintf("Failed to refresh post %s (id %d): %v", media.ID, existingPost.ID, err))
+					continue
+				}
+				totalRefreshed++
+				continue
+			}
+
 			providerPostIDs, _ := json.Marshal(map[string]string{
 				"instagram": media.ID,
 			})
 
-			// Get owner ID as pointer
 			ownerIDStr := channel.OwnerUserID.String()
 
-			// Create new post
 			post := &entities.Post{
 				ChannelIDs:      pq.Int64Array{channel.ID},
 				OwnerID:         &ownerIDStr,
@@ -142,7 +140,7 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 				continue
 			}
 
-			totalSynced++
+			totalNew++
 		}
 
 		// Check if there are more pages
@@ -157,7 +155,7 @@ func syncChannelPosts(ctx context.Context, channel entities.Channel) error {
 		}
 	}
 
-	utils.Logger.Info(ctx, fmt.Sprintf("Synced %d new posts for channel %d", totalSynced, channel.ID))
+	utils.Logger.Info(ctx, fmt.Sprintf("Posts sync for channel %d: %d new, %d existing refreshed from Instagram", channel.ID, totalNew, totalRefreshed))
 	return nil
 }
 

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/utils/database"
@@ -32,6 +33,32 @@ func CreatePost(ctx context.Context, post *entities.Post) error {
 		post.Media,
 		post.PublishedAt,
 	).Scan(&post.ID, &post.CreatedAt, &post.UpdatedAt)
+}
+
+// UpdatePostFromInstagramSync refreshes fields from the Graph API when the post row already exists.
+func UpdatePostFromInstagramSync(ctx context.Context, postID int64, postType *string, caption *string, media []byte, publishedAt *time.Time) error {
+	db := database.GetDB()
+	query := `
+		UPDATE posts
+		SET post_type = $2,
+		    caption = $3,
+		    media = $4,
+		    published_at = $5,
+		    updated_at = NOW()
+		WHERE id = $1
+	`
+	res, err := db.ExecContext(ctx, query, postID, postType, caption, media, publishedAt)
+	if err != nil {
+		return err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if n == 0 {
+		return fmt.Errorf("no post row updated for id %d", postID)
+	}
+	return nil
 }
 
 // GetPostByProviderID retrieves a post by channel ID and provider post ID

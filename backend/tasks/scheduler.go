@@ -13,6 +13,13 @@ import (
 
 var scheduler *asynq.Scheduler
 
+// Instagram periodic sync specs (asynq "@every" duration). Sub-hour cadence; tune if you hit Graph API rate limits.
+const (
+	instagramProfileSyncSpec   = "@every 1h"
+	instagramPostsSyncSpec     = "@every 30m"
+	instagramAnalyticsSyncSpec = "@every 30m"
+)
+
 // InitScheduler initializes the Asynq scheduler
 func InitScheduler() error {
 	host, _ := configs.Get().GetString(constants.DatabaseConfig, constants.RedisHostConfigKey)
@@ -40,28 +47,26 @@ func InitScheduler() error {
 		},
 	)
 
-	// Register Instagram profile sync job to run every 6 hours (using slow queue for background jobs)
+	// Instagram sync jobs (slow queue). Restart scheduler after changing constants above.
 	syncTask := asynq.NewTask(TypeSyncInstagramProfiles, nil)
-	if _, err := scheduler.Register("@every 6h", syncTask, asynq.Queue(QueueSlow)); err != nil {
+	if _, err := scheduler.Register(instagramProfileSyncSpec, syncTask, asynq.Queue(QueueSlow)); err != nil {
 		log.Printf("Warning: Failed to register Instagram profile sync job: %v", err)
 	} else {
-		log.Println("Registered Instagram profile sync job to run every 6 hours")
+		log.Printf("Registered Instagram profile sync job (%s)", instagramProfileSyncSpec)
 	}
 
-	// Register Instagram posts sync job to run every 12 hours
 	postsTask := asynq.NewTask(TypeSyncInstagramPosts, nil)
-	if _, err := scheduler.Register("@every 8h", postsTask, asynq.Queue(QueueSlow)); err != nil {
+	if _, err := scheduler.Register(instagramPostsSyncSpec, postsTask, asynq.Queue(QueueSlow)); err != nil {
 		log.Printf("Warning: Failed to register Instagram posts sync job: %v", err)
 	} else {
-		log.Println("Registered Instagram posts sync job to run every 12 hours")
+		log.Printf("Registered Instagram posts sync job (%s)", instagramPostsSyncSpec)
 	}
 
-	// Register Instagram analytics sync job to run every 3 hours
 	analyticsTask := asynq.NewTask(TypeSyncInstagramAnalytics, nil)
-	if _, err := scheduler.Register("@every 3h", analyticsTask, asynq.Queue(QueueSlow)); err != nil {
+	if _, err := scheduler.Register(instagramAnalyticsSyncSpec, analyticsTask, asynq.Queue(QueueSlow)); err != nil {
 		log.Printf("Warning: Failed to register Instagram analytics sync job: %v", err)
 	} else {
-		log.Println("Registered Instagram analytics sync job to run every 3 hours")
+		log.Printf("Registered Instagram analytics sync job (%s)", instagramAnalyticsSyncSpec)
 	}
 
 	// Register period snapshot task to run daily

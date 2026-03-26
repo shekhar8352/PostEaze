@@ -37,7 +37,7 @@ func HandleSyncInstagramAnalyticsTask(ctx context.Context, t *asynq.Task) error 
 	// Fetch all active Instagram channels
 	channels, err := repositories.GetAllActiveInstagramChannels(ctx)
 	if err != nil {
-		utils.Logger.Error(ctx, "Failed to fetch Instagram channels: ", err)
+		utils.Logger.Error(ctx, "Failed to fetch Instagram channels: %v", err)
 		return err
 	}
 
