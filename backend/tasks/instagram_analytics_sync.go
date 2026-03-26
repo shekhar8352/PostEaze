@@ -3,6 +3,7 @@ package tasks
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -204,6 +205,62 @@ func syncPostsAnalytics(ctx context.Context, provider instagram.InstagramProvide
 	return nil
 }
 
+// mediaInsightMetricFallbacks returns ordered metric lists. Carousels and some media types reject
+// "impressions" (and occasionally "plays") in a single batch; later slices omit problematic metrics.
+func mediaInsightMetricFallbacks(postType *string) [][]string {
+	pt := ""
+	if postType != nil {
+		pt = *postType
+	}
+	noImpression := []string{"reach", "likes", "comments", "saved", "shares", "total_interactions"}
+	full := []string{"impressions", "reach", "likes", "comments", "saved", "shares", "total_interactions"}
+	fullVideo := []string{"impressions", "reach", "likes", "comments", "saved", "shares", "plays", "total_interactions"}
+	minimal := []string{"reach", "likes", "comments", "saved", "shares"}
+
+	switch pt {
+	case "carousel":
+		return [][]string{
+			noImpression,
+			{"likes", "comments", "saved", "shares", "total_interactions"},
+			{"likes", "comments", "saved"},
+		}
+	case "video", "reel":
+		return [][]string{
+			fullVideo,
+			noImpression,
+			{"reach", "likes", "comments", "saved", "shares", "plays"},
+			minimal,
+		}
+	default:
+		return [][]string{
+			full,
+			noImpression,
+			minimal,
+			{"likes", "comments"},
+		}
+	}
+}
+
+func fetchMediaInsightsWithFallback(provider instagram.InstagramProvider, accessToken, mediaID string, postType *string) (*instagram.InsightsResponse, error) {
+	var lastErr error
+	for _, metrics := range mediaInsightMetricFallbacks(postType) {
+		resp, err := provider.GetMediaInsights(accessToken, mediaID, metrics)
+		if err == nil {
+			return resp, nil
+		}
+		lastErr = err
+		var gerr *instagram.GraphAPIError
+		if errors.As(err, &gerr) {
+			if gerr.IsInsightsUnavailableForever() {
+				return nil, err
+			}
+			continue
+		}
+		return nil, err
+	}
+	return nil, lastErr
+}
+
 func syncSinglePostInsights(ctx context.Context, provider instagram.InstagramProvider, channelID int64, accessToken string, post entities.Post) {
 	isStory := post.PostType != nil && *post.PostType == "story"
 
@@ -223,21 +280,20 @@ func syncSinglePostInsights(ctx context.Context, provider instagram.InstagramPro
 		}
 		insightsResp, err = provider.GetStoryInsights(accessToken, instagramPostID)
 	} else {
-		var metrics []string
-		if post.PostType != nil && (*post.PostType == "video" || *post.PostType == "reel") {
-			metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "plays", "total_interactions"}
-		} else {
-			metrics = []string{"impressions", "reach", "likes", "comments", "saved", "shares", "total_interactions"}
-		}
 		if instagramPostID == "" {
 			utils.Logger.Error(ctx, fmt.Sprintf("Skipping post analytics for post %d: instagram_post_id is nil", post.ID))
 			return
 		}
-		insightsResp, err = provider.GetMediaInsights(accessToken, instagramPostID, metrics)
+		insightsResp, err = fetchMediaInsightsWithFallback(provider, accessToken, instagramPostID, post.PostType)
 	}
 
 	if err != nil {
-		utils.Logger.Error(ctx, fmt.Sprintf("Failed to fetch insights for post %s: %v", instagramPostID, err))
+		var gerr *instagram.GraphAPIError
+		if errors.As(err, &gerr) && gerr.IsInsightsUnavailableForever() {
+			utils.Logger.Warn(ctx, fmt.Sprintf("Skipping insights for post %s (not available from Instagram): %s", instagramPostID, gerr.Message))
+			return
+		}
+		utils.Logger.Warn(ctx, fmt.Sprintf("Failed to fetch insights for post %s after metric fallbacks: %v", instagramPostID, err))
 		return
 	}
 

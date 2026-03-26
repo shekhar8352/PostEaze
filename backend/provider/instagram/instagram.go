@@ -332,9 +332,8 @@ func (p *InstagramProviderImpl) GetMediaInsights(accessToken string, mediaID str
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		var errResp map[string]interface{}
-		if err := json.Unmarshal(body, &errResp); err == nil {
-			return nil, fmt.Errorf("failed to get media insights: %v", errResp)
+		if ge, ok := GraphAPIErrorFromBody(body); ok {
+			return nil, ge
 		}
 		return nil, fmt.Errorf("failed to get media insights: %s, body: %s", resp.Status, string(body))
 	}

@@ -168,6 +168,8 @@ func getPostType(mediaType string) string {
 		return "video"
 	case "CAROUSEL_ALBUM":
 		return "carousel"
+	case "REELS":
+		return "reel"
 	default:
 		return "post"
 	}
