@@ -423,3 +423,54 @@ func GetStoryAnalyticsHandler(c *gin.Context) {
 	}
 	utils.SendSuccess(c, resp, "Story analytics retrieved successfully")
 }
+
+// GetAudienceSnapshotsHandler godoc
+// @Summary      Get Instagram audience snapshots
+// @Description  Lifetime demographic insights (audience_city, country, gender_age, locale) stored per UTC day during analytics sync
+// @Tags         Analytics
+// @Param        channelId path int true "Channel ID"
+// @Param        start_date query string false "Start date (YYYY-MM-DD)"
+// @Param        end_date query string false "End date (YYYY-MM-DD)"
+// @Param        limit query int false "Page size (default 100, max 500; 0 = all)"
+// @Param        offset query int false "Offset"
+// @Param        include_raw query string false "1 to include raw Meta JSON"
+// @Router       /channels/{channelId}/analytics/audience [get]
+// @Security     BearerAuth
+func GetAudienceSnapshotsHandler(c *gin.Context) {
+	channelID, err := strconv.ParseInt(c.Param("channelId"), 10, 64)
+	if err != nil {
+		utils.SendError(c, http.StatusBadRequest, "Invalid channel ID")
+		return
+	}
+
+	startDate, endDate := utils.ParseDateRange(c)
+	limit, offset := utils.ParseAnalyticsPagination(c)
+	includeRaw := utils.AnalyticsIncludeRawQuery(c)
+
+	f := repositories.AudienceSnapshotListFilters{Limit: limit, Offset: offset}
+	total, err := repositories.CountAudienceSnapshotsInRange(c.Request.Context(), channelID, startDate, endDate)
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, "Failed to count audience snapshots: "+err.Error())
+		return
+	}
+
+	rows, err := repositories.GetAudienceSnapshotsByDateRange(c.Request.Context(), channelID, startDate, endDate, f)
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, "Failed to fetch audience snapshots: "+err.Error())
+		return
+	}
+
+	resp := modelsv1.AudienceSnapshotsResponse{
+		Meta: modelsv1.DateRangeMeta{
+			StartDate: utils.FormatAnalyticsDate(startDate),
+			EndDate:   utils.FormatAnalyticsDate(endDate),
+		},
+		Pagination: modelsv1.PaginationMeta{
+			Limit:  limit,
+			Offset: offset,
+			Total:  total,
+		},
+		Snapshots: utils.MapAudienceSnapshotItems(rows, includeRaw),
+	}
+	utils.SendSuccess(c, resp, "Audience snapshots retrieved successfully")
+}

@@ -66,3 +66,12 @@ type InstagramProfileAnalytics struct {
 	Raw                 []byte    `db:"raw"` // JSONB
 	CreatedAt           time.Time `db:"created_at"`
 }
+
+// InstagramAudienceSnapshot stores Meta lifetime audience_* insight payloads (merged) per UTC day.
+type InstagramAudienceSnapshot struct {
+	ID           int64     `db:"id"`
+	ChannelID    int64     `db:"channel_id"`
+	SnapshotDate time.Time `db:"snapshot_date"`
+	Raw          []byte    `db:"raw"` // JSONB: { "data": [ ... InsightData ... ] }
+	CreatedAt    time.Time `db:"created_at"`
+}

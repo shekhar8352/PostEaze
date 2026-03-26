@@ -707,3 +707,52 @@ func GetLatestAnalyticsSnapshot(ctx context.Context, entityType, periodType stri
 	}
 	return &s, nil
 }
+
+// AudienceSnapshotListFilters optional pagination for audience snapshot history.
+type AudienceSnapshotListFilters struct {
+	Limit  int
+	Offset int
+}
+
+// CountAudienceSnapshotsInRange counts instagram_audience_snapshots rows for a channel in [startDate, endDate].
+func CountAudienceSnapshotsInRange(ctx context.Context, channelID int64, startDate, endDate time.Time) (int, error) {
+	db := database.GetDB()
+	var n int
+	err := db.QueryRowContext(ctx, `
+		SELECT COUNT(*) FROM instagram_audience_snapshots
+		WHERE channel_id = $1 AND snapshot_date >= $2::date AND snapshot_date <= $3::date
+	`, channelID, startDate, endDate).Scan(&n)
+	return n, err
+}
+
+// GetAudienceSnapshotsByDateRange returns audience snapshots newest-first.
+func GetAudienceSnapshotsByDateRange(ctx context.Context, channelID int64, startDate, endDate time.Time, f AudienceSnapshotListFilters) ([]entities.InstagramAudienceSnapshot, error) {
+	db := database.GetDB()
+	query := `
+		SELECT id, channel_id, snapshot_date, raw, created_at
+		FROM instagram_audience_snapshots
+		WHERE channel_id = $1 AND snapshot_date >= $2::date AND snapshot_date <= $3::date
+		ORDER BY snapshot_date DESC
+	`
+	args := []interface{}{channelID, startDate, endDate}
+	if f.Limit > 0 {
+		query += fmt.Sprintf(" LIMIT $%d OFFSET $%d", len(args)+1, len(args)+2)
+		args = append(args, f.Limit, f.Offset)
+	}
+
+	rows, err := db.QueryContext(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []entities.InstagramAudienceSnapshot
+	for rows.Next() {
+		var s entities.InstagramAudienceSnapshot
+		if err := rows.Scan(&s.ID, &s.ChannelID, &s.SnapshotDate, &s.Raw, &s.CreatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, s)
+	}
+	return out, rows.Err()
+}

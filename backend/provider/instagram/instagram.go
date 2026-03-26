@@ -30,6 +30,8 @@ type InstagramProvider interface {
 	GetMediaInsights(accessToken string, mediaID string, metrics []string) (*InsightsResponse, error)
 	GetStoryInsights(accessToken string, mediaID string) (*InsightsResponse, error)
 	GetProfileInsights(accessToken string, igUserID string, metrics []string, since int64, until int64) (*InsightsResponse, error)
+	// GetAudienceInsights fetches lifetime demographic breakdowns (city, country, gender/age, locale).
+	GetAudienceInsights(accessToken string, igUserID string, metrics []string) (*InsightsResponse, error)
 }
 
 type InstagramProviderImpl struct {
@@ -387,6 +389,43 @@ func (p *InstagramProviderImpl) GetProfileInsights(accessToken string, igUserID 
 	insightsResp, err := DecodeInsightsResponseJSON(body)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse profile insights response: %w", err)
+	}
+
+	return insightsResp, nil
+}
+
+// GetAudienceInsights fetches IG User insights with period=lifetime (audience_* metrics).
+func (p *InstagramProviderImpl) GetAudienceInsights(accessToken string, igUserID string, metrics []string) (*InsightsResponse, error) {
+	if len(metrics) == 0 {
+		return &InsightsResponse{}, nil
+	}
+	q := url.Values{}
+	q.Set("metric", strings.Join(metrics, ","))
+	q.Set("period", "lifetime")
+	q.Set("access_token", accessToken)
+	reqURL := fmt.Sprintf("https://graph.instagram.com/%s/insights?%s", igUserID, q.Encode())
+
+	resp, err := http.Get(reqURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		if ge, ok := GraphAPIErrorFromBody(body); ok {
+			return nil, ge
+		}
+		return nil, fmt.Errorf("failed to get audience insights: %s, body: %s", resp.Status, string(body))
+	}
+
+	insightsResp, err := DecodeInsightsResponseJSON(body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse audience insights response: %w", err)
 	}
 
 	return insightsResp, nil

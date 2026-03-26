@@ -103,6 +103,20 @@ func MapProfileAnalyticsItems(items []entities.InstagramProfileAnalytics, includ
 	return out
 }
 
+// MapAudienceSnapshotItems maps audience snapshot rows to API DTOs.
+func MapAudienceSnapshotItems(items []entities.InstagramAudienceSnapshot, includeRaw bool) []modelsv1.AudienceSnapshotItem {
+	out := make([]modelsv1.AudienceSnapshotItem, 0, len(items))
+	for _, s := range items {
+		out = append(out, modelsv1.AudienceSnapshotItem{
+			ID:           s.ID,
+			SnapshotDate: FormatAnalyticsDate(s.SnapshotDate),
+			CreatedAt:    s.CreatedAt.UTC().Format(time.RFC3339),
+			Raw:          analyticsRawJSON(s.Raw, includeRaw),
+		})
+	}
+	return out
+}
+
 // MapPostAnalyticsItems maps entity rows to API DTOs.
 func MapPostAnalyticsItems(items []entities.InstagramPostAnalytics, includeRaw bool) []modelsv1.PostAnalyticsItem {
 	out := make([]modelsv1.PostAnalyticsItem, 0, len(items))

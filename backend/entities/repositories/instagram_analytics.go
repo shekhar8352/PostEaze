@@ -142,3 +142,20 @@ func UpsertInstagramProfileAnalytics(ctx context.Context, analytics *entities.In
 		jsonbOrEmpty(analytics.Raw),
 	).Scan(&analytics.ID, &analytics.CreatedAt)
 }
+
+// UpsertInstagramAudienceSnapshot stores or replaces the audience insight blob for a channel on a calendar day (UTC).
+func UpsertInstagramAudienceSnapshot(ctx context.Context, s *entities.InstagramAudienceSnapshot) error {
+	db := database.GetDB()
+	query := `
+		INSERT INTO instagram_audience_snapshots (channel_id, snapshot_date, raw)
+		VALUES ($1, $2, $3)
+		ON CONFLICT (channel_id, snapshot_date)
+		DO UPDATE SET raw = EXCLUDED.raw
+		RETURNING id, created_at
+	`
+	return db.QueryRowContext(ctx, query,
+		s.ChannelID,
+		s.SnapshotDate,
+		jsonbOrEmpty(s.Raw),
+	).Scan(&s.ID, &s.CreatedAt)
+}

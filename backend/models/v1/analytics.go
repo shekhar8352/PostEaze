@@ -192,3 +192,18 @@ type StoryAnalyticsResponse struct {
 	Pagination PaginationMeta       `json:"pagination"`
 	Stories    []StoryAnalyticsItem `json:"stories"`
 }
+
+// AudienceSnapshotItem is one stored lifetime-audience insight payload (Meta JSON) for a UTC calendar day.
+type AudienceSnapshotItem struct {
+	ID           int64           `json:"id"`
+	SnapshotDate string          `json:"snapshot_date"`
+	CreatedAt    string          `json:"created_at"`
+	Raw          json.RawMessage `json:"raw,omitempty"`
+}
+
+// AudienceSnapshotsResponse is GET .../analytics/audience.
+type AudienceSnapshotsResponse struct {
+	Meta       DateRangeMeta          `json:"meta"`
+	Pagination PaginationMeta         `json:"pagination"`
+	Snapshots  []AudienceSnapshotItem `json:"snapshots"`
+}

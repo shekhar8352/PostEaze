@@ -30,6 +30,12 @@ var profileInsightsMetricBatches = [][]string{
 	{"accounts_engaged", "total_interactions", "views"},
 }
 
+// Lifetime audience breakdowns (Graph API period=lifetime). Batched so one failing metric does not block others.
+var audienceInsightMetricBatches = [][]string{
+	{"audience_city", "audience_country"},
+	{"audience_gender_age", "audience_locale"},
+}
+
 // HandleSyncInstagramAnalyticsTask syncs Instagram analytics for all active channels
 func HandleSyncInstagramAnalyticsTask(ctx context.Context, t *asynq.Task) error {
 	utils.Logger.Info(ctx, "Starting Instagram analytics sync job")
@@ -89,6 +95,10 @@ func syncChannelAnalytics(ctx context.Context, channel entities.Channel) error {
 		utils.Logger.Error(ctx, fmt.Sprintf("Failed to sync profile analytics for channel %d: %v", channel.ID, err))
 	}
 
+	if err := syncAudienceInsights(ctx, provider, channel.ID, igUserID, decryptedToken); err != nil {
+		utils.Logger.Error(ctx, fmt.Sprintf("Failed to sync audience insights for channel %d: %v", channel.ID, err))
+	}
+
 	// Sync post analytics
 	if err := syncPostsAnalytics(ctx, provider, channel.ID, decryptedToken); err != nil {
 		utils.Logger.Error(ctx, fmt.Sprintf("Failed to sync posts analytics for channel %d: %v", channel.ID, err))
@@ -133,6 +143,44 @@ func syncProfileAnalytics(ctx context.Context, provider instagram.InstagramProvi
 		}
 	}
 
+	return nil
+}
+
+func syncAudienceInsights(ctx context.Context, provider instagram.InstagramProvider, channelID int64, igUserID, accessToken string) error {
+	var merged []instagram.InsightData
+	for _, batch := range audienceInsightMetricBatches {
+		resp, err := provider.GetAudienceInsights(accessToken, igUserID, batch)
+		if err != nil {
+			var gerr *instagram.GraphAPIError
+			if errors.As(err, &gerr) {
+				utils.Logger.Warn(ctx, fmt.Sprintf("Audience insights batch skipped for channel %d metrics=%v: %s", channelID, batch, gerr.Message))
+			} else {
+				utils.Logger.Warn(ctx, fmt.Sprintf("Audience insights batch failed for channel %d metrics=%v: %v", channelID, batch, err))
+			}
+			continue
+		}
+		merged = append(merged, resp.Data...)
+	}
+	if len(merged) == 0 {
+		utils.Logger.Info(ctx, fmt.Sprintf("No audience demographic data stored for channel %d (ineligible or unavailable from Instagram)", channelID))
+		return nil
+	}
+	wrapped := struct {
+		Data []instagram.InsightData `json:"data"`
+	}{Data: merged}
+	raw, err := json.Marshal(wrapped)
+	if err != nil {
+		return fmt.Errorf("marshal audience insights: %w", err)
+	}
+	snap := &entities.InstagramAudienceSnapshot{
+		ChannelID:    channelID,
+		SnapshotDate: utils.ToUTCDate(time.Now().UTC()),
+		Raw:          raw,
+	}
+	if err := repositories.UpsertInstagramAudienceSnapshot(ctx, snap); err != nil {
+		return fmt.Errorf("upsert audience snapshot: %w", err)
+	}
+	utils.Logger.Info(ctx, fmt.Sprintf("Stored audience snapshot for channel %d (%d insight series)", channelID, len(merged)))
 	return nil
 }
 
