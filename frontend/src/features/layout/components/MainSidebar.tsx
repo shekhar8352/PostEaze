@@ -5,6 +5,7 @@ import { MAIN_NAV_ITEMS, BOTTOM_NAV_ITEMS } from '../constants';
 import { ChannelsNav } from './ChannelsNav';
 import { useAuth } from '@/features/auth';
 import { notifications } from '@mantine/notifications';
+import sidebarStyles from './MainSidebar.module.css';
 
 export const MainSidebar = () => {
     const location = useLocation();
@@ -30,16 +31,7 @@ export const MainSidebar = () => {
     };
 
     return (
-        <Box
-            style={{
-                display: 'flex',
-                flexDirection: 'column',
-                height: '100%',
-                background: 'rgba(255, 255, 255, 0.7)',
-                backdropFilter: 'blur(10px)',
-                borderRight: '1px solid rgba(102, 126, 234, 0.1)',
-            }}
-        >
+        <Box className={sidebarStyles.shell}>
             <ScrollArea
                 style={{ flex: 1 }}
                 type="auto"
@@ -89,7 +81,7 @@ export const MainSidebar = () => {
             </ScrollArea>
 
             {/* Logout Button - Fixed at bottom */}
-            <Box p="md" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+            <Box p="md" className={sidebarStyles.footer}>
                 <NavLink
                     label="Logout"
                     leftSection={<Icons.Logout size={20} />}

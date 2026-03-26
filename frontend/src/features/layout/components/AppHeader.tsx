@@ -3,6 +3,7 @@ import { Icons } from '@/app/theme';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
 import { notifications } from '@mantine/notifications';
+import headerStyles from './AppHeader.module.css';
 
 interface AppHeaderProps {
     mobileOpened: boolean;
@@ -38,11 +39,7 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
             h="100%"
             px="md"
             justify="space-between"
-            style={{
-                background: 'rgba(255, 255, 255, 0.8)',
-                backdropFilter: 'blur(10px)',
-                borderBottom: '1px solid rgba(102, 126, 234, 0.1)',
-            }}
+            className={headerStyles.bar}
         >
             <Group>
                 <Burger
@@ -51,25 +48,14 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
                     hiddenFrom="sm"
                     size="sm"
                 />
-                <Text
-                    size="24px"
-                    fw={800}
-                    variant="gradient"
-                    gradient={{ from: 'blue', to: 'cyan', deg: 45 }}
-                    style={{
-                        letterSpacing: '-0.5px',
-                        cursor: 'pointer',
-                        transition: 'transform 0.3s ease',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.transform = 'scale(1.05)';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.transform = 'scale(1)';
-                    }}
+                <UnstyledButton
+                    type="button"
+                    className={headerStyles.brand}
+                    onClick={() => navigate('/dashboard')}
+                    aria-label="PostEaze home"
                 >
-                    PostEaze
-                </Text>
+                    Post<span className={headerStyles.brandAccent}>Eaze</span>
+                </UnstyledButton>
             </Group>
 
             <Menu shadow="md" width={200} position="bottom-end">
@@ -82,7 +68,7 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
                                 radius="xl"
                                 size={32}
                             />
-                            <Text fw={600} size="sm" style={{ lineHeight: 1 }} mr={3}>
+                            <Text fw={600} size="sm" className={headerStyles.userLabel} style={{ lineHeight: 1 }} mr={3}>
                                 {user?.name || user?.email}
                             </Text>
                             <Icons.ChevronDown size={12} stroke={1.5} />

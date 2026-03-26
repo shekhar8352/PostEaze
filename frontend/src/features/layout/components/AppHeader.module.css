@@ -1,0 +1,25 @@
+.bar {
+  background: var(--pe-header-bg);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--pe-border);
+}
+
+.brand {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 1.125rem;
+  letter-spacing: -0.03em;
+  color: var(--pe-text);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 0;
+}
+
+.brandAccent {
+  color: var(--pe-accent);
+}
+
+.userLabel {
+  color: var(--pe-text-secondary);
+}

@@ -1,0 +1,4 @@
+.main {
+  background: var(--pe-bg-app);
+  min-height: 100vh;
+}

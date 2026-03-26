@@ -1,0 +1,12 @@
+.shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--pe-bg-elevated);
+  border-right: 1px solid var(--pe-border);
+}
+
+.footer {
+  border-top: 1px solid var(--pe-border);
+  background: var(--pe-bg-subtle);
+}
