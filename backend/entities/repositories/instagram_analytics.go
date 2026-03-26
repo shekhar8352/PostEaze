@@ -107,20 +107,20 @@ func UpsertInstagramProfileAnalytics(ctx context.Context, analytics *entities.In
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		ON CONFLICT (channel_id, date) 
 		DO UPDATE SET
-			follower_count = EXCLUDED.follower_count,
-			impressions = EXCLUDED.impressions,
-			profile_views = EXCLUDED.profile_views,
-			reach = EXCLUDED.reach,
-			website_clicks = EXCLUDED.website_clicks,
-			email_clicks = EXCLUDED.email_clicks,
-			views = EXCLUDED.views,
-			accounts_engaged = EXCLUDED.accounts_engaged,
-			total_interactions = EXCLUDED.total_interactions,
-			bio_link_clicks = EXCLUDED.bio_link_clicks,
-			phone_call_clicks = EXCLUDED.phone_call_clicks,
-			text_message_clicks = EXCLUDED.text_message_clicks,
-			get_directions_clicks = EXCLUDED.get_directions_clicks,
-			raw = EXCLUDED.raw
+			follower_count = COALESCE(EXCLUDED.follower_count, instagram_profile_analytics.follower_count),
+			impressions = COALESCE(EXCLUDED.impressions, instagram_profile_analytics.impressions),
+			profile_views = COALESCE(EXCLUDED.profile_views, instagram_profile_analytics.profile_views),
+			reach = COALESCE(EXCLUDED.reach, instagram_profile_analytics.reach),
+			website_clicks = COALESCE(EXCLUDED.website_clicks, instagram_profile_analytics.website_clicks),
+			email_clicks = COALESCE(EXCLUDED.email_clicks, instagram_profile_analytics.email_clicks),
+			views = COALESCE(EXCLUDED.views, instagram_profile_analytics.views),
+			accounts_engaged = COALESCE(EXCLUDED.accounts_engaged, instagram_profile_analytics.accounts_engaged),
+			total_interactions = COALESCE(EXCLUDED.total_interactions, instagram_profile_analytics.total_interactions),
+			bio_link_clicks = COALESCE(EXCLUDED.bio_link_clicks, instagram_profile_analytics.bio_link_clicks),
+			phone_call_clicks = COALESCE(EXCLUDED.phone_call_clicks, instagram_profile_analytics.phone_call_clicks),
+			text_message_clicks = COALESCE(EXCLUDED.text_message_clicks, instagram_profile_analytics.text_message_clicks),
+			get_directions_clicks = COALESCE(EXCLUDED.get_directions_clicks, instagram_profile_analytics.get_directions_clicks),
+			raw = COALESCE(EXCLUDED.raw, instagram_profile_analytics.raw)
 		RETURNING id, created_at
 	`
 	return db.QueryRowContext(ctx, query,
