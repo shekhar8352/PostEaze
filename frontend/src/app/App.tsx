@@ -5,6 +5,7 @@ import AppRoutes from "./routes";
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import "@mantine/core/styles.css";
+import "@mantine/dates/styles.css";
 import { Notifications } from '@mantine/notifications';
 import "@mantine/notifications/styles.css";
 import { AuthProvider } from "@/features/auth";

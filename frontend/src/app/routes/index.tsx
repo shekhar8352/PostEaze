@@ -3,6 +3,7 @@ import { useRoutes } from "react-router-dom";
 import { authRoutes } from "@/features/auth";
 import { landingRoutes } from "@/features/landing";
 import { dashboardRoutes } from "@/features/dashboard";
+import { analyticsRoutes } from "@/features/analytics";
 import { channelRoutes } from "@/features/channels";
 import { MainLayout } from "@/features/layout";
 import { ProtectedLayout } from "./ProtectedRoute";
@@ -22,6 +23,7 @@ const AppRoutes = () => {
           children: [
             // All protected routes here
             ...dashboardRoutes,
+            ...analyticsRoutes,
             ...landingRoutes,
             ...channelRoutes,
           ],
