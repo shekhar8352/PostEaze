@@ -308,6 +308,19 @@ func GetChannelDashboardHandler(c *gin.Context) {
 		TopPosts:      utils.MapTopPostItems(topPosts),
 		PostsOverview: utils.MapPostsOverview(postsOverview),
 	}
+
+	snap, err := repositories.GetLatestInstagramAudienceSnapshot(c.Request.Context(), channelID)
+	if err != nil {
+		utils.Logger.Warn(c.Request.Context(), "Dashboard: could not load audience snapshot: %v", err)
+	} else if snap != nil {
+		aud, aerr := utils.AudienceDashboardFromSnapshot(snap)
+		if aerr != nil {
+			utils.Logger.Warn(c.Request.Context(), "Dashboard: audience snapshot parse failed: %v", aerr)
+		} else if aud != nil && len(aud.Metrics) > 0 {
+			resp.Audience = aud
+		}
+	}
+
 	utils.SendSuccess(c, resp, "Dashboard retrieved successfully")
 }
 

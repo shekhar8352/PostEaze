@@ -160,12 +160,34 @@ type ComparisonResponse struct {
 	Period   PeriodBounds               `json:"period"`
 }
 
+// AudienceBucket is one label/count inside an audience breakdown (e.g. one city).
+type AudienceBucket struct {
+	Label string  `json:"label"`
+	Value int64   `json:"value"`
+	Pct   float64 `json:"pct"`
+}
+
+// AudienceMetricBlock is one Meta insight series (e.g. audience_city) with top buckets.
+type AudienceMetricBlock struct {
+	Key   string           `json:"key"`
+	Title string           `json:"title"`
+	Items []AudienceBucket `json:"items"`
+}
+
+// AudienceDashboard is the latest parsed lifetime audience snapshot for the channel dashboard.
+type AudienceDashboard struct {
+	SnapshotDate string                `json:"snapshot_date,omitempty"`
+	CreatedAt    string                `json:"created_at,omitempty"`
+	Metrics      []AudienceMetricBlock `json:"metrics"`
+}
+
 // DashboardResponse aggregates overview, top posts, and posts summary.
 type DashboardResponse struct {
 	Meta          DateRangeMeta             `json:"meta"`
 	Overview      AggregatedProfileOverview `json:"overview"`
 	TopPosts      []TopPostItem             `json:"top_posts"`
 	PostsOverview PostsOverview             `json:"posts_overview"`
+	Audience      *AudienceDashboard        `json:"audience,omitempty"`
 }
 
 // StoryAnalyticsItem is one story metrics row with post context.
