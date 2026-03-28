@@ -9,8 +9,11 @@ Numbered SQL migrations for PostgreSQL. Each change has a matching `.up.sql` and
 | `001_initial_schema.up/down.sql` | Core schema: users (Firebase + `platforms`), `refresh_tokens`, teams, team members, channels, posts, Instagram analytics tables, etc. Enables `pgcrypto` and `pg_trgm`. |
 | `002_analytics_extra_columns.up/down.sql` | Extra columns for analytics / reporting (see file for details). |
 | `003_user_firebase_auth_columns.up/down.sql` | User columns aligned with Firebase auth (see file for details). |
+| `004_posts_multi_provider.up/down.sql` | Post storage updates for multiple providers (see file). |
+| `005_instagram_audience_snapshots.up/down.sql` | Instagram audience snapshot storage (see file). |
+| `006_scheduled_posts.up/down.sql` | Scheduled posts tables for the calendar API (see file). |
 
-Apply in numeric order on empty or known-state databases. For a greenfield dev DB, run `001` then `002` then `003` (or as required by your branch).
+Apply in numeric order on empty or known-state databases. For a greenfield dev DB, run `001` through `006` (or as required by your branch).
 
 ## Naming
 
@@ -23,7 +26,7 @@ Apply in numeric order on empty or known-state databases. For a greenfield dev D
 
 ```bash
 psql "$DATABASE_URL" -f backend/migrations/001_initial_schema.up.sql
-# then 002, 003 as needed
+# then 002 … 006 in order as needed
 ```
 
 Use your real connection string or Docker `psql` invocation. Down migrations reverse the corresponding up migration.

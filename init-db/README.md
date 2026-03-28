@@ -9,14 +9,15 @@ This directory provides a standardized location for database initialization scri
 ## Docker Integration
 
 ### Volume Mounting
-The `init-db` folder is mounted in the PostgreSQL container via Docker Compose:
+The `init-db` folder is mounted in the PostgreSQL service when using the **full** stack [`docker-compose.yml`](../docker-compose.yml) at the repo root:
 
 ```yaml
 postgres:
-  image: postgres:15-alpine
   volumes:
     - ./init-db:/docker-entrypoint-initdb.d
 ```
+
+[`docker-compose.local.yml`](../docker-compose.local.yml) does **not** mount `init-db`; it is intended for running only Postgres, Redis, and the worker while you run the API and Vite app locally.
 
 ### Execution Order
 PostgreSQL automatically executes files in `/docker-entrypoint-initdb.d` in alphabetical order during the first container startup. Supported file types include:
@@ -61,9 +62,10 @@ PostEaze uses a **migration-based approach** for database schema management:
 ### Migration Files Location
 ```
 backend/migrations/
-├── 001_create_initial_tables.up.sql    # Schema creation
-├── 001_create_initial_tables.down.sql  # Schema rollback
-└── README.md                           # Migration documentation
+├── 001_*.up.sql / *.down.sql   # Initial schema (and follow-on migrations)
+├── ...
+├── 006_scheduled_posts.up.sql  # Example: scheduled posts tables
+└── README.md
 ```
 
 ## Potential Use Cases

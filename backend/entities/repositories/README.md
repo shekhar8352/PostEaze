@@ -54,6 +54,9 @@ Channel CRUD, tokens, and Instagram-specific helpers (see source for full list).
 ### post.go
 Post storage and listing (`posts` table), filters by channel, provider post IDs.
 
+### scheduled_post.go
+Scheduled post CRUD and calendar range listing for the authenticated owner.
+
 ### channel_access.go / post_access.go
 Authorization helpers (`UserCanAccessChannel`, post/channel membership checks) used by middleware and handlers.
 

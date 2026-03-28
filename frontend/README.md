@@ -1,117 +1,76 @@
 # PostEaze Frontend
 
-The PostEaze frontend is a modern React application built with TypeScript, providing a responsive and intuitive user interface for social media management. The application uses a feature-based architecture with Redux Toolkit for state management and Mantine for UI components.
+React SPA for PostEaze: auth (Firebase + JWT), dashboard, Instagram channels, analytics, and a **calendar** for scheduled posts. Uses a feature-based layout with a shared shell (sidebar/header).
 
 ## Architecture
 
-### Tech Stack
+### Tech stack
 
-- **React 19** - Modern React with latest features and performance improvements
-- **TypeScript** - Type-safe development with full IntelliSense support
-- **Vite** - Fast build tool with hot module replacement (HMR)
-- **Mantine** - Comprehensive React components library with built-in theming
-- **Redux Toolkit** - Predictable state management with modern Redux patterns
-- **React Router** - Declarative routing for single-page application navigation
-- **Axios** - HTTP client for API communication with the Go backend
-- **Formik + Yup** - Form handling and validation
-- **Vitest** - Fast unit testing framework
+- **React 19** — UI
+- **TypeScript** — types
+- **Vite 6** — dev server and production build
+- **Mantine 8** — components, dates, notifications; **@mantine/form** for some forms
+- **Redux Toolkit** — global slices where needed (e.g. channels)
+- **TanStack Query** — server state, caching, and feature-level queries
+- **React Router 7** — routing (`useRoutes`, lazy routes)
+- **Axios** — HTTP (shared `apiClient` in `src/services/api/client.ts` + interceptors)
+- **Firebase** — client auth; tokens exchanged with the Go API
+- **Formik + Yup** — forms where used (e.g. auth)
+- **Chart.js / react-chartjs-2** — analytics charts
+- **react-big-calendar** — calendar UI for scheduled posts
+- **Vitest** + Testing Library — tests (see `vite.config.ts` test block)
 
-### Application Structure
+### Source layout
 
 ```
 src/
-├── app/           # Redux store configuration and app-level setup
-├── features/      # Feature-based modules (auth, landing, etc.)
-├── routes/        # Application routing configuration
-├── services/      # API services and HTTP client setup
-├── utils/         # Shared utility functions
-├── assets/        # Static assets (images, icons, etc.)
-├── test/          # Testing utilities and setup
-├── App.tsx        # Root application component
-└── main.tsx       # Application entry point
+├── app/                 # App shell: providers, routes, Redux store, theme, global styles
+├── features/            # Feature modules (auth, layout, dashboard, channels, analytics, calendar, landing)
+├── services/            # api/client, interceptors, legacy axios re-export
+├── utils/               # Shared helpers (grow as needed)
+├── assets/              # Bundled static assets
+├── test/                # Vitest setup and render helpers
+└── main.tsx             # Entry (renders app/App.tsx)
 ```
 
-## Key Features
+## Key behaviors
 
-### State Management
-- **Redux Toolkit** for predictable state management
-- Feature-based slice organization
-- Async thunks for API integration
-- Type-safe hooks for React-Redux integration
+- **Providers** (`app/App.tsx`): Redux → TanStack Query → Auth → Mantine → Router.
+- **API base URL**: `import.meta.env.VITE_API_BASE_URL` or default `http://localhost:8080/api` (`services/api/client.ts`). Must match your Go server port and include `/api` if that is how the backend is mounted.
+- **Auth**: JWT access token attached by interceptors (`services/api/interceptors.ts`); refresh flow coordinated with the API.
+- **Protected UI**: `ProtectedLayout` + `MainLayout` wrap dashboard, analytics, channels, calendar, and the in-app home route.
 
-### UI Framework
-- **Mantine** components with custom theming
-- Responsive design with mobile-first approach
-- Consistent design system across all features
-- Built-in accessibility features
-
-### Routing
-- **React Router v7** for client-side routing
-- Feature-based route organization
-- Protected routes for authenticated areas
-- Lazy loading for code splitting
-
-### Form Handling
-- **Formik** for form state management
-- **Yup** for schema validation
-- Reusable form components
-- Error handling and user feedback
-
-## Getting Started
+## Getting started
 
 ### Prerequisites
-- Node.js 18+ and npm/yarn
-- PostEaze backend running on port 8080
 
-### Development Setup
+- Node.js 18+
+- Backend running and reachable at the URL you configure (see above)
+
+### Commands
 
 ```bash
-# Install dependencies
 npm install
-
-# Start development server
-npm run dev
-
-# Run tests
-npm test
-
-# Build for production
-npm run build
-
-# Preview production build
-npm run preview
+npm run dev          # Vite — http://localhost:5173
+npm run build        # typecheck + production build
+npm run lint         # ESLint
+npm run preview      # preview production build
 ```
 
-### Environment Configuration
+### Tests
 
-The application connects to the backend API. Ensure the backend is running and accessible at the configured endpoint.
+Vitest is configured in `vite.config.ts`. Run:
 
-## Development Guidelines
+```bash
+npx vitest           # watch mode
+npx vitest run       # single run (e.g. CI)
+```
 
-### Feature Organization
-Each feature follows a consistent structure:
-- Components and pages
-- Redux slice for state management
-- API service functions
-- Route definitions
-- Tests
+## Documentation index
 
-### Code Style
-- TypeScript strict mode enabled
-- ESLint configuration for code quality
-- Consistent naming conventions
-- Component composition patterns
-
-### Testing Strategy
-- Unit tests with Vitest and React Testing Library
-- Component testing with user interaction simulation
-- Redux store testing with mock store
-- API service testing with mocked responses
-
-## Related Documentation
-
-- [Source Code Structure](src/README.md) - Detailed source code organization
-- [Features Architecture](src/features/README.md) - Feature-based development patterns
-- [State Management](src/app/README.md) - Redux store configuration
-- [API Services](src/services/README.md) - Backend integration patterns
-- [Testing Setup](src/test/README.md) - Testing utilities and configuration
+- [`src/README.md`](src/README.md) — source tree overview
+- [`src/features/README.md`](src/features/README.md) — feature modules
+- [`src/app/routes/README.md`](src/app/routes/README.md) — route composition
+- [`src/app/store/README.md`](src/app/store/README.md) — Redux store
+- [`src/services/README.md`](src/services/README.md) — HTTP client
+- [`src/test/README.md`](src/test/README.md) — testing setup

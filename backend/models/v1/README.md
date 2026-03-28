@@ -12,6 +12,7 @@ HTTP and shared structs for API version 1: JSON binding/validation tags for Gin,
 | `team.go` | Team and membership models |
 | `channel.go` | Instagram channel creation, page details |
 | `analytics.go` | Analytics API request/response types |
+| `scheduled_post.go` | Scheduled post create/list/get/cancel DTOs and query types |
 
 ## Authentication
 

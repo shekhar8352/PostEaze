@@ -1,6 +1,6 @@
-# Landing Feature
+# Landing feature
 
-The landing feature provides the main entry point and homepage functionality for the PostEaze application. This feature handles the initial user experience and serves as the gateway to the application's core functionality.
+Home view for **authenticated** users at **`/`**, rendered inside **`MainLayout`** (see `app/routes/index.tsx`). Unauthenticated visitors are directed to auth routes by `ProtectedLayout`, not this page.
 
 ## Architecture
 
@@ -21,20 +21,15 @@ The landing feature follows the standard feature-based architecture pattern used
   - Root landing page component that serves as the application homepage
   - Integrates the Navbar component for consistent navigation
 
-## Routing Structure
-
-The landing feature defines the following routes:
+## Routing
 
 ```typescript
 const landingRoutes: RouteObject[] = [
-  {
-    path: "/",
-    element: <LandingPage />,
-  },
+  { path: "/", element: <LandingPage /> },
 ];
 ```
 
-- **`/`** - Root path that renders the main landing page
+This **`/`** route is registered **inside** the protected + `MainLayout` branch, so it is the post-login home, not a marketing page.
 
 ## Component Hierarchy
 
@@ -43,7 +38,7 @@ LandingPage
 └── Navbar
 ```
 
-The landing page serves as the main container that incorporates the navigation component to provide a consistent user interface.
+The page composes the shared **Navbar** and any home content for signed-in users.
 
 ## Usage
 
@@ -54,20 +49,8 @@ The landing feature is automatically integrated into the application's routing s
 export { default as landingRoutes } from "./landingRoutes";
 ```
 
-## Key Features
+## Related documentation
 
-- **Homepage Rendering** - Provides the main entry point for users visiting the application
-- **Navigation Integration** - Includes navbar component for consistent site navigation
-- **Route Configuration** - Defines routing structure for landing-related pages
-
-## Development Notes
-
-- The landing page currently has a minimal implementation with basic navbar integration
-- Components follow React functional component patterns with TypeScript
-- The feature is structured to support easy expansion with additional landing-related pages and components
-
-## Related Documentation
-
-- [Features Overview](../README.md) - General feature architecture documentation
-- [Routes Documentation](../../routes/README.md) - Application routing configuration
-- [App Documentation](../../app/README.md) - Redux store and app-level setup
+- [Features overview](../README.md)
+- [Routes](../../app/routes/README.md)
+- [Layout / shell](../layout/README.md)

@@ -13,6 +13,7 @@ All routes below are prefixed with `/api/v1` unless stated. Request/response bod
 | `meta.go` | Meta OAuth callback |
 | `log.go` | Read application logs by date or ID |
 | `posts.go` | List posts for authenticated user |
+| `scheduled_post.go` | Scheduled posts CRUD + calendar listing |
 | `analytics.go` | Instagram analytics under `/channels/:channelId/analytics` |
 | `dev.go` | Development-only test JWT |
 | `cron.go` | Dev-oriented triggers for background sync jobs |
@@ -75,6 +76,17 @@ Mounted in router under `/api/v1/webhooks` (see [webhooks README](../webhooks/RE
 | Method | Path | Auth |
 |--------|------|------|
 | GET | `/posts` | JWT |
+
+## Scheduled posts (`/scheduled-posts`)
+
+All routes require JWT (`AuthMiddleware`).
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/scheduled-posts` | List posts in a time range (calendar); query params from `ListScheduledPostsQuery` |
+| POST | `/scheduled-posts` | Create a scheduled post |
+| GET | `/scheduled-posts/:id` | Get one scheduled post |
+| DELETE | `/scheduled-posts/:id` | Cancel / remove a scheduled post |
 
 ## Analytics (`/channels/:channelId/analytics`)
 

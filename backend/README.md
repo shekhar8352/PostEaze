@@ -14,7 +14,7 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram channe
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│  Business — business/v1 (auth, user, team, channel, log)    │
+│  Business — business/v1 (auth, user, team, channel, log, scheduled posts) │
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
@@ -45,7 +45,7 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram channe
 |------|------|
 | `main.go` | Startup: env, configs, DB, Redis, encryption, Firebase, Asynq client, router, HTTP client |
 | `api/` | Router, Swagger, `v1` handlers, Instagram webhooks |
-| `business/v1/` | Domain logic (Firebase auth, users, teams, channels, logs) |
+| `business/v1/` | Domain logic (Firebase auth, users, teams, channels, logs, scheduled posts) |
 | `entities/` | `RawEntity` SQL patterns; `repositories/` data access |
 | `models/v1/` | Request/response and shared structs |
 | `migrations/` | Numbered `*.up.sql` / `*.down.sql` |
@@ -81,6 +81,7 @@ Base path: `/api/v1` unless noted.
 | Channels | `GET /channels`, `GET /channels/details`, `POST /channels/instagram/create`, `POST /channels/instagram/subscribe-webhooks` | Most require JWT |
 | Webhooks | `GET`, `POST /webhooks/instagram` | Meta verification + events |
 | Posts | `GET /posts` | JWT |
+| Scheduled posts | `GET /scheduled-posts`, `POST /scheduled-posts`, `GET /scheduled-posts/:id`, `DELETE /scheduled-posts/:id` | JWT — list supports calendar range query params (see handlers) |
 | Analytics | `GET /channels/:channelId/analytics/...` | JWT + `RequireInstagramChannelAnalyticsAccess` (profile, posts, overview, dashboard, etc.) |
 | Dev | `POST /dev/generate-token` | Test JWT helpers when `ENV=development` / `dev` |
 | Cron (dev-oriented) | `POST /cron/trigger-instagram-sync`, `.../trigger-instagram-posts`, `.../trigger-instagram-analytics` | Guarded by `ENV` in handlers |

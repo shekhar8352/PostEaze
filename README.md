@@ -1,6 +1,6 @@
 # PostEaze
 
-PostEaze is a social media management platform built for influencers and marketing teams. It helps users schedule posts across platforms like Instagram, Facebook, YouTube, WhatsApp Channels, LinkedIn, and Twitter (X), with advanced analytics and team collaboration support.
+PostEaze is a social media management platform built for influencers and marketing teams. It supports connected channels (including Instagram), post listing, **scheduled posts** with a calendar-oriented API, Instagram analytics, teams, and background jobs for sync—expandable toward additional networks over time.
 
 ## Table of Contents
 - [Tech Stack](#tech-stack)
@@ -9,6 +9,7 @@ PostEaze is a social media management platform built for influencers and marketi
 - [Branching Strategy](#branching-strategy)
 - [Pull Request Protocol](#pull-request-protocol)
 - [Code Review Process](#code-review-process)
+- [Local Setup](#local-setup)
 
 ## Tech Stack
 - **Frontend:** React + TypeScript (Vite, Mantine, Formik, Redux Toolkit)
@@ -24,15 +25,18 @@ The project is structured as follows:
 
 ```bash
 .
-├── frontend/ # React frontend
-├── backend/ # Go backend
-├── docker-compose.yml # Multi-container setup
-├── README.md # Main documentation
+├── frontend/          # React + Vite SPA
+├── backend/           # Go API, migrations, Asynq worker
+├── init-db/           # Optional Postgres init scripts (mounted in full stack compose)
+├── docker-compose.yml # Full stack (backend, frontend, Postgres, Redis, worker)
+├── docker-compose.local.yml # Postgres + Redis + worker only (run API/FE on host)
+└── README.md
 ```
 
 - Frontend: [`frontend/`](./frontend)
 - Backend: [`backend/`](./backend)
-- Docs: This file and separate READMEs per app
+- Database init: [`init-db/`](./init-db)
+- Docs: This file plus READMEs under `frontend/` and `backend/`
 
 ## Development Guidelines
 - Use **feature branches** for new features.
@@ -84,15 +88,25 @@ docker-compose -f docker-compose.local.yml up --build
 ```
 
 ### 4. Run without Docker
+
+From the repo root, use separate terminals for **Postgres + Redis** (e.g. via `docker-compose.local.yml`), the **API**, the **Asynq worker**, and the **frontend**.
+
 ```bash
-cd backend
-cd backend
-go run main.go
+# Terminal 1 — dependencies only (example)
+docker compose -f docker-compose.local.yml up -d
 
-# Run Worker (in a separate terminal)
-go run cmd/worker/main.go
+# Terminal 2 — API (from backend/, after env + migrations — see backend README)
+cd backend
+go run .
 
+# Terminal 3 — Asynq worker
+cd backend
+go run ./cmd/worker
+
+# Terminal 4 — frontend
 cd frontend
 npm install
 npm run dev
 ```
+
+Point the SPA at your API: set `VITE_API_BASE_URL` (defaults to `http://localhost:8080/api` in code—match your `-port` / deployment). Vite dev server runs at **http://localhost:5173**; CORS in the API allows that origin.

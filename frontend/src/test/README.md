@@ -112,22 +112,15 @@ test('mantine button renders correctly', () => {
 });
 ```
 
-## Running Tests
+## Running tests
 
-### Available Commands
+Vitest is enabled in `vite.config.ts`. There is no `test` script in `package.json` by default; invoke the CLI directly:
 
 ```bash
-# Run all tests
-npm run test
-
-# Run tests in watch mode
-npm run test:watch
-
-# Run tests with coverage
-npm run test:coverage
-
-# Run specific test file
-npm run test MyComponent.test.tsx
+npx vitest              # interactive / watch
+npx vitest run          # single run (CI)
+npx vitest run src/path/to/file.test.tsx
+npx vitest run --coverage   # if coverage provider is configured
 ```
 
 ### Test File Conventions
