@@ -22,7 +22,9 @@ export function useCreateScheduledPost() {
     mutationFn: (body: CreateScheduledPostRequest) => scheduledPostService.create(body),
     onSuccess: ({ response, httpStatus }) => {
       void qc.invalidateQueries({ queryKey: scheduledPostKeys.all });
-      if (response.overall_status === "scheduled") {
+      if (response.overall_status === "published") {
+        notifications.show({ title: "Published", message: "Post went live on Instagram.", color: "green" });
+      } else if (response.overall_status === "scheduled") {
         notifications.show({ title: "Scheduled", message: "Post submitted to Instagram.", color: "green" });
       } else if (response.overall_status === "partial_failure" || httpStatus === 207) {
         notifications.show({

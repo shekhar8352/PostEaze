@@ -10,12 +10,13 @@ type ScheduledMediaItem struct {
 
 // CreateScheduledPostRequest is the body for POST /scheduled-posts.
 type CreateScheduledPostRequest struct {
-	ChannelIDs []int64              `json:"channel_ids" binding:"required,min=1"`
-	Platforms  []string             `json:"platforms" binding:"required,min=1"`
-	ScheduledAt time.Time         `json:"scheduled_at" binding:"required"`
-	PostType   string              `json:"post_type" binding:"required"` // image | video | carousel
-	Caption    string              `json:"caption"`
-	Media      ScheduledMediaPayload `json:"media" binding:"required"`
+	ChannelIDs  []int64               `json:"channel_ids" binding:"required,min=1"`
+	Platforms   []string              `json:"platforms" binding:"required,min=1"`
+	PublishNow  bool                  `json:"publish_now"`                 // if true, post immediately (no scheduled_publish_time)
+	ScheduledAt *time.Time            `json:"scheduled_at"`                // required when publish_now is false
+	PostType    string                `json:"post_type" binding:"required"` // image | video | carousel
+	Caption     string                `json:"caption"`
+	Media       ScheduledMediaPayload `json:"media" binding:"required"`
 }
 
 // ScheduledMediaPayload wraps items for storage and validation.
@@ -35,7 +36,8 @@ type ChannelScheduleResult struct {
 // CreateScheduledPostResponse is returned after scheduling (may be multi-status).
 type CreateScheduledPostResponse struct {
 	ScheduledPostID int64                   `json:"scheduled_post_id"`
-	OverallStatus   string                  `json:"overall_status"` // scheduled | partial_failure | failed
+	OverallStatus   string                  `json:"overall_status"` // published | scheduled | partial_failure | failed
+	PublishNow      bool                    `json:"publish_now"`
 	Results         []ChannelScheduleResult `json:"results"`
 }
 

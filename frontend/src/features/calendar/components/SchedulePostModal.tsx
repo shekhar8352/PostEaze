@@ -41,9 +41,12 @@ export interface SchedulePostModalProps {
   channels: BaseChannelDisplay[];
 }
 
+type TimingMode = "now" | "later";
+
 export function SchedulePostModal({ opened, onClose, initialStart, channels }: SchedulePostModalProps) {
   const createMutation = useCreateScheduledPost();
   const [step, setStep] = useState(0);
+  const [timingMode, setTimingMode] = useState<TimingMode>("later");
   const [scheduledAtStr, setScheduledAtStr] = useState<string | null>(null);
   const [channelValues, setChannelValues] = useState<string[]>([]);
   const [postType, setPostType] = useState<PostType>("image");
@@ -55,6 +58,7 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
   useEffect(() => {
     if (opened) {
       setStep(0);
+      setTimingMode("later");
       setScheduledAtStr(defaultSlotString(initialStart));
       setChannelValues([]);
       setPostType("image");
@@ -79,7 +83,8 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     [igChannels]
   );
 
-  const canNextStep0 = scheduledAtStr != null && scheduledAtStr.length > 0;
+  const canNextStep0 =
+    timingMode === "now" || (scheduledAtStr != null && scheduledAtStr.length > 0 && dayjs(scheduledAtStr).isValid());
   const canNextStep1 = channelValues.length > 0;
 
   const buildMediaItems = () => {
@@ -116,17 +121,30 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     if (err) {
       return;
     }
-    const scheduledAt = dayjs(scheduledAtStr);
-    if (!scheduledAt.isValid()) return;
+    if (timingMode === "later") {
+      const scheduledAt = dayjs(scheduledAtStr);
+      if (!scheduledAt.isValid()) return;
+    }
     const channelIds = channelValues.map((v) => Number(v));
-    const body = {
-      channel_ids: channelIds,
-      platforms: ["instagram"],
-      scheduled_at: scheduledAt.toDate().toISOString(),
-      post_type: postType,
-      caption: caption.trim(),
-      media: { items: buildMediaItems() },
-    };
+    const body =
+      timingMode === "now"
+        ? {
+            channel_ids: channelIds,
+            platforms: ["instagram"] as const,
+            publish_now: true,
+            post_type: postType,
+            caption: caption.trim(),
+            media: { items: buildMediaItems() },
+          }
+        : {
+            channel_ids: channelIds,
+            platforms: ["instagram"] as const,
+            publish_now: false,
+            scheduled_at: dayjs(scheduledAtStr!).toDate().toISOString(),
+            post_type: postType,
+            caption: caption.trim(),
+            media: { items: buildMediaItems() },
+          };
     try {
       await createMutation.mutateAsync(body);
       onClose();
@@ -139,24 +157,44 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Schedule post"
+      title="Create post"
       size="lg"
       transitionProps={{ duration: 200 }}
     >
       <Stepper active={step} onStepClick={setStep} allowNextStepsSelect={false}>
-        <Stepper.Step label="When" description="Date & time">
+        <Stepper.Step label="When" description="Now or later">
           <Stack gap="md" mt="md">
-            <DateTimePicker
-              label="Scheduled time"
-              placeholder="Pick date and time"
-              value={scheduledAtStr}
-              onChange={setScheduledAtStr}
-              valueFormat="YYYY-MM-DD HH:mm"
-              popoverProps={{ withinPortal: true }}
-            />
-            <Text size="xs" c="dimmed">
-              Instagram requires between 10 minutes and 75 days from now (UTC).
+            <Text size="sm" fw={500}>
+              When to publish
             </Text>
+            <SegmentedControl
+              fullWidth
+              data={[
+                { value: "now", label: "Post now" },
+                { value: "later", label: "Schedule" },
+              ]}
+              value={timingMode}
+              onChange={(v) => setTimingMode(v as TimingMode)}
+            />
+            {timingMode === "later" && (
+              <DateTimePicker
+                label="Scheduled time"
+                placeholder="Pick date and time"
+                value={scheduledAtStr}
+                onChange={setScheduledAtStr}
+                valueFormat="YYYY-MM-DD HH:mm"
+                popoverProps={{ withinPortal: true }}
+              />
+            )}
+            {timingMode === "later" ? (
+              <Text size="xs" c="dimmed">
+                Instagram requires between 10 minutes and 75 days from now (UTC).
+              </Text>
+            ) : (
+              <Text size="xs" c="dimmed">
+                Publishes immediately after you confirm (Instagram feed; same media rules apply).
+              </Text>
+            )}
             <Group justify="flex-end">
               <Button variant="default" onClick={onClose}>
                 Cancel
@@ -250,11 +288,11 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
           <Stack gap="sm" mt="md">
             <Text size="sm">
               <strong>When:</strong>{" "}
-              {scheduledAtStr
-                ? dayjs(scheduledAtStr).isValid()
+              {timingMode === "now"
+                ? "Immediately"
+                : scheduledAtStr && dayjs(scheduledAtStr).isValid()
                   ? dayjs(scheduledAtStr).format("YYYY-MM-DD HH:mm")
-                  : "—"
-                : "—"}
+                  : "—"}
             </Text>
             <Text size="sm">
               <strong>Channels:</strong>{" "}
@@ -280,7 +318,7 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
                 Back
               </Button>
               <Button loading={createMutation.isPending} onClick={handleSchedule} disabled={!!validateStep2()}>
-                Schedule
+                {timingMode === "now" ? "Publish now" : "Schedule"}
               </Button>
             </Group>
           </Stack>

@@ -34,9 +34,17 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	if req.PostType == "reel" || req.PostType == "story" {
 		return nil, 501, fmt.Errorf("post type %q is not supported yet; use image, video, or carousel", req.PostType)
 	}
-	schedUTC := req.ScheduledAt.UTC()
-	if err := instagram.ValidateScheduledPublishWindow(schedUTC, time.Now().UTC()); err != nil {
-		return nil, 400, err
+	var schedUTC time.Time
+	if req.PublishNow {
+		schedUTC = time.Now().UTC()
+	} else {
+		if req.ScheduledAt == nil {
+			return nil, 400, fmt.Errorf("scheduled_at is required when publish_now is false")
+		}
+		schedUTC = req.ScheduledAt.UTC()
+		if err := instagram.ValidateScheduledPublishWindow(schedUTC, time.Now().UTC()); err != nil {
+			return nil, 400, err
+		}
 	}
 	payload, err := buildSchedulePayload(req)
 	if err != nil {
@@ -81,7 +89,8 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	results := make([]modelsv1.ChannelScheduleResult, 0, len(req.ChannelIDs))
 	igPub := defaultInstagramPublisher
 	stateMap := map[string]any{
-		"instagram": map[string]any{"channels": map[string]any{}},
+		"publish_now": req.PublishNow,
+		"instagram":   map[string]any{"channels": map[string]any{}},
 	}
 	channelsMap, _ := stateMap["instagram"].(map[string]any)
 	inner, _ := channelsMap["channels"].(map[string]any)
@@ -121,6 +130,7 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 		pubPayload := publishing.SchedulePayload{
 			PostType:     payload.PostType,
 			Caption:      payload.Caption,
+			PublishNow:   req.PublishNow,
 			ScheduledAt:  schedUTC,
 			ImageURL:     payload.ImageURL,
 			VideoURL:     payload.VideoURL,
@@ -147,17 +157,27 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	overall := "failed"
 	finalStatus := string(entities.ScheduledStatusFailed)
 	if successN == len(req.ChannelIDs) {
-		overall = "scheduled"
-		finalStatus = string(entities.ScheduledStatusScheduled)
+		if req.PublishNow {
+			overall = "published"
+			finalStatus = string(entities.ScheduledStatusPublished)
+		} else {
+			overall = "scheduled"
+			finalStatus = string(entities.ScheduledStatusScheduled)
+		}
 	} else if successN > 0 {
 		overall = "partial_failure"
-		finalStatus = string(entities.ScheduledStatusScheduled)
+		if req.PublishNow {
+			finalStatus = string(entities.ScheduledStatusFailed)
+		} else {
+			finalStatus = string(entities.ScheduledStatusScheduled)
+		}
 	}
 	_ = repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, finalStatus, stateBytes)
 
 	resp := &modelsv1.CreateScheduledPostResponse{
 		ScheduledPostID: sp.ID,
 		OverallStatus:   overall,
+		PublishNow:      req.PublishNow,
 		Results:         results,
 	}
 	return resp, 200, nil

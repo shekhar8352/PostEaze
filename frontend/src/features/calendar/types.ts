@@ -15,7 +15,9 @@ export interface ScheduledMediaItem {
 export interface CreateScheduledPostRequest {
   channel_ids: number[];
   platforms: string[];
-  scheduled_at: string;
+  /** Omit or null when publish_now is true */
+  scheduled_at?: string | null;
+  publish_now?: boolean;
   post_type: PostType;
   caption: string;
   media: { items: ScheduledMediaItem[] };
@@ -31,7 +33,8 @@ export interface ChannelScheduleResult {
 
 export interface CreateScheduledPostResponse {
   scheduled_post_id: number;
-  overall_status: "scheduled" | "partial_failure" | "failed";
+  overall_status: "published" | "scheduled" | "partial_failure" | "failed";
+  publish_now: boolean;
   results: ChannelScheduleResult[];
 }
 

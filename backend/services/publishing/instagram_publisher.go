@@ -3,6 +3,7 @@ package publishing
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/shekhar8352/PostEaze/provider/instagram"
 )
@@ -22,13 +23,17 @@ func (p *InstagramPublisher) Schedule(ctx context.Context, accessToken, igUserID
 	if p.API == nil {
 		return "", "", fmt.Errorf("instagram API not configured")
 	}
-	sched := payload.ScheduledAt
+	var schedPtr *time.Time
+	if !payload.PublishNow {
+		t := payload.ScheduledAt
+		schedPtr = &t
+	}
 	switch payload.PostType {
 	case "image":
 		req := &instagram.ContentPublishRequest{
 			PostType:    instagram.ContentTypeImage,
 			Caption:     payload.Caption,
-			ScheduledAt: &sched,
+			ScheduledAt: schedPtr,
 			ImageURL:    payload.ImageURL,
 		}
 		creationID, err = p.API.CreateMediaContainer(ctx, accessToken, igUserID, req)
@@ -36,12 +41,12 @@ func (p *InstagramPublisher) Schedule(ctx context.Context, accessToken, igUserID
 		req := &instagram.ContentPublishRequest{
 			PostType:    instagram.ContentTypeVideo,
 			Caption:     payload.Caption,
-			ScheduledAt: &sched,
+			ScheduledAt: schedPtr,
 			VideoURL:    payload.VideoURL,
 		}
 		creationID, err = p.API.CreateMediaContainer(ctx, accessToken, igUserID, req)
 	case "carousel":
-		creationID, err = p.API.CreateCarouselContainers(ctx, accessToken, igUserID, payload.CarouselURLs, payload.Caption, &sched)
+		creationID, err = p.API.CreateCarouselContainers(ctx, accessToken, igUserID, payload.CarouselURLs, payload.Caption, schedPtr)
 	default:
 		return "", "", fmt.Errorf("unsupported post type for instagram: %s", payload.PostType)
 	}

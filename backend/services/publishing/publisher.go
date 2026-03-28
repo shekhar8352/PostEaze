@@ -12,9 +12,10 @@ const (
 
 // SchedulePayload is platform-agnostic input for a single channel publish attempt.
 type SchedulePayload struct {
-	PostType     string    // image | video | carousel
+	PostType     string // image | video | carousel
 	Caption      string
-	ScheduledAt  time.Time // UTC; used for Meta scheduled_publish_time
+	PublishNow   bool // if true, omit Meta scheduled_publish_time (immediate feed post)
+	ScheduledAt  time.Time // UTC; used for Meta scheduled_publish_time when !PublishNow
 	ImageURL     string
 	VideoURL     string
 	CarouselURLs []string
