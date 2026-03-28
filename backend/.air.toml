@@ -6,7 +6,7 @@ tmp_dir = "tmp"
 
 [build]
   # Build command — compiles the API server
-  cmd = "go build -o ./tmp/api ./cmd/api/main.go"
+  cmd = "go build -o ./tmp/api ./main.go"
   # Binary to run after build
   entrypoint = "./tmp/api"
   # Watch these file extensions
