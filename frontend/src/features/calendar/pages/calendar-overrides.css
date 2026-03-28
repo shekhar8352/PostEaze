@@ -1,0 +1,47 @@
+/* Editorial calendar — align react-big-calendar with Mantine surfaces */
+.posteaze-rbc-wrap .rbc-calendar {
+  font-family: var(--mantine-font-family);
+  color: var(--mantine-color-text);
+}
+
+.posteaze-rbc-wrap .rbc-header,
+.posteaze-rbc-wrap .rbc-time-header-content,
+.posteaze-rbc-wrap .rbc-day-bg,
+.posteaze-rbc-wrap .rbc-time-content,
+.posteaze-rbc-wrap .rbc-month-view,
+.posteaze-rbc-wrap .rbc-toolbar {
+  border-color: light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+}
+
+.posteaze-rbc-wrap .rbc-toolbar button {
+  border-radius: var(--mantine-radius-sm);
+  color: var(--mantine-color-text);
+}
+
+.posteaze-rbc-wrap .rbc-toolbar button.rbc-active {
+  background: var(--mantine-color-blue-filled);
+  color: var(--mantine-color-white);
+  border-color: transparent;
+}
+
+.posteaze-rbc-wrap .rbc-off-range-bg {
+  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+}
+
+.posteaze-rbc-wrap .rbc-today {
+  background: light-dark(var(--mantine-color-blue-0), rgba(51, 154, 240, 0.12));
+}
+
+.posteaze-rbc-wrap .rbc-event {
+  background: light-dark(var(--mantine-color-blue-6), var(--mantine-color-blue-8));
+}
+
+.posteaze-rbc-wrap .rbc-slot-selection {
+  background: rgba(51, 154, 240, 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .posteaze-rbc-wrap .rbc-event {
+    transition: none;
+  }
+}

@@ -5,6 +5,7 @@ import { landingRoutes } from "@/features/landing";
 import { dashboardRoutes } from "@/features/dashboard";
 import { analyticsRoutes } from "@/features/analytics";
 import { channelRoutes } from "@/features/channels";
+import { calendarRoutes } from "@/features/calendar";
 import { MainLayout } from "@/features/layout";
 import { ProtectedLayout } from "./ProtectedRoute";
 import { NotFound } from "./NotFound";
@@ -26,6 +27,7 @@ const AppRoutes = () => {
             ...analyticsRoutes,
             ...landingRoutes,
             ...channelRoutes,
+            ...calendarRoutes,
           ],
         },
       ],
