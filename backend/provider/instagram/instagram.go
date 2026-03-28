@@ -9,6 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/shekhar8352/PostEaze/utils"
 )
@@ -32,6 +33,10 @@ type InstagramProvider interface {
 	GetProfileInsights(accessToken string, igUserID string, metrics []string, since int64, until int64) (*InsightsResponse, error)
 	// GetAudienceInsights fetches lifetime demographic breakdowns (city, country, gender/age, locale).
 	GetAudienceInsights(accessToken string, igUserID string, metrics []string) (*InsightsResponse, error)
+	// Content publishing (Instagram Graph — graph.instagram.com by default).
+	CreateMediaContainer(ctx context.Context, accessToken, igUserID string, req *ContentPublishRequest) (creationID string, err error)
+	CreateCarouselContainers(ctx context.Context, accessToken, igUserID string, imageURLs []string, caption string, scheduledAt *time.Time) (parentCreationID string, err error)
+	PublishMedia(ctx context.Context, accessToken, igUserID, creationID string) (publishedMediaID string, err error)
 }
 
 type InstagramProviderImpl struct {
