@@ -23,6 +23,28 @@ const POST_TYPES: { value: PostType; label: string }[] = [
   { value: "carousel", label: "Carousel" },
 ];
 
+/** Instagram cURLs the URL; viewer pages (Drive, etc.) are HTML, not JPEG bytes. */
+function instagramMediaUrlHint(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const h = u.hostname.toLowerCase();
+    const p = u.pathname.toLowerCase();
+    if (h.includes("drive.google.com") && (p.includes("/file/d/") || p.includes("/file/u/") || p.startsWith("/open"))) {
+      return "This looks like a Google Drive share link. Instagram needs a direct HTTPS link that returns the image file (JPEG), not a preview page.";
+    }
+    if (h === "docs.google.com") {
+      return "Google Docs links are not direct image URLs. Use a public URL whose response is the raw image.";
+    }
+    const isDropbox = h.endsWith(".dropbox.com") || h === "dropbox.com";
+    if (isDropbox && p.includes("/s/") && !u.search.includes("raw=1") && !u.search.includes("dl=1")) {
+      return "For Dropbox, use a direct link with ?raw=1 so Instagram receives file bytes.";
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 function defaultSlotString(initial: Date | null): string {
   const d = initial ?? (() => {
     const x = new Date();
@@ -105,13 +127,21 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     const items = buildMediaItems();
     if (postType === "image") {
       if (items.length !== 1 || !items[0].url.startsWith("https://")) return "One HTTPS image URL required";
+      const hint = instagramMediaUrlHint(items[0].url);
+      if (hint) return hint;
     }
     if (postType === "video") {
       if (items.length !== 1 || !items[0].url.startsWith("https://")) return "One HTTPS video URL required";
+      const hint = instagramMediaUrlHint(items[0].url);
+      if (hint) return hint;
     }
     if (postType === "carousel") {
       if (items.length < 2 || items.length > 10) return "Enter 2–10 image URLs (one per line)";
       if (items.some((i) => !i.url.startsWith("https://"))) return "All carousel URLs must be HTTPS";
+      for (const i of items) {
+        const hint = instagramMediaUrlHint(i.url);
+        if (hint) return hint;
+      }
     }
     return null;
   };
@@ -241,20 +271,38 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
             />
             <Textarea label="Caption" placeholder="Optional" minRows={2} value={caption} onChange={(e) => setCaption(e.target.value)} />
             {postType === "image" && (
-              <TextInput
-                label="Image URL (HTTPS)"
-                placeholder="https://..."
-                value={imageUrl}
-                onChange={(e) => setImageUrl(e.target.value)}
-              />
+              <Stack gap={4}>
+                <TextInput
+                  label="Image URL (HTTPS)"
+                  placeholder="https://cdn.example.com/photo.jpg"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
+                />
+                <Text size="xs" c="dimmed">
+                  Must be a direct link Meta can fetch as JPEG (not Google Drive “view” pages). See{" "}
+                  <a
+                    href="https://developers.facebook.com/docs/instagram-platform/content-publishing/"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Content publishing
+                  </a>
+                  .
+                </Text>
+              </Stack>
             )}
             {postType === "video" && (
-              <TextInput
-                label="Video URL (HTTPS)"
-                placeholder="https://..."
-                value={videoUrl}
-                onChange={(e) => setVideoUrl(e.target.value)}
-              />
+              <Stack gap={4}>
+                <TextInput
+                  label="Video URL (HTTPS)"
+                  placeholder="https://..."
+                  value={videoUrl}
+                  onChange={(e) => setVideoUrl(e.target.value)}
+                />
+                <Text size="xs" c="dimmed">
+                  Same as images: a direct HTTPS URL to the video file, not a player or share page.
+                </Text>
+              </Stack>
             )}
             {postType === "carousel" && (
               <Textarea

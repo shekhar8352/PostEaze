@@ -201,7 +201,7 @@ func buildSchedulePayload(req *modelsv1.CreateScheduledPostRequest) (builtPayloa
 		if len(items) != 1 || items[0].Kind != "image" {
 			return out, fmt.Errorf("image post requires exactly one media item with kind image")
 		}
-		if err := mustHTTPSURL(items[0].URL); err != nil {
+		if err := mustInstagramFetchableMediaURL(items[0].URL); err != nil {
 			return out, err
 		}
 		out.ImageURL = items[0].URL
@@ -209,7 +209,7 @@ func buildSchedulePayload(req *modelsv1.CreateScheduledPostRequest) (builtPayloa
 		if len(items) != 1 || items[0].Kind != "video" {
 			return out, fmt.Errorf("video post requires exactly one media item with kind video")
 		}
-		if err := mustHTTPSURL(items[0].URL); err != nil {
+		if err := mustInstagramFetchableMediaURL(items[0].URL); err != nil {
 			return out, err
 		}
 		out.VideoURL = items[0].URL
@@ -221,7 +221,7 @@ func buildSchedulePayload(req *modelsv1.CreateScheduledPostRequest) (builtPayloa
 			if it.Kind != "image" {
 				return out, fmt.Errorf("carousel items must be kind image")
 			}
-			if err := mustHTTPSURL(it.URL); err != nil {
+			if err := mustInstagramFetchableMediaURL(it.URL); err != nil {
 				return out, err
 			}
 			out.CarouselURLs = append(out.CarouselURLs, it.URL)
@@ -236,6 +236,38 @@ func mustHTTPSURL(s string) error {
 	u, err := url.Parse(s)
 	if err != nil || u.Scheme != "https" || u.Host == "" {
 		return fmt.Errorf("media url must be a valid https URL")
+	}
+	return nil
+}
+
+// mustInstagramFetchableMediaURL rejects URLs that typically return HTML (viewer pages)
+// instead of raw media. Meta cURLs the URL and expects image/video bytes; see
+// https://developers.facebook.com/docs/instagram-platform/content-publishing/
+func mustInstagramFetchableMediaURL(s string) error {
+	if err := mustHTTPSURL(s); err != nil {
+		return err
+	}
+	u, err := url.Parse(s)
+	if err != nil {
+		return err
+	}
+	host := strings.ToLower(u.Hostname())
+	path := strings.ToLower(u.Path)
+	q := strings.ToLower(u.RawQuery)
+
+	switch {
+	case strings.Contains(host, "drive.google.com"):
+		// Viewer/share pages are HTML; Meta cURLs the URL and expects raw JPEG/video bytes.
+		if strings.Contains(path, "/file/d/") || strings.Contains(path, "/file/u/") ||
+			strings.HasPrefix(path, "/open") {
+			return fmt.Errorf("Google Drive share or preview links return a web page, not a JPEG file; Instagram cannot use them. Host the image on a CDN or static HTTPS URL whose response is image/jpeg (see Meta content publishing docs)")
+		}
+	case host == "docs.google.com":
+		return fmt.Errorf("Google Docs URLs are not direct media links; use a public HTTPS URL that returns raw image or video bytes")
+	case strings.HasSuffix(host, ".dropbox.com") || host == "dropbox.com":
+		if strings.Contains(path, "/s/") && !strings.Contains(q, "raw=1") && !strings.Contains(q, "dl=1") {
+			return fmt.Errorf("Dropbox shared folder links often return HTML; append ?raw=1 (or use dl=1) so the URL returns the file bytes")
+		}
 	}
 	return nil
 }
