@@ -1,0 +1,19 @@
+.wrap {
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border) !important;
+  box-shadow: var(--pe-shadow-sm);
+  height: 100%;
+}
+
+.cell {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--pe-border);
+}
+
+.cell:nth-last-child(-n + 2) {
+  border-bottom: none;
+}
+
+.value {
+  color: var(--pe-text);
+}

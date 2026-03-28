@@ -1,0 +1,10 @@
+.card {
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border) !important;
+  box-shadow: var(--pe-shadow-sm);
+}
+
+.value {
+  color: var(--pe-text);
+  letter-spacing: -0.02em;
+}

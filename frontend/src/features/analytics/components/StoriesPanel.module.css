@@ -1,0 +1,5 @@
+.wrap {
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border) !important;
+  box-shadow: var(--pe-shadow-sm);
+}
