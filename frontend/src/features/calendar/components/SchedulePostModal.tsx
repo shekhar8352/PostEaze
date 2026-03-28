@@ -160,7 +160,7 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
       timingMode === "now"
         ? {
             channel_ids: channelIds,
-            platforms: ["instagram"] as const,
+            platforms: ["instagram"],
             publish_now: true,
             post_type: postType,
             caption: caption.trim(),
@@ -168,7 +168,7 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
           }
         : {
             channel_ids: channelIds,
-            platforms: ["instagram"] as const,
+            platforms: ["instagram"],
             publish_now: false,
             scheduled_at: dayjs(scheduledAtStr!).toDate().toISOString(),
             post_type: postType,
