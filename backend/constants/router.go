@@ -33,4 +33,6 @@ const (
 	CreateInstagramChannel = "/create"
 	WebhookRoute           = "/webhooks"
 	InstagramWebhook       = "/instagram"
+
+	ScheduledPostsRoute = "/scheduled-posts"
 )

@@ -66,6 +66,7 @@ func Init() error {
 		addV1CronRoutes(v1)
 		addV1AnalyticsRoutes(v1)
 		addV1PostRoutes(v1)
+		addV1ScheduledPostRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -140,6 +141,17 @@ func addV1CronRoutes(v1 *gin.RouterGroup) {
 
 func addV1PostRoutes(v1 *gin.RouterGroup) {
 	v1.GET("/posts", middleware.AuthMiddleware(), apiv1.GetPostsHandler)
+}
+
+func addV1ScheduledPostRoutes(v1 *gin.RouterGroup) {
+	sp := v1.Group(constants.ScheduledPostsRoute)
+	sp.Use(middleware.AuthMiddleware())
+	{
+		sp.GET("", apiv1.ListScheduledPostsHandler)
+		sp.POST("", apiv1.CreateScheduledPostHandler)
+		sp.GET("/:id", apiv1.GetScheduledPostHandler)
+		sp.DELETE("/:id", apiv1.CancelScheduledPostHandler)
+	}
 }
 
 func addV1AnalyticsRoutes(v1 *gin.RouterGroup) {
