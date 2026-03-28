@@ -1,0 +1,13 @@
+.header {
+  margin-bottom: 0.25rem;
+}
+
+.title {
+  color: var(--pe-text);
+  letter-spacing: -0.03em;
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+.selectInput {
+  border-color: var(--pe-border);
+}

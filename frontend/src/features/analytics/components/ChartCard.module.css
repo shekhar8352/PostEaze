@@ -1,0 +1,16 @@
+.wrap {
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border) !important;
+  box-shadow: var(--pe-shadow-sm);
+  height: 100%;
+}
+
+.chart {
+  height: 220px;
+  position: relative;
+}
+
+.chartTall {
+  height: 280px;
+  position: relative;
+}

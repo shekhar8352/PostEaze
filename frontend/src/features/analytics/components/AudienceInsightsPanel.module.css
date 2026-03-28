@@ -1,0 +1,122 @@
+.wrap {
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border) !important;
+  box-shadow: var(--pe-shadow-sm);
+}
+
+.header {
+  border-bottom: 1px solid var(--pe-border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pe-text-secondary);
+}
+
+.meta {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  color: var(--pe-text-muted);
+  margin-top: 0.25rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 48em) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75em) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.block {
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md, 8px);
+  padding: 0.75rem 0.85rem;
+  background: linear-gradient(180deg, var(--pe-bg-elevated) 0%, color-mix(in srgb, var(--pe-bg-elevated) 92%, var(--pe-border)) 100%);
+}
+
+.blockTitle {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--pe-text);
+  margin-bottom: 0.65rem;
+  letter-spacing: 0.02em;
+}
+
+.rows {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
+  gap: 0.15rem 0.5rem;
+  align-items: center;
+}
+
+.label {
+  font-size: 0.78rem;
+  color: var(--pe-text);
+  grid-column: 1;
+  grid-row: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.72rem;
+  color: var(--pe-text-muted);
+  grid-column: 2;
+  grid-row: 1;
+  text-align: right;
+}
+
+.barTrack {
+  grid-column: 1 / -1;
+  grid-row: 2;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--pe-border) 55%, transparent);
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 3px;
+  background: linear-gradient(90deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+  min-width: 2px;
+  transition: width 0.35s ease-out;
+}
+
+.empty {
+  border: 1px dashed var(--pe-border);
+  border-radius: var(--pe-radius-md, 8px);
+  padding: 1rem 1.1rem;
+  background: color-mix(in srgb, var(--pe-accent-subtle, rgba(99, 102, 241, 0.08)) 100%, transparent);
+}
+
+.emptyText {
+  font-size: 0.875rem;
+  color: var(--pe-text-secondary);
+  line-height: 1.55;
+}
