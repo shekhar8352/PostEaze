@@ -54,7 +54,7 @@ func HandleSyncInstagramAnalyticsTask(ctx context.Context, t *asynq.Task) error 
 
 	// Process each channel
 	for _, channel := range channels {
-		if err := syncChannelAnalytics(ctx, channel); err != nil {
+		if err := SyncInstagramChannelAnalytics(ctx, channel); err != nil {
 			// Log error and continue with next channel
 			utils.Logger.Error(ctx, fmt.Sprintf("Failed to sync analytics for channel %d: %v", channel.ID, err))
 			continue
@@ -65,7 +65,8 @@ func HandleSyncInstagramAnalyticsTask(ctx context.Context, t *asynq.Task) error 
 	return nil
 }
 
-func syncChannelAnalytics(ctx context.Context, channel entities.Channel) error {
+// SyncInstagramChannelAnalytics fetches Instagram Graph insights for a single channel and upserts DB rows.
+func SyncInstagramChannelAnalytics(ctx context.Context, channel entities.Channel) error {
 	// Get the latest access token
 	token, err := repositories.GetLatestTokenByChannelID(ctx, channel.ID)
 	if err != nil {
