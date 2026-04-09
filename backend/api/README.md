@@ -1,6 +1,6 @@
 # API layer
 
-HTTP interface for the PostEaze backend: Gin router, versioned REST handlers under `/api/v1`, Swagger, and Instagram webhook routes.
+HTTP interface for the PostEaze backend: Gin router, versioned REST handlers under `/api/v1`, Swagger, Instagram webhooks, Meta OAuth callback, and Meta analytics sync.
 
 ## Layout
 
@@ -8,7 +8,7 @@ HTTP interface for the PostEaze backend: Gin router, versioned REST handlers und
 api/
 ├── router.go       # Gin engine, CORS, middleware, route groups, Swagger
 ├── health.go       # Liveness + Postgres/Redis checks + readiness aggregate
-├── v1/             # Version 1 handlers (auth, user, team, channel, log, meta, posts, scheduled posts, analytics, dev, cron)
+├── v1/             # Version 1 handlers (auth, user, team, channel, log, meta, meta analytics, posts, scheduled posts, analytics, dev, cron)
 └── webhooks/       # Instagram webhook verify + POST handler
 ```
 
@@ -16,7 +16,7 @@ api/
 
 1. **CORS** — Allowed origins include local Vite and configured dev hosts; methods `GET`, `POST`, `PUT`, `DELETE`, `OPTIONS`; `Authorization` allowed.
 2. **`GinLoggingMiddleware`** — Request/response logging (global).
-3. **Groups** — Health: `GET /api/health` (liveness), `GET /api/health/postgres`, `GET /api/health/redis`, `GET /api/health/ready` (503 if PG or Redis down). `/api/v1` registers auth, logs, user, team, meta, channels (+ webhooks path), dev, cron, posts, scheduled posts, analytics.
+3. **Groups** — Health: `GET /api/health` (liveness), `GET /api/health/postgres`, `GET /api/health/redis`, `GET /api/health/ready` (503 if PG or Redis down). `/api/v1` registers auth, logs, user, team, meta (callback + JWT analytics sync), channels (Instagram + Facebook + webhooks), dev, cron, analytics, posts, scheduled posts.
 4. **Swagger** — `GET /api/swagger/*` via `gin-swagger`; `docs.SwaggerInfo` uses `API_HOST` and base path `/api/v1`.
 
 ## Route registration (v1)
@@ -27,7 +27,7 @@ api/
 | `addV1LogRoutes` | `/log` |
 | `addV1UserRoutes` | `/user` |
 | `addV1TeamRoutes` | `/team` |
-| `addV1MetaRoutes` | `/meta` |
+| `addV1MetaRoutes` | `/meta` — OAuth callback; `POST /meta/analytics/sync` (JWT) |
 | `addV1ChannelRoutes` | `/channels`, `/webhooks` |
 | `addV1DevRoutes` | `/dev` |
 | `addV1CronRoutes` | `/cron` |

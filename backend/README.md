@@ -1,6 +1,6 @@
 # PostEaze Backend
 
-Go REST API for PostEaze: Firebase-based authentication, teams, Instagram channels, webhooks, background jobs (Asynq/Redis), and analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
+Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Facebook channels, Meta OAuth and analytics sync, webhooks, scheduled posts, background jobs (Asynq/Redis), and channel analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
 
 ## Architecture overview
 
@@ -14,7 +14,8 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram channe
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│  Business — business/v1 (auth, user, team, channel, log, scheduled posts) │
+│  Business — business/v1 (auth, user, team, channel, log,       │
+│            scheduled posts, analytics, Meta sync, posts)     │
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
@@ -22,11 +23,11 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram channe
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│  Infrastructure — configs, Redis, encryption, Firebase      │
+│  Infrastructure — configs, Redis, encryption, Firebase        │
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│  Providers — Meta, Instagram                                  │
+│  Providers — Meta / Instagram Graph API, insights              │
 │  Tasks — Asynq client (API) + worker (cmd/worker)             │
 └───────────────────────────────────────────────────────────────┘
 ```
@@ -45,17 +46,18 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram channe
 |------|------|
 | `main.go` | Startup: env, configs, DB, Redis, encryption, Firebase, Asynq client, router, HTTP client |
 | `api/` | Router, Swagger, `v1` handlers, Instagram webhooks |
-| `business/v1/` | Domain logic (Firebase auth, users, teams, channels, logs, scheduled posts) |
+| `business/v1/` | Domain logic (Firebase auth, users, teams, channels, logs, scheduled posts, analytics, Meta) |
 | `entities/` | `RawEntity` SQL patterns; `repositories/` data access |
 | `models/v1/` | Request/response and shared structs |
 | `migrations/` | Numbered `*.up.sql` / `*.down.sql` |
 | `middleware/` | Logging, JWT auth, roles, Instagram analytics access |
-| `provider/` | Meta Graph API, Instagram OAuth |
+| `provider/` | Meta Graph API, Instagram OAuth, insights |
 | `services/` | Email, Redis, Meta, Instagram orchestration |
 | `tasks/` | Asynq task definitions, handlers, scheduler |
 | `cmd/worker/` | Standalone worker process |
 | `utils/` | Config, DB, env, flags, HTTP, JWT, Firebase, Redis, encryption |
 | `resources/configs/` | Per-environment YAML (`dev/`, `cug/`, `prod/`) |
+| `docs/` | Generated Swagger (`swagger.json`, `swagger.yaml`, `docs.go`) |
 
 ## Service initialization (`main.go`)
 
@@ -78,13 +80,31 @@ Base path: `/api/v1` unless noted.
 | User | `GET /user/:user_id`, `PUT /user/:user_id` | |
 | Team | `POST /team/create`, `GET /team/all`, `GET /team/:id`, `GET /team/owner/:id`, `PUT /team/update`, `PUT /team/update-status` | |
 | Meta | `POST /meta/callback` | OAuth callback |
-| Channels | `GET /channels`, `GET /channels/details`, `POST /channels/instagram/create`, `POST /channels/instagram/subscribe-webhooks` | Most require JWT |
+| Meta analytics | `POST /meta/analytics/sync` | JWT — sync analytics from Meta for connected accounts |
+| Channels | `GET /channels`, `GET /channels/details`, `POST /channels/instagram/create`, `POST /channels/instagram/subscribe-webhooks`, `POST /channels/facebook/create` | Most require JWT |
 | Webhooks | `GET`, `POST /webhooks/instagram` | Meta verification + events |
 | Posts | `GET /posts` | JWT |
 | Scheduled posts | `GET /scheduled-posts`, `POST /scheduled-posts`, `GET /scheduled-posts/:id`, `DELETE /scheduled-posts/:id` | JWT — list supports calendar range query params (see handlers) |
-| Analytics | `GET /channels/:channelId/analytics/...` | JWT + `RequireInstagramChannelAnalyticsAccess` (profile, posts, overview, dashboard, etc.) |
+| Analytics | See below | JWT + `RequireInstagramChannelAnalyticsAccess` (Instagram channel) |
 | Dev | `POST /dev/generate-token` | Test JWT helpers when `ENV=development` / `dev` |
 | Cron (dev-oriented) | `POST /cron/trigger-instagram-sync`, `.../trigger-instagram-posts`, `.../trigger-instagram-analytics` | Guarded by `ENV` in handlers |
+
+### Channel analytics (`/channels/:channelId/analytics`)
+
+All require JWT and Instagram channel analytics access.
+
+| Method | Path |
+|--------|------|
+| GET | `/profile` |
+| GET | `/posts` |
+| GET | `/overview` |
+| GET | `/top-posts` |
+| GET | `/posts-overview` |
+| GET | `/posts/:postId` |
+| GET | `/dashboard` |
+| GET | `/comparison` |
+| GET | `/stories` |
+| GET | `/audience` |
 
 See [`api/v1/README.md`](api/v1/README.md) and [`api/webhooks/README.md`](api/webhooks/README.md) for detail.
 
@@ -111,21 +131,21 @@ Flags: `-mode` (`dev` | `release`), `-port`, `-base-config-path` (default `resou
 
 ## Swagger
 
-Regenerate after changing handler comments:
+OpenAPI specs live in [`docs/`](docs/) (`swagger.json`, `swagger.yaml`). Regenerate after changing handler Swagger comments (`// @Summary`, `// @Router`, etc.):
 
 ```bash
 go install github.com/swaggo/swag/cmd/swag@latest
-cd backend && swag init
+cd backend && swag init --generalInfo api/router.go --output docs --parseDependency --parseInternal
 ```
 
-Swagger host comes from `API_HOST` (see `api/router.go`). Open `http://<API_HOST>/api/swagger/index.html` (scheme/path must match your deployment).
+`docs.SwaggerInfo` in `api/router.go` sets **Host** from `API_HOST` and **BasePath** to `/api/v1`. Open `http://<API_HOST>/api/swagger/index.html` (scheme and host must match your deployment).
 
 ## Environment variables (common)
 
 | Variable | Purpose |
 |----------|---------|
 | `ENV` | `development` / `dev` vs production behavior (e.g. dev-only routes) |
-| `API_HOST` | Swagger `Host` field |
+| `API_HOST` | Swagger `Host` field (e.g. `localhost:8000`) |
 | Firebase / `GOOGLE_APPLICATION_CREDENTIALS` | Firebase Admin (see `utils/firebase.go`) |
 | `ENCRYPTION_KEY` | Base64 32-byte key for channel tokens |
 | `INSTAGRAM_*`, `META_*` | Instagram/Meta app and webhooks |

@@ -9,8 +9,9 @@ All routes below are prefixed with `/api/v1` unless stated. Request/response bod
 | `auth.go` | Firebase authentication, refresh, logout, current user |
 | `user.go` | Get/update user by ID |
 | `team.go` | Team CRUD-style operations |
-| `channel.go` | Instagram channels, page details, webhook subscription |
+| `channel.go` | Instagram and Facebook channels, page details, webhook subscription |
 | `meta.go` | Meta OAuth callback |
+| `meta_analytics.go` | Sync Meta analytics (authenticated) |
 | `log.go` | Read application logs by date or ID |
 | `posts.go` | List posts for authenticated user |
 | `scheduled_post.go` | Scheduled posts CRUD + calendar listing |
@@ -23,7 +24,7 @@ All routes below are prefixed with `/api/v1` unless stated. Request/response bod
 Base: `/api/v1/auth`
 
 | Method | Path | Auth | Description |
-|--------|------|------|-------------|
+|--------|------|------|---------------|
 | POST | `/authenticate` | No | Body: `FirebaseAuthParams` — Firebase ID token, platform, optional local ID. Creates or updates user, returns JWTs. |
 | POST | `/refresh` | No | Body: `refresh_token`. Returns new tokens. |
 | POST | `/logout` | No | Body: refresh token; revokes session server-side. |
@@ -36,7 +37,7 @@ Base: `/api/v1/auth`
 | GET | `/user/:user_id` | Not enforced by `AuthMiddleware` |
 | PUT | `/user/:user_id` | Not enforced by `AuthMiddleware` |
 
-Swagger annotations may reference `/users`; the actual paths are `/user/:user_id` per `constants.UserRoute`.
+Swagger may reference `/users`; the live paths are `/user/:user_id` per `constants.UserRoute`.
 
 ## Teams (`/team`)
 
@@ -51,11 +52,12 @@ Swagger annotations may reference `/users`; the actual paths are `/user/:user_id
 
 ## Meta (`/meta`)
 
-| Method | Path | Description |
-|--------|------|-------------|
-| POST | `/meta/callback` | Exchange OAuth code for pages/tokens (Meta flow). |
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| POST | `/meta/callback` | No | Exchange OAuth code for pages/tokens (Meta flow). |
+| POST | `/meta/analytics/sync` | JWT | Trigger sync of Meta analytics for the authenticated user’s connected assets. |
 
-## Channels & Instagram (`/channels`)
+## Channels (`/channels`)
 
 | Method | Path | Auth |
 |--------|------|------|
@@ -63,6 +65,7 @@ Swagger annotations may reference `/users`; the actual paths are `/user/:user_id
 | GET | `/channels/details` | JWT — query `channel_id` |
 | POST | `/channels/instagram/create` | JWT |
 | POST | `/channels/instagram/subscribe-webhooks` | JWT |
+| POST | `/channels/facebook/create` | JWT |
 
 ## Webhooks
 
@@ -92,7 +95,18 @@ All routes require JWT (`AuthMiddleware`).
 
 All routes require JWT and `RequireInstagramChannelAnalyticsAccess` (user must own channel or have team access; Instagram provider).
 
-Examples: `GET .../profile`, `.../posts`, `.../overview`, `.../top-posts`, `.../posts-overview`, `.../posts/:postId`, `.../dashboard`, `.../comparison`, `.../stories`.
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/channels/:channelId/analytics/profile` | Time-series profile metrics |
+| GET | `/channels/:channelId/analytics/posts` | Post-level analytics list |
+| GET | `/channels/:channelId/analytics/overview` | Aggregated overview |
+| GET | `/channels/:channelId/analytics/top-posts` | Top posts by engagement |
+| GET | `/channels/:channelId/analytics/posts-overview` | Totals (likes, comments, etc.) |
+| GET | `/channels/:channelId/analytics/posts/:postId` | Single post insights |
+| GET | `/channels/:channelId/analytics/dashboard` | Dashboard bundle |
+| GET | `/channels/:channelId/analytics/comparison` | Period-over-period comparison |
+| GET | `/channels/:channelId/analytics/stories` | Story analytics |
+| GET | `/channels/:channelId/analytics/audience` | Audience snapshots |
 
 ## Logs (`/log`)
 
@@ -104,7 +118,7 @@ Examples: `GET .../profile`, `.../posts`, `.../overview`, `.../top-posts`, `.../
 ## Development (`/dev`)
 
 | Method | Path | Notes |
-|--------|------|--------|
+|--------|------|-------|
 | POST | `/dev/generate-token` | Only when `ENV` is `development`, `dev`, or empty (see handler). |
 
 ## Cron triggers (`/cron`)
