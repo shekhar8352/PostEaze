@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Line } from "react-chartjs-2";
 import { Paper, Text, Skeleton } from "@mantine/core";
-import { registerChartJs, chartColors } from "../chartSetup";
+import { registerChartJs, useChartTheme } from "../chartSetup";
 import type { ProfileAnalyticsItem } from "../types";
 import styles from "./ChartCard.module.css";
 
@@ -13,6 +13,8 @@ type Props = {
 };
 
 export function FollowerGrowthChart({ series, loading }: Props) {
+  const colors = useChartTheme();
+
   const data = useMemo(() => {
     const labels = series.map((r) => r.date);
     const followers = series.map((r) => r.follower_count ?? null);
@@ -22,7 +24,7 @@ export function FollowerGrowthChart({ series, loading }: Props) {
         {
           label: "Followers",
           data: followers as (number | null)[],
-          borderColor: chartColors.accent,
+          borderColor: colors.accent,
           backgroundColor: "rgba(29, 78, 216, 0.12)",
           fill: true,
           tension: 0.35,
@@ -32,7 +34,7 @@ export function FollowerGrowthChart({ series, loading }: Props) {
         },
       ],
     };
-  }, [series]);
+  }, [series, colors]);
 
   const options = useMemo(
     () => ({
@@ -44,17 +46,17 @@ export function FollowerGrowthChart({ series, loading }: Props) {
       },
       scales: {
         x: {
-          grid: { color: chartColors.grid },
-          ticks: { color: chartColors.text, maxRotation: 45, minRotation: 0 },
+          grid: { color: colors.grid },
+          ticks: { color: colors.text, maxRotation: 45, minRotation: 0 },
         },
         y: {
           beginAtZero: false,
-          grid: { color: chartColors.grid },
-          ticks: { color: chartColors.text },
+          grid: { color: colors.grid },
+          ticks: { color: colors.text },
         },
       },
     }),
-    []
+    [colors]
   );
 
   return (

@@ -2,9 +2,44 @@
   background: var(--pe-bg-elevated);
   border-color: var(--pe-border) !important;
   box-shadow: var(--pe-shadow-sm);
+  border-top: 3px solid color-mix(in srgb, var(--pe-border) 70%, var(--mantine-color-blue-4));
+  transition:
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.card:hover {
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--pe-border) 45%, transparent);
+  border-color: color-mix(in srgb, var(--pe-border) 80%, var(--mantine-color-blue-3)) !important;
+}
+
+.kicker {
+  color: var(--pe-text-secondary);
+  letter-spacing: 0.06em;
+  line-height: 1.35;
 }
 
 .value {
+  font-size: clamp(1.35rem, 2.8vw, 1.85rem);
+  font-weight: 800;
   color: var(--pe-text);
-  letter-spacing: -0.02em;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+}
+
+.deltaBadge {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.footerNote {
+  color: var(--pe-text-muted);
+}
+
+.naHint {
+  font-style: italic;
+  color: var(--pe-text-muted);
+  flex-shrink: 0;
 }

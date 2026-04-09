@@ -1,4 +1,4 @@
-import { Group, Burger, Text, Menu, Avatar, UnstyledButton, rem } from '@mantine/core';
+import { Group, Burger, Text, Menu, Avatar, UnstyledButton, ActionIcon, rem, useMantineColorScheme, useComputedColorScheme } from '@mantine/core';
 import { Icons } from '@/app/theme';
 import { useAuth } from '@/features/auth';
 import { useNavigate } from 'react-router-dom';
@@ -15,6 +15,12 @@ interface AppHeaderProps {
 export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
     const { user, logout } = useAuth();
     const navigate = useNavigate();
+    const { setColorScheme } = useMantineColorScheme();
+    const computedScheme = useComputedColorScheme('light', { getInitialValueInEffect: true });
+
+    const toggleColorScheme = () => {
+        setColorScheme(computedScheme === 'dark' ? 'light' : 'dark');
+    };
 
     const handleLogout = async () => {
         try {
@@ -58,50 +64,66 @@ export const AppHeader = ({ mobileOpened, toggleMobile }: AppHeaderProps) => {
                 </UnstyledButton>
             </Group>
 
-            <Menu shadow="md" width={200} position="bottom-end">
-                <Menu.Target>
-                    <UnstyledButton>
-                        <Group gap={7}>
-                            <Avatar
-                                src={user?.avatar}
-                                alt={user?.name || user?.email}
-                                radius="xl"
-                                size={32}
-                            />
-                            <Text fw={600} size="sm" className={headerStyles.userLabel} style={{ lineHeight: 1 }} mr={3}>
-                                {user?.name || user?.email}
-                            </Text>
-                            <Icons.ChevronDown size={12} stroke={1.5} />
-                        </Group>
-                    </UnstyledButton>
-                </Menu.Target>
+            <Group gap="sm">
+                <ActionIcon
+                    onClick={toggleColorScheme}
+                    variant="subtle"
+                    color="gray"
+                    size="lg"
+                    radius="md"
+                    aria-label="Toggle color scheme"
+                >
+                    {computedScheme === 'dark'
+                        ? <Icons.Sun size={18} stroke={1.5} />
+                        : <Icons.Moon size={18} stroke={1.5} />
+                    }
+                </ActionIcon>
 
-                <Menu.Dropdown>
-                    <Menu.Label>Account</Menu.Label>
-                    <Menu.Item
-                        leftSection={<Icons.User style={{ width: rem(14), height: rem(14) }} />}
-                        onClick={() => navigate('/profile')}
-                    >
-                        Profile
-                    </Menu.Item>
-                    <Menu.Item
-                        leftSection={<Icons.Settings style={{ width: rem(14), height: rem(14) }} />}
-                        onClick={() => navigate('/settings')}
-                    >
-                        Settings
-                    </Menu.Item>
+                <Menu shadow="md" width={200} position="bottom-end">
+                    <Menu.Target>
+                        <UnstyledButton>
+                            <Group gap={7}>
+                                <Avatar
+                                    src={user?.avatar}
+                                    alt={user?.name || user?.email}
+                                    radius="xl"
+                                    size={32}
+                                />
+                                <Text fw={600} size="sm" className={headerStyles.userLabel} style={{ lineHeight: 1 }} mr={3}>
+                                    {user?.name || user?.email}
+                                </Text>
+                                <Icons.ChevronDown size={12} stroke={1.5} />
+                            </Group>
+                        </UnstyledButton>
+                    </Menu.Target>
 
-                    <Menu.Divider />
+                    <Menu.Dropdown>
+                        <Menu.Label>Account</Menu.Label>
+                        <Menu.Item
+                            leftSection={<Icons.User style={{ width: rem(14), height: rem(14) }} />}
+                            onClick={() => navigate('/profile')}
+                        >
+                            Profile
+                        </Menu.Item>
+                        <Menu.Item
+                            leftSection={<Icons.Settings style={{ width: rem(14), height: rem(14) }} />}
+                            onClick={() => navigate('/settings')}
+                        >
+                            Settings
+                        </Menu.Item>
 
-                    <Menu.Item
-                        color="red"
-                        leftSection={<Icons.Logout style={{ width: rem(14), height: rem(14) }} />}
-                        onClick={handleLogout}
-                    >
-                        Logout
-                    </Menu.Item>
-                </Menu.Dropdown>
-            </Menu>
+                        <Menu.Divider />
+
+                        <Menu.Item
+                            color="red"
+                            leftSection={<Icons.Logout style={{ width: rem(14), height: rem(14) }} />}
+                            onClick={handleLogout}
+                        >
+                            Logout
+                        </Menu.Item>
+                    </Menu.Dropdown>
+                </Menu>
+            </Group>
         </Group>
     );
 };
