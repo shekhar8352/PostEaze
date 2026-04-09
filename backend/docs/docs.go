@@ -1699,16 +1699,14 @@ const docTemplate = `{
         },
         "modelsv1.CreateFacebookChannelRequest": {
             "type": "object",
-            "required": [
-                "code",
-                "page_id",
-                "redirect_uri"
-            ],
             "properties": {
                 "channel_name": {
                     "type": "string"
                 },
                 "code": {
+                    "type": "string"
+                },
+                "page_access_token": {
                     "type": "string"
                 },
                 "page_id": {
@@ -2092,17 +2090,24 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
 // SwaggerInfo holds exported Swagger Info so clients can modify it
 var SwaggerInfo = &swag.Spec{
-	Version:          "",
-	Host:             "",
-	BasePath:         "",
+	Version:          "1.0",
+	Host:             "localhost:8000",
+	BasePath:         "/",
 	Schemes:          []string{},
-	Title:            "",
-	Description:      "",
+	Title:            "PostEaze API",
+	Description:      "Auto-generated API documentation with Swagger",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

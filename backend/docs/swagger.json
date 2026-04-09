@@ -1,8 +1,13 @@
 {
     "swagger": "2.0",
     "info": {
-        "contact": {}
+        "description": "Auto-generated API documentation with Swagger",
+        "title": "PostEaze API",
+        "contact": {},
+        "version": "1.0"
     },
+    "host": "localhost:8000",
+    "basePath": "/",
     "paths": {
         "/auth/authenticate": {
             "post": {
@@ -1688,16 +1693,14 @@
         },
         "modelsv1.CreateFacebookChannelRequest": {
             "type": "object",
-            "required": [
-                "code",
-                "page_id",
-                "redirect_uri"
-            ],
             "properties": {
                 "channel_name": {
                     "type": "string"
                 },
                 "code": {
+                    "type": "string"
+                },
+                "page_access_token": {
                     "type": "string"
                 },
                 "page_id": {
@@ -2080,6 +2083,13 @@
                     "type": "string"
                 }
             }
+        }
+    },
+    "securityDefinitions": {
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
         }
     }
 }
