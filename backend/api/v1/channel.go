@@ -164,3 +164,48 @@ func SubscribeWebhooksHandler(c *gin.Context) {
 
 	utils.SendSuccess(c, resp, "Successfully subscribed to webhooks")
 }
+
+// CreateFacebookChannelHandler godoc
+// @Summary      Create Facebook Page channel
+// @Description  Exchanges OAuth code, resolves the Page, and stores the Page access token for analytics.
+// @Tags         Channels
+// @Accept       json
+// @Produce      json
+// @Security     BearerAuth
+// @Param        request body modelsv1.CreateFacebookChannelRequest true "Create Facebook channel"
+// @Success      200  {object}  modelsv1.CreateFacebookChannelResponse
+// @Router       /channels/facebook/create [post]
+func CreateFacebookChannelHandler(c *gin.Context) {
+	userIDStr, exists := c.Get("user_id")
+	if !exists {
+		utils.SendError(c, http.StatusUnauthorized, "User ID not found in token")
+		return
+	}
+
+	var req modelsv1.CreateFacebookChannelRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		utils.SendError(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	tokenFlow := req.PageID != "" && req.PageAccessToken != ""
+	codeFlow := req.Code != "" && req.RedirectURI != "" && req.PageID != ""
+	if !tokenFlow && !codeFlow {
+		utils.SendError(c, http.StatusBadRequest, "provide page_id and page_access_token (after Meta callback), or code, redirect_uri, and page_id")
+		return
+	}
+
+	var resp *modelsv1.CreateFacebookChannelResponse
+	var err error
+	if tokenFlow {
+		resp, err = businessv1.CreateFacebookChannelFromPageToken(c.Request.Context(), req, userIDStr.(string))
+	} else {
+		resp, err = businessv1.CreateFacebookChannel(c.Request.Context(), req, userIDStr.(string))
+	}
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, resp, "Facebook Page connected successfully")
+}

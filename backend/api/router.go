@@ -111,6 +111,7 @@ func addV1TeamRoutes(v1 *gin.RouterGroup) {
 func addV1MetaRoutes(v1 *gin.RouterGroup) {
 	metav1 := v1.Group(constants.MetaRoute)
 	metav1.POST(constants.MetaCallback, apiv1.HandleMetaCallback)
+	metav1.POST(constants.MetaAnalyticsSync, middleware.AuthMiddleware(), apiv1.SyncMetaAnalyticsHandler)
 }
 
 func addV1ChannelRoutes(v1 *gin.RouterGroup) {
@@ -121,6 +122,9 @@ func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 	instagramv1 := channelv1.Group(constants.InstagramRoute)
 	instagramv1.POST(constants.CreateInstagramChannel, middleware.AuthMiddleware(), apiv1.CreateInstagramChannelHandler)
 	instagramv1.POST("/subscribe-webhooks", middleware.AuthMiddleware(), apiv1.SubscribeWebhooksHandler)
+
+	facebookv1 := channelv1.Group(constants.FacebookRoute)
+	facebookv1.POST(constants.CreateFacebookChannel, middleware.AuthMiddleware(), apiv1.CreateFacebookChannelHandler)
 
 	webhookv1 := v1.Group(constants.WebhookRoute)
 	webhookv1.GET(constants.InstagramWebhook, webhooks.HandleInstagramWebhookVerify)

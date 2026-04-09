@@ -319,6 +319,45 @@ const docTemplate = `{
                 }
             }
         },
+        "/channels/facebook/create": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Exchanges OAuth code, resolves the Page, and stores the Page access token for analytics.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Channels"
+                ],
+                "summary": "Create Facebook Page channel",
+                "parameters": [
+                    {
+                        "description": "Create Facebook channel",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/modelsv1.CreateFacebookChannelRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/modelsv1.CreateFacebookChannelResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/channels/instagram/create": {
             "post": {
                 "security": [
@@ -446,24 +485,18 @@ const docTemplate = `{
                 }
             }
         },
-        "/channels/{channelId}/analytics/overview": {
+        "/channels/{channelId}/analytics/audience": {
             "get": {
                 "security": [
                     {
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get aggregated analytics overview for a channel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
+                "description": "Lifetime demographic insights (audience_city, country, gender_age, locale) stored per UTC day during analytics sync",
                 "tags": [
                     "Analytics"
                 ],
-                "summary": "Get Analytics Overview",
+                "summary": "Get Instagram audience snapshots",
                 "parameters": [
                     {
                         "type": "integer",
@@ -483,31 +516,62 @@ const docTemplate = `{
                         "description": "End date (YYYY-MM-DD)",
                         "name": "end_date",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 100, max 500; 0 = all)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "1 to include raw Meta JSON",
+                        "name": "include_raw",
+                        "in": "query"
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
+                "responses": {}
+            }
+        },
+        "/channels/{channelId}/analytics/comparison": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
                     }
-                }
+                ],
+                "responses": {}
+            }
+        },
+        "/channels/{channelId}/analytics/dashboard": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "summary": "Get Channel Dashboard",
+                "responses": {}
+            }
+        },
+        "/channels/{channelId}/analytics/overview": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "Analytics"
+                ],
+                "summary": "Get Analytics Overview",
+                "responses": {}
             }
         },
         "/channels/{channelId}/analytics/posts": {
@@ -518,12 +582,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Get Instagram post analytics for a channel within a date range",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "Analytics"
                 ],
@@ -547,31 +605,33 @@ const docTemplate = `{
                         "description": "End date (YYYY-MM-DD)",
                         "name": "end_date",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by posts.post_type",
+                        "name": "post_type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 100, max 500; 0 = all)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "1 to include raw Meta JSON per row",
+                        "name": "include_raw",
+                        "in": "query"
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
+                "responses": {}
             }
         },
         "/channels/{channelId}/analytics/posts-overview": {
@@ -581,61 +641,17 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get overview of posts activity including new posts, likes, comments, etc.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Analytics"
-                ],
-                "summary": "Get Posts Overview",
-                "parameters": [
+                "responses": {}
+            }
+        },
+        "/channels/{channelId}/analytics/posts/{postId}": {
+            "get": {
+                "security": [
                     {
-                        "type": "integer",
-                        "description": "Channel ID",
-                        "name": "channelId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Start date (YYYY-MM-DD)",
-                        "name": "start_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End date (YYYY-MM-DD)",
-                        "name": "end_date",
-                        "in": "query"
+                        "BearerAuth": []
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
+                "responses": {}
             }
         },
         "/channels/{channelId}/analytics/profile": {
@@ -646,12 +662,6 @@ const docTemplate = `{
                     }
                 ],
                 "description": "Get Instagram profile analytics for a channel within a date range",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
                 "tags": [
                     "Analytics"
                 ],
@@ -666,42 +676,73 @@ const docTemplate = `{
                     },
                     {
                         "type": "string",
-                        "default": "7 days ago",
                         "description": "Start date (YYYY-MM-DD)",
                         "name": "start_date",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "default": "today",
                         "description": "End date (YYYY-MM-DD)",
                         "name": "end_date",
                         "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 100, max 500; 0 = all)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "1 to include raw Meta JSON per row",
+                        "name": "include_raw",
+                        "in": "query"
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
+                "responses": {}
+            }
+        },
+        "/channels/{channelId}/analytics/stories": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
                     }
-                }
+                ],
+                "summary": "List story analytics",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Filter by internal post id",
+                        "name": "post_id",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Page size (default 100, max 500)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "1 for raw JSON",
+                        "name": "include_raw",
+                        "in": "query"
+                    }
+                ],
+                "responses": {}
             }
         },
         "/channels/{channelId}/analytics/top-posts": {
@@ -711,68 +752,23 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "Get top performing posts by engagement",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Analytics"
-                ],
                 "summary": "Get Top Posts",
                 "parameters": [
                     {
-                        "type": "integer",
-                        "description": "Channel ID",
-                        "name": "channelId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "integer",
-                        "default": 10,
-                        "description": "Number of posts to return",
-                        "name": "limit",
+                        "type": "string",
+                        "default": "engagement",
+                        "description": "engagement|reach|impressions|plays",
+                        "name": "sort",
                         "in": "query"
                     },
                     {
                         "type": "string",
-                        "description": "Start date (YYYY-MM-DD)",
-                        "name": "start_date",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "End date (YYYY-MM-DD)",
-                        "name": "end_date",
+                        "description": "Filter by post_type",
+                        "name": "post_type",
                         "in": "query"
                     }
                 ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
-                    }
-                }
+                "responses": {}
             }
         },
         "/cron/trigger-instagram-analytics": {
@@ -944,6 +940,44 @@ const docTemplate = `{
                 }
             }
         },
+        "/meta/analytics/sync": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Fetches Instagram and/or Facebook Page insights for channels owned by the user.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Meta"
+                ],
+                "summary": "Sync Meta analytics",
+                "parameters": [
+                    {
+                        "description": "Optional channel_ids filter",
+                        "name": "request",
+                        "in": "body",
+                        "schema": {
+                            "$ref": "#/definitions/modelsv1.SyncMetaAnalyticsRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/modelsv1.SyncMetaAnalyticsResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/meta/callback": {
             "post": {
                 "description": "Exchanges authorization code for access token and fetches pages",
@@ -991,6 +1025,209 @@ const docTemplate = `{
                         }
                     }
                 }
+            }
+        },
+        "/posts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Get posts with filtering options",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get Posts",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Comma separated channel IDs",
+                        "name": "channel_ids",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Provider name (e.g. instagram)",
+                        "name": "provider",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 20,
+                        "description": "Limit",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/scheduled-posts": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "ScheduledPosts"
+                ],
+                "summary": "List scheduled posts (calendar range)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Start (RFC3339 or YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "End (RFC3339 or YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Filter by channel",
+                        "name": "channel_id",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "ScheduledPosts"
+                ],
+                "summary": "Create and submit scheduled post(s) to Instagram",
+                "parameters": [
+                    {
+                        "description": "Request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/modelsv1.CreateScheduledPostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "207": {
+                        "description": "Multi-Status",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "501": {
+                        "description": "Not Implemented",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    }
+                }
+            }
+        },
+        "/scheduled-posts/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "ScheduledPosts"
+                ],
+                "summary": "Get one scheduled post",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Scheduled post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
+            },
+            "delete": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "tags": [
+                    "ScheduledPosts"
+                ],
+                "summary": "Cancel a scheduled post (local + allowed statuses)",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Scheduled post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {}
             }
         },
         "/teams": {
@@ -1460,6 +1697,42 @@ const docTemplate = `{
                 }
             }
         },
+        "modelsv1.CreateFacebookChannelRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "page_id",
+                "redirect_uri"
+            ],
+            "properties": {
+                "channel_name": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "page_id": {
+                    "type": "string"
+                },
+                "redirect_uri": {
+                    "type": "string"
+                },
+                "team_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "modelsv1.CreateFacebookChannelResponse": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "integer"
+                },
+                "channel_name": {
+                    "type": "string"
+                }
+            }
+        },
         "modelsv1.CreateInstagramChannelRequest": {
             "type": "object",
             "required": [
@@ -1489,6 +1762,49 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "channel_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "modelsv1.CreateScheduledPostRequest": {
+            "type": "object",
+            "required": [
+                "channel_ids",
+                "media",
+                "platforms",
+                "post_type"
+            ],
+            "properties": {
+                "caption": {
+                    "type": "string"
+                },
+                "channel_ids": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "integer"
+                    }
+                },
+                "media": {
+                    "$ref": "#/definitions/modelsv1.ScheduledMediaPayload"
+                },
+                "platforms": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "post_type": {
+                    "description": "image | video | carousel",
+                    "type": "string"
+                },
+                "publish_now": {
+                    "description": "if true, post immediately (no scheduled_publish_time)",
+                    "type": "boolean"
+                },
+                "scheduled_at": {
+                    "description": "required when publish_now is false",
                     "type": "string"
                 }
             }
@@ -1575,6 +1891,37 @@ const docTemplate = `{
                 }
             }
         },
+        "modelsv1.ScheduledMediaItem": {
+            "type": "object",
+            "required": [
+                "kind",
+                "url"
+            ],
+            "properties": {
+                "kind": {
+                    "description": "image | video",
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "modelsv1.ScheduledMediaPayload": {
+            "type": "object",
+            "required": [
+                "items"
+            ],
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/modelsv1.ScheduledMediaItem"
+                    }
+                }
+            }
+        },
         "modelsv1.SubscribeWebhooksRequest": {
             "type": "object",
             "required": [
@@ -1604,6 +1951,45 @@ const docTemplate = `{
                 },
                 "success": {
                     "type": "boolean"
+                }
+            }
+        },
+        "modelsv1.SyncMetaAnalyticsRequest": {
+            "type": "object",
+            "properties": {
+                "channel_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "integer"
+                    }
+                }
+            }
+        },
+        "modelsv1.SyncMetaAnalyticsResponse": {
+            "type": "object",
+            "properties": {
+                "results": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/modelsv1.SyncMetaAnalyticsResult"
+                    }
+                }
+            }
+        },
+        "modelsv1.SyncMetaAnalyticsResult": {
+            "type": "object",
+            "properties": {
+                "channel_id": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "provider": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
                 }
             }
         },

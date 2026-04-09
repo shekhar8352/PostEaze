@@ -25,8 +25,12 @@ const (
 	UpdateTeam       = "/update"
 	UpdateTeamStatus = "/update-status"
 
-	MetaRoute    = "/meta"
-	MetaCallback = "/callback"
+	MetaRoute         = "/meta"
+	MetaCallback      = "/callback"
+	MetaAnalyticsSync = "/analytics/sync"
+
+	FacebookRoute         = "/facebook"
+	CreateFacebookChannel = "/create"
 
 	ChannelRoute           = "/channels"
 	InstagramRoute         = "/instagram"
