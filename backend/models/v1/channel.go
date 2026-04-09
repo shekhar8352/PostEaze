@@ -14,6 +14,24 @@ type CreateInstagramChannelResponse struct {
 	ChannelName string `json:"channel_name"`
 }
 
+// CreateFacebookChannelRequest connects a Facebook Page.
+// Use either (1) code + redirect_uri + page_id after a single exchange, or
+// (2) page_id + page_access_token from POST /meta/callback (same OAuth session; code is consumed by callback).
+type CreateFacebookChannelRequest struct {
+	Code            string     `json:"code"`
+	RedirectURI     string     `json:"redirect_uri"`
+	PageID          string     `json:"page_id"`
+	PageAccessToken string     `json:"page_access_token"`
+	ChannelName     string     `json:"channel_name"`
+	TeamID          *uuid.UUID `json:"team_id"`
+}
+
+// CreateFacebookChannelResponse is returned after connecting a Facebook Page.
+type CreateFacebookChannelResponse struct {
+	ChannelID   int64  `json:"channel_id"`
+	ChannelName string `json:"channel_name"`
+}
+
 type GetChannelsRequest struct {
 	Provider string `form:"provider"` // Optional filter by provider (instagram, facebook, etc.)
 }

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 )
 
@@ -15,6 +16,8 @@ type MetaProvider interface {
 	ExchangeCodeForToken(code string, redirectURI string) (*TokenResponse, error)
 	GetLongLivedToken(shortLivedToken string) (*TokenResponse, error)
 	GetPages(accessToken string) ([]Page, error)
+	// FetchPageByAccessToken loads page fields and verifies the token grants access to pageID.
+	FetchPageByAccessToken(pageID string, pageAccessToken string) (*Page, error)
 }
 
 type MetaProviderImpl struct {
@@ -116,4 +119,27 @@ func (p *MetaProviderImpl) GetPages(accessToken string) ([]Page, error) {
 	}
 
 	return pagesResp.Data, nil
+}
+
+// FetchPageByAccessToken calls the Graph API with a page access token and returns a Page with AccessToken set.
+func (p *MetaProviderImpl) FetchPageByAccessToken(pageID string, pageAccessToken string) (*Page, error) {
+	u := fmt.Sprintf("%s/%s?fields=id,name,category,tasks&access_token=%s",
+		GraphAPIURL, url.PathEscape(pageID), url.QueryEscape(pageAccessToken))
+	resp, err := http.Get(u)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("failed to verify page access token: %s", resp.Status)
+	}
+	var page Page
+	if err := json.NewDecoder(resp.Body).Decode(&page); err != nil {
+		return nil, err
+	}
+	if page.ID == "" || page.ID != pageID {
+		return nil, fmt.Errorf("page id mismatch from Graph API")
+	}
+	page.AccessToken = pageAccessToken
+	return &page, nil
 }

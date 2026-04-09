@@ -61,21 +61,24 @@ func UpdatePostFromInstagramSync(ctx context.Context, postID int64, postType *st
 	return nil
 }
 
-// GetPostByProviderID retrieves a post by channel ID and provider post ID
-// Uses JSONB containment to check if provider_post_ids contains the given provider:id pair
+// GetPostByProviderID retrieves a post by channel ID and provider post ID (Instagram).
 func GetPostByProviderID(ctx context.Context, channelID int64, providerPostID string) (*entities.Post, error) {
+	return GetPostByProviderKey(ctx, channelID, "instagram", providerPostID)
+}
+
+// GetPostByProviderKey retrieves a post where provider_post_ids->>provider matches providerPostID.
+func GetPostByProviderKey(ctx context.Context, channelID int64, provider, providerPostID string) (*entities.Post, error) {
 	db := database.GetDB()
-	// Check if channel_ids contains channelID AND provider_post_ids contains instagram:providerPostID
 	query := `
 		SELECT id, channel_ids, owner_id, providers, provider_post_ids, 
 		       source, post_type, caption, media, published_at, created_at, updated_at
 		FROM posts
 		WHERE $1 = ANY(channel_ids) 
-		  AND provider_post_ids->>'instagram' = $2
+		  AND provider_post_ids->>$3 = $2
 	`
 
 	var post entities.Post
-	err := db.QueryRowContext(ctx, query, channelID, providerPostID).Scan(
+	err := db.QueryRowContext(ctx, query, channelID, providerPostID, provider).Scan(
 		&post.ID,
 		&post.ChannelIDs,
 		&post.OwnerID,
@@ -189,6 +192,11 @@ func GetPosts(ctx context.Context, filters PostFilters) ([]entities.Post, error)
 
 // Helper function to get Instagram post ID from ProviderPostIDs JSONB
 func GetInstagramPostID(post *entities.Post) string {
+	return GetProviderPostID(post, "instagram")
+}
+
+// GetProviderPostID returns the external post id for a provider key in provider_post_ids JSONB.
+func GetProviderPostID(post *entities.Post, provider string) string {
 	if post.ProviderPostIDs == nil {
 		return ""
 	}
@@ -196,5 +204,5 @@ func GetInstagramPostID(post *entities.Post) string {
 	if err := json.Unmarshal(post.ProviderPostIDs, &ids); err != nil {
 		return ""
 	}
-	return ids["instagram"]
+	return ids[provider]
 }
