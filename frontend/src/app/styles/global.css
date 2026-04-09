@@ -18,8 +18,8 @@ body {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     font-size: 16px;
     line-height: 1.55;
-    color: var(--mantine-color-text);
-    background: var(--pe-bg-app, #f1f4f8);
+    color: var(--pe-text);
+    background: var(--pe-bg-app);
     min-height: 100vh;
 }
 
@@ -34,12 +34,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: var(--pe-border-strong, #cbd5e1);
+    background: var(--pe-border-strong);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--pe-text-muted, #64748b);
+    background: var(--pe-text-muted);
 }
 
 /* === TYPOGRAPHY === */
@@ -222,9 +222,9 @@ h6 {
 
 .shimmer {
     background: linear-gradient(90deg,
-            #f0f0f0 0px,
-            #f8f8f8 40px,
-            #f0f0f0 80px);
+            var(--pe-bg-subtle) 0px,
+            var(--pe-bg-elevated) 40px,
+            var(--pe-bg-subtle) 80px);
     background-size: 1000px 100%;
     animation: shimmer 2s infinite linear;
 }
@@ -298,7 +298,6 @@ h6 {
 /* === CARD ENHANCEMENTS === */
 .card-gradient-border {
     position: relative;
-    background: white;
     border-radius: 12px;
     padding: 2px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -308,7 +307,7 @@ h6 {
     content: '';
     position: absolute;
     inset: 2px;
-    background: white;
+    background: var(--pe-bg-elevated);
     border-radius: 10px;
     z-index: -1;
 }
@@ -334,7 +333,7 @@ h6 {
 
 /* === FOCUS STATES === */
 *:focus-visible {
-    outline: 2px solid var(--pe-accent, #1d4ed8);
+    outline: 2px solid var(--pe-accent);
     outline-offset: 2px;
     border-radius: 4px;
 }

@@ -5,9 +5,9 @@
  * Update these values to change colors across the entire app.
  */
 
-// Brand Colors
+// Brand Colors — primary matches `--pe-accent` (blue) so Mantine buttons/links match workspace tokens
 export const BRAND_COLORS = {
-  primary: 'indigo',
+  primary: 'blue',
   secondary: 'cyan',
   accent: 'blue',
 } as const;

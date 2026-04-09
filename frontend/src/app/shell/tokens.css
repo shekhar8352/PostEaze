@@ -1,23 +1,63 @@
 /**
- * PostEaze B2B workspace tokens — use via var(--pe-*) in CSS modules.
- * Canvas-design spirit: geometric restraint, systematic spacing, minimal ornament.
+ * PostEaze workspace tokens — use via var(--pe-*) in CSS modules.
+ * Two schemes: light (default) and dark. Mantine's `data-mantine-color-scheme`
+ * attribute drives the switch so tokens + Mantine stay in sync.
  */
 
-:root {
-  --pe-bg-app: #f1f4f8;
+/* ─── Light scheme ─── */
+[data-mantine-color-scheme="light"] {
+  color-scheme: light;
+
+  --pe-bg-app: #eef2f7;
   --pe-bg-elevated: #ffffff;
   --pe-bg-subtle: #f8fafc;
-  --pe-border: #e2e8f0;
-  --pe-border-strong: #cbd5e1;
+  --pe-border: #d1dae6;
+  --pe-border-strong: #b8c4d4;
+
   --pe-text: #0f172a;
   --pe-text-secondary: #334155;
-  --pe-text-muted: #64748b;
-  --pe-accent: #1d4ed8;
-  --pe-accent-hover: #1e40af;
-  --pe-accent-subtle: rgba(29, 78, 216, 0.1);
+  --pe-text-muted: #5c6b7f;
+
+  --pe-accent: #228be6;
+  --pe-accent-hover: #1c7ed6;
+  --pe-accent-subtle: rgba(34, 139, 230, 0.14);
+
   --pe-radius-md: 12px;
   --pe-radius-lg: 16px;
-  --pe-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04);
-  --pe-shadow-md: 0 4px 24px rgba(15, 23, 42, 0.06);
+
+  --pe-shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.08);
+  --pe-shadow-md: 0 4px 24px rgba(15, 23, 42, 0.08);
   --pe-header-bg: rgba(255, 255, 255, 0.92);
+
+  --mantine-color-body: var(--pe-bg-app);
+  --mantine-color-text: var(--pe-text);
+}
+
+/* ─── Dark scheme ─── */
+[data-mantine-color-scheme="dark"] {
+  color-scheme: dark;
+
+  --pe-bg-app: #0c0d12;
+  --pe-bg-elevated: #16181f;
+  --pe-bg-subtle: #1c1e27;
+  --pe-border: #2a2d38;
+  --pe-border-strong: #3a3e4c;
+
+  --pe-text: #e8eaf0;
+  --pe-text-secondary: #b0b5c4;
+  --pe-text-muted: #7e849a;
+
+  --pe-accent: #4dabf7;
+  --pe-accent-hover: #74c0fc;
+  --pe-accent-subtle: rgba(77, 171, 247, 0.16);
+
+  --pe-radius-md: 12px;
+  --pe-radius-lg: 16px;
+
+  --pe-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.32);
+  --pe-shadow-md: 0 4px 24px rgba(0, 0, 0, 0.36);
+  --pe-header-bg: rgba(22, 24, 31, 0.94);
+
+  --mantine-color-body: var(--pe-bg-app);
+  --mantine-color-text: var(--pe-text);
 }

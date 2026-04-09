@@ -5,7 +5,7 @@
  * Customize component behavior and appearance here.
  */
 
-import type { MantineThemeComponents } from '@mantine/core';
+import type { MantineTheme, MantineThemeComponents } from '@mantine/core';
 
 export const COMPONENT_OVERRIDES: MantineThemeComponents = {
   Text: {
@@ -46,6 +46,15 @@ export const COMPONENT_OVERRIDES: MantineThemeComponents = {
       radius: 'md',
       centered: true,
     },
+  },
+  NavLink: {
+    styles: (_theme: MantineTheme, props: { active?: boolean }) =>
+      props.active
+        ? {}
+        : {
+            label: { color: 'var(--pe-text-secondary)' },
+            section: { color: 'var(--pe-text-muted)' },
+          },
   },
   Notification: {
     defaultProps: {

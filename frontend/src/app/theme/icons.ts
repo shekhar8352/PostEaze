@@ -63,6 +63,10 @@ import {
   IconVideo,
   IconFile,
   IconFileText,
+
+  // Theme Icons
+  IconSun,
+  IconMoon,
   
   // Type re-export for icon component type
   type Icon,
@@ -123,6 +127,10 @@ export const Icons = {
   Video: IconVideo,
   File: IconFile,
   FileText: IconFileText,
+
+  // Theme
+  Sun: IconSun,
+  Moon: IconMoon,
 } as const;
 
 // Export icon component type for component typing
