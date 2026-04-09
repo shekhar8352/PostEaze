@@ -1,13 +1,76 @@
-.header {
-  margin-bottom: 0.25rem;
+.hero {
+  background: linear-gradient(
+    165deg,
+    color-mix(in srgb, var(--pe-bg-elevated) 96%, #2563eb) 0%,
+    var(--pe-bg-elevated) 48%,
+    var(--pe-bg-elevated) 100%
+  );
+  border-color: var(--pe-border) !important;
+  box-shadow: var(--pe-shadow-sm);
+}
+
+.titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
 }
 
 .title {
   color: var(--pe-text);
-  letter-spacing: -0.03em;
-  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  letter-spacing: -0.04em;
+  font-family: var(--mantine-font-family-headings);
+}
+
+.segmented :global([data-active]) {
+  font-weight: 600;
+}
+
+.fieldLabel {
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: 0.65rem !important;
+  color: var(--pe-text-muted) !important;
 }
 
 .selectInput {
   border-color: var(--pe-border);
+  background: var(--pe-bg-elevated, #fff);
+}
+
+.periodBlock {
+  min-width: min(100%, 22rem);
+}
+
+.dateInput {
+  background: var(--pe-bg-elevated, #ffffff) !important;
+  color: var(--pe-text) !important;
+  border: 1px solid var(--pe-border) !important;
+}
+
+.dateInput::placeholder {
+  color: var(--pe-text-muted);
+}
+
+.rangePill {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem;
+  margin-top: 0.35rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--mantine-radius-md);
+  background: var(--pe-bg-subtle);
+  border: 1px solid var(--pe-border);
+  max-width: 100%;
+}
+
+.rangeLabel {
+  color: var(--pe-text-muted);
+}
+
+.rangeText {
+  color: var(--pe-text-secondary);
+  font-variant-numeric: tabular-nums;
 }

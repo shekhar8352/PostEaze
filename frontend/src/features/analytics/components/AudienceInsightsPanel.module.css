@@ -112,7 +112,7 @@
   border: 1px dashed var(--pe-border);
   border-radius: var(--pe-radius-md, 8px);
   padding: 1rem 1.1rem;
-  background: color-mix(in srgb, var(--pe-accent-subtle, rgba(99, 102, 241, 0.08)) 100%, transparent);
+  background: var(--pe-accent-subtle);
 }
 
 .emptyText {

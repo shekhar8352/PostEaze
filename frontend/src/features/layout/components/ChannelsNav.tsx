@@ -22,7 +22,7 @@ export const ChannelsNav = () => {
                 data-active={isChannelActive || undefined}
             >
                 <Group justify="space-between" gap={0}>
-                    <Text fw={500} size="sm">
+                    <Text fw={600} size="sm" c="var(--pe-text-secondary)">
                         Channels
                     </Text>
                     <Icons.ChevronRight

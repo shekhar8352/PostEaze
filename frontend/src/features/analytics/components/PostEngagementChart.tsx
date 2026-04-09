@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Bar } from "react-chartjs-2";
 import { Paper, Text, Skeleton } from "@mantine/core";
-import { registerChartJs, chartColors } from "../chartSetup";
+import { registerChartJs, useChartTheme } from "../chartSetup";
 import type { PostsOverview } from "../types";
 import styles from "./ChartCard.module.css";
 
@@ -13,12 +13,14 @@ type Props = {
 };
 
 export function PostEngagementChart({ overview, loading }: Props) {
+  const colors = useChartTheme();
+
   const data = useMemo(() => {
     const o = overview;
     if (!o) {
       return {
         labels: ["Likes", "Comments", "Saves", "Shares"],
-        datasets: [{ label: "Totals", data: [0, 0, 0, 0], backgroundColor: chartColors.accent }],
+        datasets: [{ label: "Totals", data: [0, 0, 0, 0], backgroundColor: colors.accent }],
       };
     }
     return {
@@ -37,7 +39,7 @@ export function PostEngagementChart({ overview, loading }: Props) {
         },
       ],
     };
-  }, [overview]);
+  }, [overview, colors]);
 
   const options = useMemo(
     () => ({
@@ -49,16 +51,16 @@ export function PostEngagementChart({ overview, loading }: Props) {
       scales: {
         x: {
           grid: { display: false },
-          ticks: { color: chartColors.text },
+          ticks: { color: colors.text },
         },
         y: {
           beginAtZero: true,
-          grid: { color: chartColors.grid },
-          ticks: { color: chartColors.text },
+          grid: { color: colors.grid },
+          ticks: { color: colors.text },
         },
       },
     }),
-    []
+    [colors]
   );
 
   return (
