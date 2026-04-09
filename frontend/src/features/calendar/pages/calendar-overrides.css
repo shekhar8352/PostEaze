@@ -1,21 +1,52 @@
-/* Editorial calendar — align react-big-calendar with Mantine surfaces */
-.posteaze-rbc-wrap .rbc-calendar {
-  font-family: var(--mantine-font-family);
-  color: var(--mantine-color-text);
+/**
+ * react-big-calendar — styled with PostEaze tokens so it follows
+ * both light and dark color schemes automatically.
+ */
+
+.posteaze-rbc-wrap {
+  background: var(--pe-bg-elevated);
+  color: var(--pe-text);
+  border-radius: var(--mantine-radius-md);
 }
 
-.posteaze-rbc-wrap .rbc-header,
-.posteaze-rbc-wrap .rbc-time-header-content,
-.posteaze-rbc-wrap .rbc-day-bg,
-.posteaze-rbc-wrap .rbc-time-content,
+.posteaze-rbc-wrap .rbc-calendar {
+  font-family: var(--mantine-font-family);
+  color: var(--pe-text);
+  background: var(--pe-bg-elevated);
+}
+
 .posteaze-rbc-wrap .rbc-month-view,
+.posteaze-rbc-wrap .rbc-time-view,
+.posteaze-rbc-wrap .rbc-time-header,
+.posteaze-rbc-wrap .rbc-time-content {
+  background: var(--pe-bg-elevated);
+  color: var(--pe-text);
+}
+
 .posteaze-rbc-wrap .rbc-toolbar {
-  border-color: light-dark(var(--mantine-color-gray-3), var(--mantine-color-dark-4));
+  margin-bottom: 0.75rem;
+  padding: 0.5rem 0.65rem;
+  border: 1px solid var(--pe-border);
+  border-radius: var(--mantine-radius-md);
+  background: var(--pe-bg-subtle);
+}
+
+.posteaze-rbc-wrap .rbc-toolbar-label {
+  color: var(--pe-text);
+  font-weight: 600;
 }
 
 .posteaze-rbc-wrap .rbc-toolbar button {
   border-radius: var(--mantine-radius-sm);
-  color: var(--mantine-color-text);
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border-strong);
+  color: var(--pe-text);
+}
+
+.posteaze-rbc-wrap .rbc-toolbar button:hover {
+  background: var(--pe-bg-subtle);
+  border-color: var(--pe-border-strong);
+  color: var(--pe-text);
 }
 
 .posteaze-rbc-wrap .rbc-toolbar button.rbc-active {
@@ -24,20 +55,98 @@
   border-color: transparent;
 }
 
+.posteaze-rbc-wrap .rbc-header,
+.posteaze-rbc-wrap .rbc-time-header-content {
+  color: var(--pe-text-secondary);
+  font-weight: 600;
+  border-color: var(--pe-border);
+  background: var(--pe-bg-subtle);
+}
+
+.posteaze-rbc-wrap .rbc-header + .rbc-header {
+  border-left-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-day-bg + .rbc-day-bg {
+  border-left-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-month-view {
+  border-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-month-row + .rbc-month-row {
+  border-top-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-off-range {
+  color: var(--pe-text-muted);
+}
+
 .posteaze-rbc-wrap .rbc-off-range-bg {
-  background: light-dark(var(--mantine-color-gray-0), var(--mantine-color-dark-7));
+  background: var(--pe-bg-subtle);
 }
 
 .posteaze-rbc-wrap .rbc-today {
-  background: light-dark(var(--mantine-color-blue-0), rgba(51, 154, 240, 0.12));
+  background-color: var(--pe-accent-subtle);
 }
 
-.posteaze-rbc-wrap .rbc-event {
-  background: light-dark(var(--mantine-color-blue-6), var(--mantine-color-blue-8));
+.posteaze-rbc-wrap .rbc-time-content {
+  border-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-time-header-content {
+  border-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-day-slot .rbc-time-slot {
+  border-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-timeslot-group {
+  border-bottom-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-time-gutter .rbc-timeslot-group,
+.posteaze-rbc-wrap .rbc-time-header-gutter .rbc-timeslot-group {
+  border-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-label {
+  color: var(--pe-text-muted);
+}
+
+.posteaze-rbc-wrap .rbc-current-time-indicator {
+  background-color: var(--pe-accent);
+}
+
+.posteaze-rbc-wrap .rbc-event,
+.posteaze-rbc-wrap .rbc-day-slot .rbc-background-event {
+  background-color: var(--mantine-color-blue-filled);
+  color: var(--mantine-color-white);
 }
 
 .posteaze-rbc-wrap .rbc-slot-selection {
-  background: rgba(51, 154, 240, 0.2);
+  background: var(--pe-accent-subtle);
+}
+
+.posteaze-rbc-wrap .rbc-selected-cell {
+  background-color: var(--pe-accent-subtle);
+}
+
+.posteaze-rbc-wrap .rbc-show-more {
+  color: var(--pe-accent);
+  background-color: var(--pe-bg-elevated);
+}
+
+.posteaze-rbc-wrap .rbc-overlay {
+  background-color: var(--pe-bg-elevated);
+  border-color: var(--pe-border);
+  color: var(--pe-text);
+}
+
+.posteaze-rbc-wrap .rbc-overlay-header {
+  border-bottom-color: var(--pe-border);
 }
 
 @media (prefers-reduced-motion: reduce) {

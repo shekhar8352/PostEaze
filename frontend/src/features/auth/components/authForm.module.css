@@ -1,19 +1,17 @@
-/* Auth form surface — neutral card, blue accent (matches --pe-accent family) */
+/* Auth form surface — adapts to light/dark via --pe-* tokens */
 .surface {
-  --auth-surface-ink: #0f172a;
-  --auth-surface-muted: #64748b;
-  --auth-surface-border: rgba(15, 23, 42, 0.1);
-  --auth-surface-accent: #2563eb;
+  --auth-surface-ink: var(--pe-text);
+  --auth-surface-muted: var(--pe-text-muted);
+  --auth-surface-border: var(--pe-border);
+  --auth-surface-accent: var(--pe-accent);
   --auth-font-display: 'Syne', system-ui, sans-serif;
   --auth-font-body: 'IBM Plex Sans', system-ui, sans-serif;
 
-  background: #ffffff;
+  background: var(--pe-bg-elevated);
   border-radius: 16px;
   padding: clamp(1.5rem, 3vw, 2rem);
   border: 1px solid var(--auth-surface-border);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.8) inset,
-    0 20px 40px -28px rgba(15, 23, 42, 0.35);
+  box-shadow: var(--pe-shadow-md);
   font-family: var(--auth-font-body);
 }
 
@@ -49,7 +47,7 @@
 .surface :global(.mantine-TextInput-input),
 .surface :global(.mantine-PasswordInput-input) {
   font-family: var(--auth-font-body);
-  background: #f8fafc;
+  background: var(--pe-bg-subtle);
   border-radius: 10px;
   border: 1px solid var(--auth-surface-border);
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
@@ -58,7 +56,7 @@
 .surface :global(.mantine-TextInput-input:focus),
 .surface :global(.mantine-PasswordInput-input:focus) {
   border-color: var(--auth-surface-accent);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  box-shadow: 0 0 0 3px var(--pe-accent-subtle);
 }
 
 .surface :global(.mantine-PasswordInput-innerInput) {
@@ -70,7 +68,7 @@
   font-weight: 600;
   border-radius: 10px;
   height: 44px;
-  background: linear-gradient(180deg, #2563eb 0%, #1d4ed8 100%) !important;
+  background: linear-gradient(180deg, var(--pe-accent) 0%, var(--pe-accent-hover) 100%) !important;
   color: #fff !important;
   border: none !important;
   transition: filter 0.15s ease, transform 0.15s ease;
@@ -98,14 +96,14 @@
   font-family: var(--auth-font-body);
   font-weight: 500;
   border-radius: 10px;
-  background: #f8fafc;
+  background: var(--pe-bg-subtle);
   border: 1px solid var(--auth-surface-border);
   transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .socialButton:hover:not(:disabled) {
-  background: #fff;
-  border-color: rgba(15, 23, 42, 0.14);
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border-strong);
 }
 
 .footer {
@@ -125,8 +123,8 @@
 
 .alert {
   border-radius: 10px;
-  border: 1px solid rgba(37, 99, 235, 0.2);
-  background: rgba(37, 99, 235, 0.05);
+  border: 1px solid var(--pe-accent-subtle);
+  background: var(--pe-accent-subtle);
 }
 
 .alert :global(.mantine-Alert-message) {
