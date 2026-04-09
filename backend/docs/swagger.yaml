@@ -41,6 +41,30 @@ definitions:
       provider_channel_id:
         type: string
     type: object
+  modelsv1.CreateFacebookChannelRequest:
+    properties:
+      channel_name:
+        type: string
+      code:
+        type: string
+      page_id:
+        type: string
+      redirect_uri:
+        type: string
+      team_id:
+        type: string
+    required:
+    - code
+    - page_id
+    - redirect_uri
+    type: object
+  modelsv1.CreateFacebookChannelResponse:
+    properties:
+      channel_id:
+        type: integer
+      channel_name:
+        type: string
+    type: object
   modelsv1.CreateInstagramChannelRequest:
     properties:
       channel_name:
@@ -62,6 +86,37 @@ definitions:
         type: integer
       channel_name:
         type: string
+    type: object
+  modelsv1.CreateScheduledPostRequest:
+    properties:
+      caption:
+        type: string
+      channel_ids:
+        items:
+          type: integer
+        minItems: 1
+        type: array
+      media:
+        $ref: '#/definitions/modelsv1.ScheduledMediaPayload'
+      platforms:
+        items:
+          type: string
+        minItems: 1
+        type: array
+      post_type:
+        description: image | video | carousel
+        type: string
+      publish_now:
+        description: if true, post immediately (no scheduled_publish_time)
+        type: boolean
+      scheduled_at:
+        description: required when publish_now is false
+        type: string
+    required:
+    - channel_ids
+    - media
+    - platforms
+    - post_type
     type: object
   modelsv1.FirebaseAuthParams:
     properties:
@@ -118,6 +173,27 @@ definitions:
     required:
     - refresh_token
     type: object
+  modelsv1.ScheduledMediaItem:
+    properties:
+      kind:
+        description: image | video
+        type: string
+      url:
+        type: string
+    required:
+    - kind
+    - url
+    type: object
+  modelsv1.ScheduledMediaPayload:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/modelsv1.ScheduledMediaItem'
+        minItems: 1
+        type: array
+    required:
+    - items
+    type: object
   modelsv1.SubscribeWebhooksRequest:
     properties:
       channel_id:
@@ -138,6 +214,31 @@ definitions:
         type: array
       success:
         type: boolean
+    type: object
+  modelsv1.SyncMetaAnalyticsRequest:
+    properties:
+      channel_ids:
+        items:
+          type: integer
+        type: array
+    type: object
+  modelsv1.SyncMetaAnalyticsResponse:
+    properties:
+      results:
+        items:
+          $ref: '#/definitions/modelsv1.SyncMetaAnalyticsResult'
+        type: array
+    type: object
+  modelsv1.SyncMetaAnalyticsResult:
+    properties:
+      channel_id:
+        type: integer
+      message:
+        type: string
+      provider:
+        type: string
+      status:
+        type: string
     type: object
   modelsv1.Team:
     properties:
@@ -367,11 +468,10 @@ paths:
       summary: Get User Channels
       tags:
       - Channels
-  /channels/{channelId}/analytics/overview:
+  /channels/{channelId}/analytics/audience:
     get:
-      consumes:
-      - application/json
-      description: Get aggregated analytics overview for a channel
+      description: Lifetime demographic insights (audience_city, country, gender_age,
+        locale) stored per UTC day during analytics sync
       parameters:
       - description: Channel ID
         in: path
@@ -386,24 +486,38 @@ paths:
         in: query
         name: end_date
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
+      - description: Page size (default 100, max 500; 0 = all)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: 1 to include raw Meta JSON
+        in: query
+        name: include_raw
+        type: string
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get Instagram audience snapshots
+      tags:
+      - Analytics
+  /channels/{channelId}/analytics/comparison:
+    get:
+      responses: {}
+      security:
+      - BearerAuth: []
+  /channels/{channelId}/analytics/dashboard:
+    get:
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get Channel Dashboard
+  /channels/{channelId}/analytics/overview:
+    get:
+      responses: {}
       security:
       - BearerAuth: []
       summary: Get Analytics Overview
@@ -411,8 +525,6 @@ paths:
       - Analytics
   /channels/{channelId}/analytics/posts:
     get:
-      consumes:
-      - application/json
       description: Get Instagram post analytics for a channel within a date range
       parameters:
       - description: Channel ID
@@ -428,24 +540,23 @@ paths:
         in: query
         name: end_date
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
+      - description: Filter by posts.post_type
+        in: query
+        name: post_type
+        type: string
+      - description: Page size (default 100, max 500; 0 = all)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: 1 to include raw Meta JSON per row
+        in: query
+        name: include_raw
+        type: string
+      responses: {}
       security:
       - BearerAuth: []
       summary: Get Post Analytics
@@ -453,51 +564,16 @@ paths:
       - Analytics
   /channels/{channelId}/analytics/posts-overview:
     get:
-      consumes:
-      - application/json
-      description: Get overview of posts activity including new posts, likes, comments,
-        etc.
-      parameters:
-      - description: Channel ID
-        in: path
-        name: channelId
-        required: true
-        type: integer
-      - description: Start date (YYYY-MM-DD)
-        in: query
-        name: start_date
-        type: string
-      - description: End date (YYYY-MM-DD)
-        in: query
-        name: end_date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
+      responses: {}
       security:
       - BearerAuth: []
-      summary: Get Posts Overview
-      tags:
-      - Analytics
+  /channels/{channelId}/analytics/posts/{postId}:
+    get:
+      responses: {}
+      security:
+      - BearerAuth: []
   /channels/{channelId}/analytics/profile:
     get:
-      consumes:
-      - application/json
       description: Get Instagram profile analytics for a channel within a date range
       parameters:
       - description: Channel ID
@@ -505,55 +581,6 @@ paths:
         name: channelId
         required: true
         type: integer
-      - default: 7 days ago
-        description: Start date (YYYY-MM-DD)
-        in: query
-        name: start_date
-        type: string
-      - default: today
-        description: End date (YYYY-MM-DD)
-        in: query
-        name: end_date
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
-      security:
-      - BearerAuth: []
-      summary: Get Profile Analytics
-      tags:
-      - Analytics
-  /channels/{channelId}/analytics/top-posts:
-    get:
-      consumes:
-      - application/json
-      description: Get top performing posts by engagement
-      parameters:
-      - description: Channel ID
-        in: path
-        name: channelId
-        required: true
-        type: integer
-      - default: 10
-        description: Number of posts to return
-        in: query
-        name: limit
-        type: integer
       - description: Start date (YYYY-MM-DD)
         in: query
         name: start_date
@@ -562,29 +589,63 @@ paths:
         in: query
         name: end_date
         type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties: true
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties: true
-            type: object
+      - description: Page size (default 100, max 500; 0 = all)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: 1 to include raw Meta JSON per row
+        in: query
+        name: include_raw
+        type: string
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get Profile Analytics
+      tags:
+      - Analytics
+  /channels/{channelId}/analytics/stories:
+    get:
+      parameters:
+      - description: Filter by internal post id
+        in: query
+        name: post_id
+        type: integer
+      - description: Page size (default 100, max 500)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: 1 for raw JSON
+        in: query
+        name: include_raw
+        type: string
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: List story analytics
+  /channels/{channelId}/analytics/top-posts:
+    get:
+      parameters:
+      - default: engagement
+        description: engagement|reach|impressions|plays
+        in: query
+        name: sort
+        type: string
+      - description: Filter by post_type
+        in: query
+        name: post_type
+        type: string
+      responses: {}
       security:
       - BearerAuth: []
       summary: Get Top Posts
-      tags:
-      - Analytics
   /channels/details:
     get:
       consumes:
@@ -627,6 +688,31 @@ paths:
       security:
       - BearerAuth: []
       summary: Get Instagram Page Details
+      tags:
+      - Channels
+  /channels/facebook/create:
+    post:
+      consumes:
+      - application/json
+      description: Exchanges OAuth code, resolves the Page, and stores the Page access
+        token for analytics.
+      parameters:
+      - description: Create Facebook channel
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/modelsv1.CreateFacebookChannelRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/modelsv1.CreateFacebookChannelResponse'
+      security:
+      - BearerAuth: []
+      summary: Create Facebook Page channel
       tags:
       - Channels
   /channels/instagram/create:
@@ -833,6 +919,30 @@ paths:
       summary: Generate Test Token (Development Only)
       tags:
       - Development
+  /meta/analytics/sync:
+    post:
+      consumes:
+      - application/json
+      description: Fetches Instagram and/or Facebook Page insights for channels owned
+        by the user.
+      parameters:
+      - description: Optional channel_ids filter
+        in: body
+        name: request
+        schema:
+          $ref: '#/definitions/modelsv1.SyncMetaAnalyticsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/modelsv1.SyncMetaAnalyticsResponse'
+      security:
+      - BearerAuth: []
+      summary: Sync Meta analytics
+      tags:
+      - Meta
   /meta/callback:
     post:
       consumes:
@@ -866,6 +976,136 @@ paths:
       summary: Handle Meta Callback
       tags:
       - Meta
+  /posts:
+    get:
+      consumes:
+      - application/json
+      description: Get posts with filtering options
+      parameters:
+      - description: Comma separated channel IDs
+        in: query
+        name: channel_ids
+        type: string
+      - description: Provider name (e.g. instagram)
+        in: query
+        name: provider
+        type: string
+      - default: 20
+        description: Limit
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Get Posts
+      tags:
+      - Posts
+  /scheduled-posts:
+    get:
+      parameters:
+      - description: Start (RFC3339 or YYYY-MM-DD)
+        in: query
+        name: from
+        required: true
+        type: string
+      - description: End (RFC3339 or YYYY-MM-DD)
+        in: query
+        name: to
+        required: true
+        type: string
+      - description: Filter by channel
+        in: query
+        name: channel_id
+        type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: List scheduled posts (calendar range)
+      tags:
+      - ScheduledPosts
+    post:
+      parameters:
+      - description: Request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/modelsv1.CreateScheduledPostRequest'
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "207":
+          description: Multi-Status
+          schema:
+            additionalProperties: true
+            type: object
+        "501":
+          description: Not Implemented
+          schema:
+            additionalProperties: true
+            type: object
+      security:
+      - BearerAuth: []
+      summary: Create and submit scheduled post(s) to Instagram
+      tags:
+      - ScheduledPosts
+  /scheduled-posts/{id}:
+    delete:
+      parameters:
+      - description: Scheduled post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Cancel a scheduled post (local + allowed statuses)
+      tags:
+      - ScheduledPosts
+    get:
+      parameters:
+      - description: Scheduled post ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses: {}
+      security:
+      - BearerAuth: []
+      summary: Get one scheduled post
+      tags:
+      - ScheduledPosts
   /teams:
     post:
       consumes:
