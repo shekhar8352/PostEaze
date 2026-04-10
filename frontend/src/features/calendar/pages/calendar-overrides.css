@@ -1,12 +1,25 @@
 /**
- * react-big-calendar — styled with PostEaze tokens so it follows
- * both light and dark color schemes automatically.
+ * react-big-calendar — PostEaze editorial studio overrides.
+ * Uses --pe-* tokens for light/dark scheme parity.
+ * The built-in toolbar is hidden; CalendarPage owns the nav UI.
+ *
+ * Sections:
+ *   1. Root / shared
+ *   2. Month view
+ *   3. Week & Day (time-grid) view
+ *   4. Events (shared across all views)
+ *   5. Overlays, show-more, misc
+ *   6. Accessibility
  */
+
+/* ═══════════════════════════════════════════════════════
+   1. ROOT / SHARED
+   ═══════════════════════════════════════════════════════ */
 
 .posteaze-rbc-wrap {
   background: var(--pe-bg-elevated);
   color: var(--pe-text);
-  border-radius: var(--mantine-radius-md);
+  border-radius: var(--pe-radius-lg);
 }
 
 .posteaze-rbc-wrap .rbc-calendar {
@@ -15,50 +28,18 @@
   background: var(--pe-bg-elevated);
 }
 
-.posteaze-rbc-wrap .rbc-month-view,
-.posteaze-rbc-wrap .rbc-time-view,
-.posteaze-rbc-wrap .rbc-time-header,
-.posteaze-rbc-wrap .rbc-time-content {
-  background: var(--pe-bg-elevated);
-  color: var(--pe-text);
-}
-
 .posteaze-rbc-wrap .rbc-toolbar {
-  margin-bottom: 0.75rem;
-  padding: 0.5rem 0.65rem;
-  border: 1px solid var(--pe-border);
-  border-radius: var(--mantine-radius-md);
-  background: var(--pe-bg-subtle);
+  display: none;
 }
 
-.posteaze-rbc-wrap .rbc-toolbar-label {
-  color: var(--pe-text);
+/* Header row (day names) — shared base for month + time views */
+.posteaze-rbc-wrap .rbc-header {
+  color: var(--pe-text-muted);
+  font-size: 11px;
   font-weight: 600;
-}
-
-.posteaze-rbc-wrap .rbc-toolbar button {
-  border-radius: var(--mantine-radius-sm);
-  background: var(--pe-bg-elevated);
-  border: 1px solid var(--pe-border-strong);
-  color: var(--pe-text);
-}
-
-.posteaze-rbc-wrap .rbc-toolbar button:hover {
-  background: var(--pe-bg-subtle);
-  border-color: var(--pe-border-strong);
-  color: var(--pe-text);
-}
-
-.posteaze-rbc-wrap .rbc-toolbar button.rbc-active {
-  background: var(--mantine-color-blue-filled);
-  color: var(--mantine-color-white);
-  border-color: transparent;
-}
-
-.posteaze-rbc-wrap .rbc-header,
-.posteaze-rbc-wrap .rbc-time-header-content {
-  color: var(--pe-text-secondary);
-  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 10px 4px;
   border-color: var(--pe-border);
   background: var(--pe-bg-subtle);
 }
@@ -67,90 +48,430 @@
   border-left-color: var(--pe-border);
 }
 
-.posteaze-rbc-wrap .rbc-day-bg + .rbc-day-bg {
-  border-left-color: var(--pe-border);
+/* Today highlight — used in all views */
+.posteaze-rbc-wrap .rbc-today {
+  background-color: var(--pe-accent-subtle);
 }
 
+/* Selected cell */
+.posteaze-rbc-wrap .rbc-selected-cell {
+  background-color: var(--pe-accent-subtle);
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   2. MONTH VIEW
+   ═══════════════════════════════════════════════════════ */
+
 .posteaze-rbc-wrap .rbc-month-view {
+  background: var(--pe-bg-elevated);
   border-color: var(--pe-border);
+  border-radius: 0 0 var(--pe-radius-lg) var(--pe-radius-lg);
+  overflow: hidden;
+}
+
+.posteaze-rbc-wrap .rbc-month-row {
+  min-height: 80px;
 }
 
 .posteaze-rbc-wrap .rbc-month-row + .rbc-month-row {
   border-top-color: var(--pe-border);
 }
 
+.posteaze-rbc-wrap .rbc-day-bg + .rbc-day-bg {
+  border-left-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-date-cell {
+  padding: 6px 8px 2px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--pe-text-secondary);
+}
+
+.posteaze-rbc-wrap .rbc-date-cell.rbc-now {
+  font-weight: 700;
+  color: var(--pe-accent);
+}
+
 .posteaze-rbc-wrap .rbc-off-range {
   color: var(--pe-text-muted);
+  opacity: 0.5;
 }
 
 .posteaze-rbc-wrap .rbc-off-range-bg {
   background: var(--pe-bg-subtle);
 }
 
-.posteaze-rbc-wrap .rbc-today {
-  background-color: var(--pe-accent-subtle);
+.posteaze-rbc-wrap .rbc-row-content {
+  z-index: 2;
 }
 
-.posteaze-rbc-wrap .rbc-time-content {
+
+/* ═══════════════════════════════════════════════════════
+   3. WEEK & DAY (TIME-GRID) VIEW
+   ═══════════════════════════════════════════════════════ */
+
+/* --- Outer wrapper --- */
+.posteaze-rbc-wrap .rbc-time-view {
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border);
+  border-radius: 0 0 var(--pe-radius-lg) var(--pe-radius-lg);
+  overflow: hidden;
+}
+
+/* --- Time header (fixed top area with day names) --- */
+.posteaze-rbc-wrap .rbc-time-header {
+  background: var(--pe-bg-subtle);
   border-color: var(--pe-border);
 }
 
-.posteaze-rbc-wrap .rbc-time-header-content {
-  border-color: var(--pe-border);
+.posteaze-rbc-wrap .rbc-time-header.rbc-overflowing {
+  border-right-color: var(--pe-border);
 }
 
-.posteaze-rbc-wrap .rbc-day-slot .rbc-time-slot {
-  border-color: var(--pe-border);
-}
-
-.posteaze-rbc-wrap .rbc-timeslot-group {
+.posteaze-rbc-wrap .rbc-time-header > .rbc-row:first-child {
   border-bottom-color: var(--pe-border);
 }
 
-.posteaze-rbc-wrap .rbc-time-gutter .rbc-timeslot-group,
-.posteaze-rbc-wrap .rbc-time-header-gutter .rbc-timeslot-group {
+.posteaze-rbc-wrap .rbc-time-header > .rbc-row.rbc-row-resource {
+  border-bottom-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-time-header-content {
+  border-left-color: var(--pe-border);
+  background: var(--pe-bg-subtle);
+}
+
+/* Day column headers in week view — refined typography */
+.posteaze-rbc-wrap .rbc-time-view .rbc-header {
+  padding: 12px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  color: var(--pe-text-secondary);
   border-color: var(--pe-border);
+  background: var(--pe-bg-subtle);
+  transition: background 120ms ease;
+}
+
+.posteaze-rbc-wrap .rbc-time-view .rbc-header.rbc-today {
+  color: var(--pe-accent);
+  font-weight: 700;
+  background: var(--pe-accent-subtle);
+  position: relative;
+}
+
+.posteaze-rbc-wrap .rbc-time-view .rbc-header.rbc-today::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 20%;
+  right: 20%;
+  height: 2px;
+  background: var(--pe-accent);
+  border-radius: 2px;
+}
+
+/* --- Allday section --- */
+.posteaze-rbc-wrap .rbc-allday-cell {
+  background: var(--pe-bg-elevated);
+  border-color: var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-allday-cell + .rbc-allday-cell {
+  border-left-color: var(--pe-border);
+}
+
+/* --- Time gutter (left column with hours) --- */
+.posteaze-rbc-wrap .rbc-time-gutter {
+  background: var(--pe-bg-subtle);
+  border-right: 1px solid var(--pe-border);
+}
+
+.posteaze-rbc-wrap .rbc-time-gutter .rbc-timeslot-group {
+  border-bottom-color: var(--pe-border);
+  padding-right: 2px;
 }
 
 .posteaze-rbc-wrap .rbc-label {
   color: var(--pe-text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0 8px;
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
-.posteaze-rbc-wrap .rbc-current-time-indicator {
-  background-color: var(--pe-accent);
+/* Gutter header (top-left corner) */
+.posteaze-rbc-wrap .rbc-time-header-gutter {
+  background: var(--pe-bg-subtle);
+  border-color: var(--pe-border);
 }
 
-.posteaze-rbc-wrap .rbc-event,
+/* --- Scrollable time content area --- */
+.posteaze-rbc-wrap .rbc-time-content {
+  background: var(--pe-bg-elevated);
+  border-top: 2px solid var(--pe-border);
+  border-color: var(--pe-border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--pe-border-strong) transparent;
+}
+
+.posteaze-rbc-wrap .rbc-time-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.posteaze-rbc-wrap .rbc-time-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.posteaze-rbc-wrap .rbc-time-content::-webkit-scrollbar-thumb {
+  background: var(--pe-border-strong);
+  border-radius: 3px;
+}
+
+.posteaze-rbc-wrap .rbc-time-content::-webkit-scrollbar-thumb:hover {
+  background: var(--pe-text-muted);
+}
+
+/* Column separators in time content */
+.posteaze-rbc-wrap .rbc-time-content > * + * > * {
+  border-left-color: var(--pe-border);
+}
+
+/* --- Time slot groups (each hour block) --- */
+.posteaze-rbc-wrap .rbc-timeslot-group {
+  border-bottom: 1px solid var(--pe-border);
+  min-height: 48px;
+}
+
+/* --- Individual time slots (half-hour lines) --- */
+.posteaze-rbc-wrap .rbc-day-slot .rbc-time-slot {
+  border-top: 1px solid color-mix(in srgb, var(--pe-border) 50%, transparent);
+}
+
+.posteaze-rbc-wrap .rbc-day-slot .rbc-time-slot:first-child {
+  border-top: none;
+}
+
+/* --- Day slot columns --- */
+.posteaze-rbc-wrap .rbc-day-slot {
+  background: var(--pe-bg-elevated);
+}
+
+/* Events container within day slots */
+.posteaze-rbc-wrap .rbc-day-slot .rbc-events-container {
+  margin-right: 4px;
+}
+
+/* --- Time-grid events (week/day) --- */
+.posteaze-rbc-wrap .rbc-day-slot .rbc-event {
+  background: linear-gradient(
+    135deg,
+    var(--pe-accent) 0%,
+    color-mix(in srgb, var(--pe-accent) 85%, #000) 100%
+  );
+  color: #ffffff;
+  border: none;
+  border-left: 3px solid color-mix(in srgb, var(--pe-accent) 60%, #fff);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 4px 8px 4px 6px;
+  box-shadow:
+    0 1px 3px color-mix(in srgb, var(--pe-accent) 25%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--pe-accent) 15%, transparent);
+  transition: box-shadow 160ms ease, transform 120ms ease;
+  overflow: hidden;
+}
+
+.posteaze-rbc-wrap .rbc-day-slot .rbc-event:hover {
+  box-shadow:
+    0 4px 14px color-mix(in srgb, var(--pe-accent) 40%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--pe-accent) 25%, transparent);
+  transform: scale(1.01);
+  z-index: 10;
+}
+
+.posteaze-rbc-wrap .rbc-day-slot .rbc-event.rbc-selected {
+  background: var(--pe-accent-hover);
+  box-shadow:
+    0 0 0 2px var(--pe-accent-subtle),
+    0 4px 14px color-mix(in srgb, var(--pe-accent) 35%, transparent);
+}
+
+/* Event label (time text) in time grid */
+.posteaze-rbc-wrap .rbc-day-slot .rbc-event-label {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 1px;
+  white-space: nowrap;
+}
+
+/* Event content text in time grid */
+.posteaze-rbc-wrap .rbc-day-slot .rbc-event-content {
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+/* Overlapping events */
+.posteaze-rbc-wrap .rbc-event-overlaps {
+  box-shadow:
+    -1px 1px 6px color-mix(in srgb, #000 20%, transparent);
+}
+
+/* Background events in time grid */
 .posteaze-rbc-wrap .rbc-day-slot .rbc-background-event {
-  background-color: var(--mantine-color-blue-filled);
-  color: var(--mantine-color-white);
+  background: var(--pe-accent-subtle);
+  color: var(--pe-accent);
+  border: 1px dashed var(--pe-accent);
+  border-radius: 4px;
+  opacity: 0.7;
 }
 
+/* --- Slot selection (drag to create) --- */
 .posteaze-rbc-wrap .rbc-slot-selection {
   background: var(--pe-accent-subtle);
+  border: 1px dashed var(--pe-accent);
+  border-radius: 4px;
+  color: var(--pe-accent);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 4px 8px;
 }
 
-.posteaze-rbc-wrap .rbc-selected-cell {
-  background-color: var(--pe-accent-subtle);
+/* --- Current time indicator --- */
+.posteaze-rbc-wrap .rbc-current-time-indicator {
+  background-color: #ef4444;
+  height: 2px;
+  z-index: 4;
 }
+
+.posteaze-rbc-wrap .rbc-current-time-indicator::before {
+  content: "";
+  position: absolute;
+  left: -5px;
+  top: -4px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.4);
+}
+
+/* Resource view gutter sticky */
+.posteaze-rbc-wrap .rbc-time-view-resources .rbc-time-gutter,
+.posteaze-rbc-wrap .rbc-time-view-resources .rbc-time-header-gutter {
+  background-color: var(--pe-bg-subtle);
+  border-right-color: var(--pe-border);
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   4. EVENTS — MONTH VIEW (non-time-grid)
+   ═══════════════════════════════════════════════════════ */
+
+.posteaze-rbc-wrap .rbc-event {
+  background-color: var(--pe-accent);
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 6px;
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--pe-accent) 30%, transparent);
+  transition: box-shadow 160ms ease, transform 160ms ease;
+}
+
+.posteaze-rbc-wrap .rbc-event:hover {
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--pe-accent) 45%, transparent);
+  transform: translateY(-1px);
+}
+
+.posteaze-rbc-wrap .rbc-event.rbc-selected {
+  background-color: var(--pe-accent-hover);
+  box-shadow:
+    0 0 0 2px var(--pe-accent-subtle),
+    0 2px 8px color-mix(in srgb, var(--pe-accent) 35%, transparent);
+}
+
+.posteaze-rbc-wrap .rbc-event:focus {
+  outline: 2px solid var(--pe-accent);
+  outline-offset: 1px;
+}
+
+.posteaze-rbc-wrap .rbc-event-label {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+}
+
+/* Row segment padding in month view */
+.posteaze-rbc-wrap .rbc-row-segment {
+  padding: 1px 3px;
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   5. OVERLAYS, SHOW-MORE, MISC
+   ═══════════════════════════════════════════════════════ */
 
 .posteaze-rbc-wrap .rbc-show-more {
   color: var(--pe-accent);
-  background-color: var(--pe-bg-elevated);
+  font-size: 11px;
+  font-weight: 600;
+  background: transparent;
+  padding: 2px 4px;
+  border-radius: 4px;
+  transition: background 120ms ease;
+}
+
+.posteaze-rbc-wrap .rbc-show-more:hover {
+  background: var(--pe-accent-subtle);
 }
 
 .posteaze-rbc-wrap .rbc-overlay {
   background-color: var(--pe-bg-elevated);
-  border-color: var(--pe-border);
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md);
+  box-shadow: var(--pe-shadow-md);
   color: var(--pe-text);
+  padding: 10px;
+}
+
+.posteaze-rbc-wrap .rbc-overlay > * + * {
+  margin-top: 3px;
 }
 
 .posteaze-rbc-wrap .rbc-overlay-header {
   border-bottom-color: var(--pe-border);
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--pe-text);
+  padding: 4px 0 8px;
+  margin-bottom: 6px;
 }
 
+
+/* ═══════════════════════════════════════════════════════
+   6. ACCESSIBILITY
+   ═══════════════════════════════════════════════════════ */
+
 @media (prefers-reduced-motion: reduce) {
-  .posteaze-rbc-wrap .rbc-event {
+  .posteaze-rbc-wrap .rbc-event,
+  .posteaze-rbc-wrap .rbc-day-slot .rbc-event,
+  .posteaze-rbc-wrap .rbc-show-more,
+  .posteaze-rbc-wrap .rbc-time-view .rbc-header {
     transition: none;
+  }
+
+  .posteaze-rbc-wrap .rbc-event:hover,
+  .posteaze-rbc-wrap .rbc-day-slot .rbc-event:hover {
+    transform: none;
   }
 }

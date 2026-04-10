@@ -27,6 +27,12 @@ declare module "react-big-calendar" {
     style?: CSSProperties;
     eventPropGetter?: (event: TEvent) => { style?: CSSProperties; className?: string };
     components?: Record<string, ComponentType<unknown>>;
+    step?: number;
+    timeslots?: number;
+    min?: Date;
+    max?: Date;
+    scrollToTime?: Date;
+    dayLayoutAlgorithm?: "overlap" | "no-overlap";
   }
 
   export const Calendar: ComponentType<CalendarProps>;
