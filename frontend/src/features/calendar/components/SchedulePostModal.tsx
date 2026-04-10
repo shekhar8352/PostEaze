@@ -46,6 +46,7 @@ const STEP_DEF = [
 const MODAL_SEGMENTED_CLASS_NAMES = {
   root: styles.segmentedRoot,
   indicator: styles.segmentedIndicator,
+  control: styles.segmentedControl,
   label: styles.segmentedLabel,
 } as const;
 
