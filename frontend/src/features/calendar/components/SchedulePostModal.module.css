@@ -1,0 +1,296 @@
+/**
+ * New post modal — editorial studio surface using workspace tokens.
+ * "Chromatic rail" accent + stepped rhythm; respects reduced motion.
+ */
+
+.modalContent {
+  border-radius: var(--pe-radius-lg) !important;
+  border: 1px solid var(--pe-border);
+  box-shadow: var(--pe-shadow-md);
+  overflow: hidden;
+  background: var(--pe-bg-elevated);
+}
+
+.modalHeader {
+  padding-bottom: var(--mantine-spacing-sm);
+  border-bottom: 1px solid var(--pe-border);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pe-bg-subtle) 88%, var(--pe-bg-elevated)) 0%,
+    var(--pe-bg-elevated) 100%
+  );
+}
+
+.modalBody {
+  padding-top: var(--mantine-spacing-md);
+}
+
+.titleBlock {
+  position: relative;
+  padding-left: 14px;
+}
+
+.titleBlock::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 2px;
+  bottom: 2px;
+  width: 3px;
+  border-radius: 3px;
+  background: linear-gradient(
+    180deg,
+    #f09433 0%,
+    #e6683c 22%,
+    #dc2743 48%,
+    #bc1888 100%
+  );
+  opacity: 0.92;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--pe-text-muted);
+  margin-bottom: 4px;
+}
+
+.title {
+  font-family: var(--mantine-font-family-headings);
+  font-weight: 700;
+  font-size: 1.35rem;
+  line-height: 1.25;
+  color: var(--pe-text);
+  letter-spacing: -0.02em;
+}
+
+.subtitle {
+  margin-top: 4px;
+  font-size: var(--mantine-font-size-sm);
+  line-height: 1.5;
+  color: var(--pe-text-secondary);
+  max-width: 36rem;
+}
+
+.stepNav {
+  margin-bottom: var(--mantine-spacing-lg);
+}
+
+.stepList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .stepList {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stepItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--pe-radius-md);
+  border: 1px solid var(--pe-border);
+  background: var(--pe-bg-subtle);
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.stepItemUpcoming {
+  opacity: 0.72;
+}
+
+.stepItemCurrent {
+  border-color: color-mix(in srgb, var(--pe-accent) 45%, var(--pe-border));
+  background: color-mix(in srgb, var(--pe-accent-subtle) 55%, var(--pe-bg-elevated));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--pe-accent) 12%, transparent);
+  opacity: 1;
+}
+
+.stepItemDone {
+  border-color: color-mix(in srgb, var(--pe-accent) 28%, var(--pe-border));
+  background: var(--pe-bg-elevated);
+  opacity: 1;
+}
+
+.stepIcon {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: var(--pe-bg-elevated);
+  border: 1px solid var(--pe-border);
+  color: var(--pe-text-secondary);
+}
+
+.stepItemCurrent .stepIcon {
+  color: var(--pe-accent);
+  border-color: color-mix(in srgb, var(--pe-accent) 35%, var(--pe-border));
+  background: var(--pe-accent-subtle);
+}
+
+.stepItemDone .stepIcon {
+  color: var(--pe-accent);
+}
+
+.stepMeta {
+  min-width: 0;
+}
+
+.stepLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--pe-text);
+  line-height: 1.3;
+}
+
+.stepHint {
+  font-size: 11px;
+  color: var(--pe-text-muted);
+  line-height: 1.4;
+  margin-top: 2px;
+}
+
+.panel {
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md);
+  background: var(--pe-bg-elevated);
+  padding: var(--mantine-spacing-md);
+  box-shadow: var(--pe-shadow-sm);
+}
+
+.sectionLabel {
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pe-text-muted);
+  margin-bottom: 10px;
+}
+
+.hint {
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--pe-text-secondary);
+}
+
+.hint a {
+  color: var(--pe-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.hint a:hover {
+  text-decoration: underline;
+}
+
+.footerActions {
+  margin-top: var(--mantine-spacing-lg);
+  padding-top: var(--mantine-spacing-md);
+  border-top: 1px solid var(--pe-border);
+}
+
+.summaryCard {
+  padding: 12px 14px;
+  border-radius: var(--pe-radius-md);
+  border: 1px solid var(--pe-border);
+  background: var(--pe-bg-subtle);
+  min-height: 72px;
+}
+
+.summaryCardWide {
+  grid-column: 1 / -1;
+}
+
+.summaryKey {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--pe-text-muted);
+  margin-bottom: 6px;
+}
+
+.summaryValue {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--pe-text);
+  word-break: break-word;
+}
+
+.emptyChannels {
+  padding: var(--mantine-spacing-md);
+  border-radius: var(--pe-radius-md);
+  border: 1px dashed var(--pe-border-strong);
+  background: color-mix(in srgb, var(--pe-bg-subtle) 80%, var(--pe-bg-elevated));
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stepItem {
+    transition: none;
+  }
+}
+
+/* SegmentedControl — strong selected state on dark (and light) surfaces */
+.segmentedRoot {
+  background: color-mix(in srgb, var(--pe-bg-app) 55%, var(--pe-bg-subtle)) !important;
+  border: 1px solid var(--pe-border-strong) !important;
+  border-radius: var(--pe-radius-md);
+  padding: 5px !important;
+  box-shadow: inset 0 1px 2px color-mix(in srgb, #000 18%, transparent);
+}
+
+.segmentedIndicator {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--pe-accent) 82%, #fff) 0%,
+    var(--pe-accent) 48%,
+    color-mix(in srgb, var(--pe-accent) 92%, #000) 100%
+  ) !important;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--pe-accent) 35%, #000),
+    0 2px 10px color-mix(in srgb, var(--pe-accent) 42%, transparent),
+    inset 0 1px 0 color-mix(in srgb, #fff 22%, transparent) !important;
+}
+
+.segmentedLabel {
+  font-weight: 500;
+  z-index: 1;
+  transition: color 160ms ease, font-weight 160ms ease;
+}
+
+/* Inactive option — clearly quieter than the selected pill */
+.segmentedLabel:not([data-active]) {
+  color: var(--pe-text-muted) !important;
+}
+
+/* Selected option — high contrast on the accent indicator */
+.segmentedLabel[data-active] {
+  color: #ffffff !important;
+  font-weight: 700;
+  text-shadow: 0 1px 2px color-mix(in srgb, #000 55%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .segmentedLabel {
+    transition: none;
+  }
+}

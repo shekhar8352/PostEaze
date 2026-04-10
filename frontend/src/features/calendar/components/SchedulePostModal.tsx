@@ -1,27 +1,53 @@
 import { useEffect, useMemo, useState } from "react";
 import dayjs from "dayjs";
 import {
+  Alert,
+  Badge,
   Button,
   Group,
   Modal,
   MultiSelect,
   SegmentedControl,
+  SimpleGrid,
   Stack,
-  Stepper,
   Text,
   Textarea,
   TextInput,
+  Title,
 } from "@mantine/core";
+import { useReducedMotion } from "@mantine/hooks";
 import { DateTimePicker } from "@mantine/dates";
+import {
+  IconBrandInstagram,
+  IconCircleCheck,
+  IconClock,
+  IconPhotoPlus,
+  IconUsers,
+} from "@tabler/icons-react";
 import type { BaseChannelDisplay } from "@/features/channels/types/base.types";
 import { useCreateScheduledPost } from "../hooks/useScheduledPostsQueries";
 import type { PostType } from "../types";
+import styles from "./SchedulePostModal.module.css";
 
 const POST_TYPES: { value: PostType; label: string }[] = [
   { value: "image", label: "Image" },
   { value: "video", label: "Video" },
   { value: "carousel", label: "Carousel" },
 ];
+
+const STEP_DEF = [
+  { label: "Timing", hint: "Now or schedule", Icon: IconClock },
+  { label: "Channels", hint: "Where it goes live", Icon: IconUsers },
+  { label: "Content", hint: "Media & caption", Icon: IconPhotoPlus },
+  { label: "Review", hint: "Confirm & send", Icon: IconCircleCheck },
+] as const;
+
+/** Shared SegmentedControl styling — selected segment must pop on dark UI */
+const MODAL_SEGMENTED_CLASS_NAMES = {
+  root: styles.segmentedRoot,
+  indicator: styles.segmentedIndicator,
+  label: styles.segmentedLabel,
+} as const;
 
 /** Instagram cURLs the URL; viewer pages (Drive, etc.) are HTML, not JPEG bytes. */
 function instagramMediaUrlHint(url: string): string | null {
@@ -46,12 +72,14 @@ function instagramMediaUrlHint(url: string): string | null {
 }
 
 function defaultSlotString(initial: Date | null): string {
-  const d = initial ?? (() => {
-    const x = new Date();
-    x.setMinutes(0, 0, 0);
-    x.setHours(x.getHours() + 1);
-    return x;
-  })();
+  const d =
+    initial ??
+    (() => {
+      const x = new Date();
+      x.setMinutes(0, 0, 0);
+      x.setHours(x.getHours() + 1);
+      return x;
+    })();
   return dayjs(d).format("YYYY-MM-DD HH:mm");
 }
 
@@ -66,6 +94,7 @@ export interface SchedulePostModalProps {
 type TimingMode = "now" | "later";
 
 export function SchedulePostModal({ opened, onClose, initialStart, channels }: SchedulePostModalProps) {
+  const reduceMotion = useReducedMotion();
   const createMutation = useCreateScheduledPost();
   const [step, setStep] = useState(0);
   const [timingMode, setTimingMode] = useState<TimingMode>("later");
@@ -76,6 +105,7 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
   const [imageUrl, setImageUrl] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [carouselUrls, setCarouselUrls] = useState("");
+  const [contentError, setContentError] = useState<string | null>(null);
 
   useEffect(() => {
     if (opened) {
@@ -88,8 +118,13 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
       setImageUrl("");
       setVideoUrl("");
       setCarouselUrls("");
+      setContentError(null);
     }
   }, [opened, initialStart]);
+
+  useEffect(() => {
+    setContentError(null);
+  }, [postType, imageUrl, videoUrl, carouselUrls]);
 
   const igChannels = useMemo(
     () => channels.filter((c) => c.provider === "instagram"),
@@ -146,6 +181,8 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     return null;
   };
 
+  const validationMessage = validateStep2();
+
   const handleSchedule = async () => {
     const err = validateStep2();
     if (err) {
@@ -183,22 +220,72 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     }
   };
 
+  const goToContentNext = () => {
+    const e = validateStep2();
+    setContentError(e);
+    if (!e) setStep(3);
+  };
+
+  const modalTitle = (
+    <div className={styles.titleBlock}>
+      <div className={styles.kicker}>
+        <IconBrandInstagram size={14} stroke={1.75} aria-hidden />
+        Instagram
+      </div>
+      <Title order={3} className={styles.title}>
+        New post
+      </Title>
+      <Text className={styles.subtitle}>Schedule or publish feed content in four short steps—timing, channels, media, review.</Text>
+    </div>
+  );
+
   return (
     <Modal
       opened={opened}
       onClose={onClose}
-      title="Create post"
-      size="lg"
-      transitionProps={{ duration: 200 }}
+      title={modalTitle}
+      size="xl"
+      padding="lg"
+      transitionProps={{ duration: reduceMotion ? 0 : 220, timingFunction: "cubic-bezier(0.4, 0, 0.2, 1)" }}
+      classNames={{
+        content: styles.modalContent,
+        header: styles.modalHeader,
+        body: styles.modalBody,
+      }}
     >
-      <Stepper active={step} onStepClick={setStep} allowNextStepsSelect={false}>
-        <Stepper.Step label="When" description="Now or later">
-          <Stack gap="md" mt="md">
-            <Text size="sm" fw={500}>
-              When to publish
-            </Text>
+      <nav className={styles.stepNav} aria-label="Create post steps">
+        <ol className={styles.stepList}>
+          {STEP_DEF.map((s, i) => {
+            const Icon = s.Icon;
+            const isCurrent = step === i;
+            const isDone = step > i;
+            return (
+              <li key={s.label} aria-current={isCurrent ? "step" : undefined}>
+                <div
+                  className={`${styles.stepItem} ${isCurrent ? styles.stepItemCurrent : ""} ${isDone ? styles.stepItemDone : ""} ${!isCurrent && !isDone ? styles.stepItemUpcoming : ""}`}
+                >
+                  <span className={styles.stepIcon} aria-hidden>
+                    <Icon size={18} stroke={1.75} />
+                  </span>
+                  <div className={styles.stepMeta}>
+                    <div className={styles.stepLabel}>{s.label}</div>
+                    <div className={styles.stepHint}>{s.hint}</div>
+                  </div>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
+
+      {step === 0 && (
+        <div className={styles.panel}>
+          <Text className={styles.sectionLabel}>When to publish</Text>
+          <Stack gap="md">
             <SegmentedControl
               fullWidth
+              color="blue"
+              classNames={MODAL_SEGMENTED_CLASS_NAMES}
               data={[
                 { value: "now", label: "Post now" },
                 { value: "later", label: "Schedule" },
@@ -217,161 +304,198 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
               />
             )}
             {timingMode === "later" ? (
-              <Text size="xs" c="dimmed">
+              <Text size="sm" className={styles.hint}>
                 Instagram requires between 10 minutes and 75 days from now (UTC).
               </Text>
             ) : (
-              <Text size="xs" c="dimmed">
-                Publishes immediately after you confirm (Instagram feed; same media rules apply).
+              <Text size="sm" className={styles.hint}>
+                Publishes immediately after you confirm. The same media rules apply as for scheduled posts.
               </Text>
             )}
-            <Group justify="flex-end">
+            <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={onClose}>
                 Cancel
               </Button>
               <Button onClick={() => setStep(1)} disabled={!canNextStep0}>
-                Next
+                Continue
               </Button>
             </Group>
           </Stack>
-        </Stepper.Step>
+        </div>
+      )}
 
-        <Stepper.Step label="Channels" description="Where to publish">
-          <Stack gap="md" mt="md">
-            <MultiSelect
-              label="Channels"
-              placeholder={channelOptions.length ? "Select one or more" : "Connect Instagram first"}
-              data={channelOptions}
-              value={channelValues}
-              onChange={setChannelValues}
-              searchable
-              nothingFoundMessage="No channels"
-            />
-            <Group justify="space-between">
+      {step === 1 && (
+        <div className={styles.panel}>
+          <Text className={styles.sectionLabel}>Destination</Text>
+          <Stack gap="md">
+            {channelOptions.length === 0 ? (
+              <div className={styles.emptyChannels}>
+                <Text size="sm" fw={600} c="var(--pe-text)">
+                  No Instagram channels yet
+                </Text>
+                <Text size="sm" mt={6} className={styles.hint}>
+                  Connect an Instagram account in Channels, then return here to schedule.
+                </Text>
+              </div>
+            ) : (
+              <MultiSelect
+                label="Channels"
+                description="Pick every account that should receive this post"
+                placeholder="Select one or more"
+                data={channelOptions}
+                value={channelValues}
+                onChange={setChannelValues}
+                searchable
+                nothingFoundMessage="No channels"
+              />
+            )}
+            <Group justify="space-between" className={styles.footerActions} wrap="nowrap">
               <Button variant="default" onClick={() => setStep(0)}>
                 Back
               </Button>
               <Button onClick={() => setStep(2)} disabled={!canNextStep1}>
-                Next
+                Continue
               </Button>
             </Group>
           </Stack>
-        </Stepper.Step>
+        </div>
+      )}
 
-        <Stepper.Step label="Content" description="Type & media URLs">
-          <Stack gap="md" mt="md">
-            <Text size="sm" fw={500}>
-              Post type
-            </Text>
-            <SegmentedControl
-              fullWidth
-              data={POST_TYPES.map((p) => ({ value: p.value, label: p.label }))}
-              value={postType}
-              onChange={(v) => setPostType(v as PostType)}
+      {step === 2 && (
+        <div className={styles.panel}>
+          <Text className={styles.sectionLabel}>Post content</Text>
+          <Stack gap="md">
+            <div>
+              <Text size="sm" fw={600} mb={8} c="var(--pe-text)">
+                Format
+              </Text>
+              <SegmentedControl
+                fullWidth
+                color="blue"
+                classNames={MODAL_SEGMENTED_CLASS_NAMES}
+                data={POST_TYPES.map((p) => ({ value: p.value, label: p.label }))}
+                value={postType}
+                onChange={(v) => setPostType(v as PostType)}
+              />
+            </div>
+            <Textarea
+              label="Caption"
+              description="Optional — appears below your media on Instagram"
+              placeholder="Write something your audience will want to engage with…"
+              minRows={3}
+              autosize
+              minLength={0}
+              maxLength={2200}
+              value={caption}
+              onChange={(e) => setCaption(e.target.value)}
             />
-            <Textarea label="Caption" placeholder="Optional" minRows={2} value={caption} onChange={(e) => setCaption(e.target.value)} />
             {postType === "image" && (
-              <Stack gap={4}>
+              <Stack gap={6}>
                 <TextInput
                   label="Image URL (HTTPS)"
                   placeholder="https://cdn.example.com/photo.jpg"
                   value={imageUrl}
                   onChange={(e) => setImageUrl(e.target.value)}
                 />
-                <Text size="xs" c="dimmed">
-                  Must be a direct link Meta can fetch as JPEG (not Google Drive “view” pages). See{" "}
-                  <a
-                    href="https://developers.facebook.com/docs/instagram-platform/content-publishing/"
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    Content publishing
+                <Text className={styles.hint}>
+                  Use a direct link Meta can fetch as JPEG—not Google Drive “view” pages.{" "}
+                  <a href="https://developers.facebook.com/docs/instagram-platform/content-publishing/" target="_blank" rel="noreferrer">
+                    Content publishing docs
                   </a>
-                  .
                 </Text>
               </Stack>
             )}
             {postType === "video" && (
-              <Stack gap={4}>
+              <Stack gap={6}>
                 <TextInput
                   label="Video URL (HTTPS)"
-                  placeholder="https://..."
+                  placeholder="https://…"
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                 />
-                <Text size="xs" c="dimmed">
-                  Same as images: a direct HTTPS URL to the video file, not a player or share page.
-                </Text>
+                <Text className={styles.hint}>Direct HTTPS URL to the video file—not a player or share page.</Text>
               </Stack>
             )}
             {postType === "carousel" && (
               <Textarea
                 label="Image URLs (one per line, 2–10, HTTPS)"
-                placeholder="https://example.com/a.jpg&#10;https://example.com/b.jpg"
+                placeholder={"https://example.com/a.jpg\nhttps://example.com/b.jpg"}
                 minRows={4}
                 value={carouselUrls}
                 onChange={(e) => setCarouselUrls(e.target.value)}
               />
             )}
-            <Group justify="space-between">
+            {contentError && (
+              <Alert color="red" variant="light" title="Fix media URLs">
+                {contentError}
+              </Alert>
+            )}
+            <Group justify="space-between" className={styles.footerActions} wrap="nowrap">
               <Button variant="default" onClick={() => setStep(1)}>
                 Back
               </Button>
-              <Button
-                onClick={() => {
-                  const e = validateStep2();
-                  if (e) {
-                    return;
-                  }
-                  setStep(3);
-                }}
-              >
-                Next
-              </Button>
+              <Button onClick={goToContentNext}>Continue</Button>
             </Group>
           </Stack>
-        </Stepper.Step>
+        </div>
+      )}
 
-        <Stepper.Step label="Summary" description="Confirm">
-          <Stack gap="sm" mt="md">
-            <Text size="sm">
-              <strong>When:</strong>{" "}
-              {timingMode === "now"
-                ? "Immediately"
-                : scheduledAtStr && dayjs(scheduledAtStr).isValid()
-                  ? dayjs(scheduledAtStr).format("YYYY-MM-DD HH:mm")
-                  : "—"}
-            </Text>
-            <Text size="sm">
-              <strong>Channels:</strong>{" "}
-              {channelValues.map((id) => channelOptions.find((o) => o.value === id)?.label ?? id).join(", ") || "—"}
-            </Text>
-            <Text size="sm">
-              <strong>Type:</strong> {postType}
-            </Text>
-            <Text size="sm">
-              <strong>Caption:</strong> {caption.trim() || "—"}
-            </Text>
-            <Text size="sm">
-              <strong>Media:</strong>{" "}
-              {postType === "carousel" ? `${buildMediaItems().length} images` : buildMediaItems()[0]?.url ?? "—"}
-            </Text>
-            {validateStep2() && (
-              <Text size="sm" c="red">
-                {validateStep2()}
-              </Text>
+      {step === 3 && (
+        <div className={styles.panel}>
+          <Text className={styles.sectionLabel}>Summary</Text>
+          <Stack gap="md">
+            <SimpleGrid cols={{ base: 1, sm: 2 }} spacing="sm">
+              <div className={styles.summaryCard}>
+                <div className={styles.summaryKey}>When</div>
+                <div className={styles.summaryValue}>
+                  {timingMode === "now"
+                    ? "Immediately"
+                    : scheduledAtStr && dayjs(scheduledAtStr).isValid()
+                      ? dayjs(scheduledAtStr).format("YYYY-MM-DD HH:mm")
+                      : "—"}
+                </div>
+              </div>
+              <div className={styles.summaryCard}>
+                <div className={styles.summaryKey}>Format</div>
+                <div className={styles.summaryValue}>
+                  <Badge variant="light" color="blue" size="md" tt="none">
+                    {POST_TYPES.find((p) => p.value === postType)?.label ?? postType}
+                  </Badge>
+                </div>
+              </div>
+              <div className={`${styles.summaryCard} ${styles.summaryCardWide}`}>
+                <div className={styles.summaryKey}>Channels</div>
+                <div className={styles.summaryValue}>
+                  {channelValues.map((id) => channelOptions.find((o) => o.value === id)?.label ?? id).join(", ") || "—"}
+                </div>
+              </div>
+              <div className={`${styles.summaryCard} ${styles.summaryCardWide}`}>
+                <div className={styles.summaryKey}>Caption</div>
+                <div className={styles.summaryValue}>{caption.trim() || "—"}</div>
+              </div>
+              <div className={`${styles.summaryCard} ${styles.summaryCardWide}`}>
+                <div className={styles.summaryKey}>Media</div>
+                <div className={styles.summaryValue}>
+                  {postType === "carousel" ? `${buildMediaItems().length} images` : buildMediaItems()[0]?.url ?? "—"}
+                </div>
+              </div>
+            </SimpleGrid>
+            {validationMessage && (
+              <Alert color="red" variant="light">
+                {validationMessage}
+              </Alert>
             )}
-            <Group justify="space-between" mt="md">
+            <Group justify="space-between" className={styles.footerActions} wrap="nowrap">
               <Button variant="default" onClick={() => setStep(2)}>
                 Back
               </Button>
-              <Button loading={createMutation.isPending} onClick={handleSchedule} disabled={!!validateStep2()}>
-                {timingMode === "now" ? "Publish now" : "Schedule"}
+              <Button loading={createMutation.isPending} onClick={handleSchedule} disabled={!!validationMessage}>
+                {timingMode === "now" ? "Publish now" : "Schedule post"}
               </Button>
             </Group>
           </Stack>
-        </Stepper.Step>
-      </Stepper>
+        </div>
+      )}
     </Modal>
   );
 }
