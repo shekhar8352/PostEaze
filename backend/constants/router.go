@@ -39,4 +39,7 @@ const (
 	InstagramWebhook       = "/instagram"
 
 	ScheduledPostsRoute = "/scheduled-posts"
+
+	MediaRoute       = "/media"
+	MediaAssetsRoute = "/media-assets"
 )

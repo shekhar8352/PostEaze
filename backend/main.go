@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"os"
 	"time"
 
 	_ "github.com/lib/pq"
@@ -15,6 +16,7 @@ import (
 	"github.com/shekhar8352/PostEaze/utils/encryption"
 	"github.com/shekhar8352/PostEaze/utils/env"
 	"github.com/shekhar8352/PostEaze/utils/flags"
+	"github.com/shekhar8352/PostEaze/utils/blobstore"
 	httpclient "github.com/shekhar8352/PostEaze/utils/http"
 	"github.com/shekhar8352/PostEaze/utils/redis"
 )
@@ -29,6 +31,7 @@ func main() {
 	initEncryption(ctx)
 	initFirebase(ctx)
 	initAsynq(ctx)
+	initBlobStore()
 	initRouter(ctx)
 	initHttp(ctx)
 }
@@ -104,6 +107,13 @@ func initFirebase(ctx context.Context) {
 	err := utils.InitializeFirebase(ctx)
 	if err != nil {
 		log.Fatal(ctx, " error in initialising Firebase ", err)
+	}
+}
+
+func initBlobStore() {
+	token := os.Getenv("BLOB_READ_WRITE_TOKEN")
+	if token != "" {
+		blobstore.Init(blobstore.NewVercelBlobStore(token))
 	}
 }
 
