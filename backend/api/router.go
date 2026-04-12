@@ -67,6 +67,7 @@ func Init() error {
 		addV1AnalyticsRoutes(v1)
 		addV1PostRoutes(v1)
 		addV1ScheduledPostRoutes(v1)
+		addV1MediaAssetRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -155,6 +156,28 @@ func addV1ScheduledPostRoutes(v1 *gin.RouterGroup) {
 		sp.POST("", apiv1.CreateScheduledPostHandler)
 		sp.GET("/:id", apiv1.GetScheduledPostHandler)
 		sp.DELETE("/:id", apiv1.CancelScheduledPostHandler)
+	}
+}
+
+func addV1MediaAssetRoutes(v1 *gin.RouterGroup) {
+	media := v1.Group("/media")
+	media.Use(middleware.AuthMiddleware())
+	{
+		media.POST("/upload", apiv1.UploadMediaHandler)
+	}
+
+	assets := v1.Group("/media-assets")
+	assets.Use(middleware.AuthMiddleware())
+	{
+		assets.GET("", apiv1.ListMediaAssetsHandler)
+		assets.POST("", apiv1.CreateMediaAssetHandler)
+		assets.GET("/:id", apiv1.GetMediaAssetHandler)
+		assets.PUT("/:id", apiv1.UpdateMediaAssetHandler)
+		assets.DELETE("/:id", apiv1.DeleteMediaAssetHandler)
+		assets.POST("/:id/versions", apiv1.AddVersionHandler)
+		assets.DELETE("/:id/versions/:vid", apiv1.DeleteVersionHandler)
+		assets.PUT("/:id/current-version", apiv1.SetCurrentVersionHandler)
+		assets.POST("/:id/publish", apiv1.PublishMediaAssetHandler)
 	}
 }
 
