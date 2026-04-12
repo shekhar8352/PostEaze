@@ -3,7 +3,7 @@
 CREATE TABLE IF NOT EXISTS media_assets (
     id                 BIGSERIAL    PRIMARY KEY,
     owner_user_id      UUID         NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    team_id            BIGINT       REFERENCES teams(id) ON DELETE SET NULL,
+    team_id            UUID         REFERENCES teams(id) ON DELETE SET NULL,
     title              TEXT         NOT NULL DEFAULT '',
     asset_type         TEXT         NOT NULL CHECK (asset_type IN ('photo', 'video')),
     status             TEXT         NOT NULL DEFAULT 'draft'
