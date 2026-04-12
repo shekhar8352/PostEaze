@@ -4,7 +4,7 @@
 # Air binary (can be overridden: `make dev AIR=/path/to/air`)
 AIR ?= air
 
-.PHONY: help test test-unit test-integration test-coverage test-verbose test-race test-bench clean build run dev dev-worker lint fmt vet deps tidy run-api run-worker build-api build-worker
+.PHONY: help test test-unit test-integration test-coverage test-verbose test-race test-bench clean build run dev dev-worker lint fmt vet deps tidy run-api run-worker build-api build-worker migrate-up migrate-force migrate-dirty-redo-seven
 
 GOPATH ?= $(shell go env GOPATH)
 AIR = $(GOPATH)/bin/air
@@ -309,6 +309,19 @@ db-clean: ## Clean test database
 	@if command -v psql >/dev/null 2>&1; then \
 		dropdb postease_test || echo "Database may not exist"; \
 	fi
+
+# golang-migrate (install: go install -tags 'postgres' github.com/golang-migrate/migrate/v4/cmd/migrate@latest)
+MIGRATE ?= migrate
+MIGRATIONS_DIR ?= ./migrations
+
+migrate-up: ## Apply pending migrations (requires DATABASE_URL)
+	@test -n "$${DATABASE_URL}" || (echo "Set DATABASE_URL to your Postgres URL" && exit 1)
+	@$(MIGRATE) -path $(MIGRATIONS_DIR) -database "$${DATABASE_URL}" up
+
+migrate-force: ## Set schema version and clear dirty flag (does not run SQL). Usage: make migrate-force VERSION=6
+	@test -n "$${DATABASE_URL}" || (echo "Set DATABASE_URL to your Postgres URL" && exit 1)
+	@test -n "$(VERSION)" || (echo "Usage: make migrate-force VERSION=6   (use last good version before the failed migration)" && exit 1)
+	@$(MIGRATE) -path $(MIGRATIONS_DIR) -database "$${DATABASE_URL}" force $(VERSION)
 
 # Performance testing
 perf-test: ## Run performance tests
