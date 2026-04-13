@@ -6,6 +6,7 @@ import { dashboardRoutes } from "@/features/dashboard";
 import { analyticsRoutes } from "@/features/analytics";
 import { channelRoutes } from "@/features/channels";
 import { calendarRoutes } from "@/features/calendar";
+import { mediaWorkspaceRoutes } from "@/features/media-workspace";
 import { MainLayout } from "@/features/layout";
 import { ProtectedLayout } from "./ProtectedRoute";
 import { NotFound } from "./NotFound";
@@ -28,6 +29,7 @@ const AppRoutes = () => {
             ...landingRoutes,
             ...channelRoutes,
             ...calendarRoutes,
+            ...mediaWorkspaceRoutes,
           ],
         },
       ],
