@@ -23,6 +23,7 @@ All entities implement the `database.RawEntity` interface which provides:
 - **user.go** — User row + refresh-token helpers (Firebase identity, `platforms` array)
 - **team.go** — Team and membership queries
 - **channel.go** (and related) — Social channel + token storage
+- **media_asset.go**, **media_version.go** — Media workspace rows and query codes
 - **repositories/** — Repository functions calling `QueryRaw` / transactions
 
 ## Entity structure

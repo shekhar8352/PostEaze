@@ -15,6 +15,7 @@ All routes below are prefixed with `/api/v1` unless stated. Request/response bod
 | `log.go` | Read application logs by date or ID |
 | `posts.go` | List posts for authenticated user |
 | `scheduled_post.go` | Scheduled posts CRUD + calendar listing |
+| `media_asset.go` | Media upload, assets, versions, current version, publish to scheduled post |
 | `analytics.go` | Instagram analytics under `/channels/:channelId/analytics` |
 | `dev.go` | Development-only test JWT |
 | `cron.go` | Dev-oriented triggers for background sync jobs |
@@ -90,6 +91,30 @@ All routes require JWT (`AuthMiddleware`).
 | POST | `/scheduled-posts` | Create a scheduled post |
 | GET | `/scheduled-posts/:id` | Get one scheduled post |
 | DELETE | `/scheduled-posts/:id` | Cancel / remove a scheduled post |
+
+## Media workspace
+
+All routes require JWT (`AuthMiddleware`).
+
+### Upload (`/media`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/media/upload` | Multipart file upload to blob storage; returns URL/metadata for use when creating assets or versions |
+
+### Assets (`/media-assets`)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/media-assets` | List assets (query params from `ListMediaAssetsQuery`) |
+| POST | `/media-assets` | Create asset + initial version (multipart: metadata + file) |
+| GET | `/media-assets/:id` | Get one asset with all versions |
+| PUT | `/media-assets/:id` | Update title/status |
+| DELETE | `/media-assets/:id` | Delete asset and versions |
+| POST | `/media-assets/:id/versions` | Add a version (multipart) |
+| DELETE | `/media-assets/:id/versions/:vid` | Remove a version |
+| PUT | `/media-assets/:id/current-version` | Set active version |
+| POST | `/media-assets/:id/publish` | Create a scheduled post from the current version (body: channels, caption, schedule) |
 
 ## Analytics (`/channels/:channelId/analytics`)
 

@@ -12,6 +12,7 @@ Versioned domain services used by `api/v1` handlers. Each file groups related op
 | `channel.go` | Instagram channel orchestration (delegates to services/repositories) |
 | `log.go` | `ReadLogsByLogID`, `ReadLogsByDate` — scan JSON log files under `logs/` |
 | `scheduled_post.go` | Create, get, list (calendar range), cancel scheduled posts for the authenticated owner |
+| `media_asset.go` | Blob upload, media asset + version lifecycle, set current version, publish (scheduled post from asset) |
 
 ## Authentication flow (Firebase)
 

@@ -7,6 +7,7 @@ Orchestrates domain rules between HTTP handlers and repositories. Stateless func
 - **Firebase authentication** — Validate Firebase ID tokens, upsert users by `firebase_id`, issue JWT access/refresh tokens, refresh and logout.
 - **Users & teams** — User lookup/update; team create, list, update, status.
 - **Channels** — Instagram channel creation and related flows (via services/repositories).
+- **Media workspace** — Upload to blob storage, CRUD on `media_assets` / `media_versions`, set current version, publish into scheduled posts.
 - **Logs** — Read structured log files for admin/debug (`ReadLogsByDate`, `ReadLogsByLogID`).
 
 ## Patterns
@@ -25,7 +26,7 @@ Orchestrates domain rules between HTTP handlers and repositories. Stateless func
 
 ## Layout
 
-- **`v1/`** — Current implementation (`auth.go`, `user.go`, `team.go`, `channel.go`, `log.go`)
+- **`v1/`** — Current implementation (`auth.go`, `user.go`, `team.go`, `channel.go`, `scheduled_post.go`, `media_asset.go`, `log.go`, …)
 
 ## Related documentation
 

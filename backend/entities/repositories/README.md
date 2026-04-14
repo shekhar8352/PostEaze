@@ -57,6 +57,9 @@ Post storage and listing (`posts` table), filters by channel, provider post IDs.
 ### scheduled_post.go
 Scheduled post CRUD and calendar range listing for the authenticated owner.
 
+### media_asset.go / media_version.go
+Media workspace: create/list/get/update/delete assets, version rows, current-version pointer, scoped by owner user.
+
 ### channel_access.go / post_access.go
 Authorization helpers (`UserCanAccessChannel`, post/channel membership checks) used by middleware and handlers.
 

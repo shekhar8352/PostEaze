@@ -1,6 +1,6 @@
 # PostEaze Backend
 
-Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Facebook channels, Meta OAuth and analytics sync, webhooks, scheduled posts, background jobs (Asynq/Redis), and channel analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
+Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Facebook channels, Meta OAuth and analytics sync, webhooks, scheduled posts, media workspace (versioned assets and publish-to-scheduled-post), background jobs (Asynq/Redis), and channel analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
 
 ## Architecture overview
 
@@ -15,7 +15,8 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Fa
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
 │  Business — business/v1 (auth, user, team, channel, log,       │
-│            scheduled posts, analytics, Meta sync, posts)     │
+│            scheduled posts, media assets, analytics, Meta,   │
+│            posts)                                              │
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
@@ -85,6 +86,7 @@ Base path: `/api/v1` unless noted.
 | Webhooks | `GET`, `POST /webhooks/instagram` | Meta verification + events |
 | Posts | `GET /posts` | JWT |
 | Scheduled posts | `GET /scheduled-posts`, `POST /scheduled-posts`, `GET /scheduled-posts/:id`, `DELETE /scheduled-posts/:id` | JWT — list supports calendar range query params (see handlers) |
+| Media workspace | `POST /media/upload`; `GET|POST /media-assets`, `GET|PUT|DELETE /media-assets/:id`, `POST /media-assets/:id/versions`, `DELETE /media-assets/:id/versions/:vid`, `PUT /media-assets/:id/current-version`, `POST /media-assets/:id/publish` | JWT — upload and versioning; publish creates a scheduled post from the current version |
 | Analytics | See below | JWT + `RequireInstagramChannelAnalyticsAccess` (Instagram channel) |
 | Dev | `POST /dev/generate-token` | Test JWT helpers when `ENV=development` / `dev` |
 | Cron (dev-oriented) | `POST /cron/trigger-instagram-sync`, `.../trigger-instagram-posts`, `.../trigger-instagram-analytics` | Guarded by `ENV` in handlers |
@@ -123,7 +125,8 @@ See [`api/v1/README.md`](api/v1/README.md) and [`api/webhooks/README.md`](api/we
 ```bash
 cd backend
 go mod download
-# Apply SQL in migrations/ in order (see migrations/README.md)
+export DATABASE_URL='postgres://USER:PASS@HOST:5432/DBNAME?sslmode=disable'
+make migrate-up   # requires golang-migrate CLI; see migrations/README.md
 go run .
 ```
 
