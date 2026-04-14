@@ -67,6 +67,39 @@ func GetScheduledPostByID(ctx context.Context, id int64, ownerUserID uuid.UUID) 
 	return &sp, nil
 }
 
+// GetScheduledPostByIDForJob loads a scheduled post by primary key (trusted worker / internal use only).
+func GetScheduledPostByIDForJob(ctx context.Context, id int64) (*entities.ScheduledPost, error) {
+	db := database.GetDB()
+	q := `
+		SELECT id, owner_user_id, channel_ids, platforms, scheduled_at, status,
+		       post_type, caption, media, provider_state, created_at, updated_at
+		FROM scheduled_posts
+		WHERE id = $1
+	`
+	var sp entities.ScheduledPost
+	err := db.QueryRowContext(ctx, q, id).Scan(
+		&sp.ID,
+		&sp.OwnerUserID,
+		&sp.ChannelIDs,
+		&sp.Platforms,
+		&sp.ScheduledAt,
+		&sp.Status,
+		&sp.PostType,
+		&sp.Caption,
+		&sp.Media,
+		&sp.ProviderState,
+		&sp.CreatedAt,
+		&sp.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &sp, nil
+}
+
 // ScheduledPostRangeFilters for calendar listing.
 type ScheduledPostRangeFilters struct {
 	OwnerUserID uuid.UUID

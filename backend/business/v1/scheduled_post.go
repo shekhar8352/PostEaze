@@ -16,7 +16,9 @@ import (
 	"github.com/shekhar8352/PostEaze/entities/repositories"
 	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 	"github.com/shekhar8352/PostEaze/provider/instagram"
+	"github.com/shekhar8352/PostEaze/mediapublish"
 	"github.com/shekhar8352/PostEaze/services/publishing"
+	"github.com/shekhar8352/PostEaze/tasks"
 	"github.com/shekhar8352/PostEaze/utils/encryption"
 )
 
@@ -69,12 +71,16 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	}
 	stateJSON := []byte(`{}`)
 
+	initialStatus := string(entities.ScheduledStatusPending)
+	if !req.PublishNow {
+		initialStatus = string(entities.ScheduledStatusScheduled)
+	}
 	sp := &entities.ScheduledPost{
 		OwnerUserID:   ownerID,
 		ChannelIDs:    pq.Int64Array(append([]int64(nil), req.ChannelIDs...)),
 		Platforms:     pq.StringArray(append([]string(nil), req.Platforms...)),
 		ScheduledAt:   schedUTC,
-		Status:        string(entities.ScheduledStatusPending),
+		Status:        initialStatus,
 		PostType:      req.PostType,
 		Caption:       strPtrOrNil(req.Caption),
 		Media:         mediaJSON,
@@ -82,6 +88,39 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	}
 	if err := repositories.CreateScheduledPost(ctx, sp); err != nil {
 		return nil, 500, err
+	}
+
+	// Future posts: queue Asynq job at scheduled_at; Meta does not document scheduled_publish_time on IG /media.
+	if !req.PublishNow {
+		stateMap := map[string]any{
+			"publish_now": false,
+			"queue":       "asynq",
+			"run_at_utc":  schedUTC.Format(time.RFC3339),
+			"instagram":   map[string]any{"channels": map[string]any{}},
+		}
+		channelsMap, _ := stateMap["instagram"].(map[string]any)
+		inner, _ := channelsMap["channels"].(map[string]any)
+		results := make([]modelsv1.ChannelScheduleResult, 0, len(req.ChannelIDs))
+		for _, cid := range req.ChannelIDs {
+			results = append(results, modelsv1.ChannelScheduleResult{ChannelID: cid, Success: true})
+			inner[fmt.Sprintf("%d", cid)] = map[string]any{"status": "queued"}
+		}
+		stateBytes, _ := json.Marshal(stateMap)
+		if err := repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, string(entities.ScheduledStatusScheduled), stateBytes); err != nil {
+			return nil, 500, err
+		}
+		if _, err := tasks.EnqueueInstagramScheduledPostPublish(sp.ID, schedUTC); err != nil {
+			fail := map[string]any{"error": "enqueue: " + err.Error()}
+			fb, _ := json.Marshal(fail)
+			_ = repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, string(entities.ScheduledStatusFailed), fb)
+			return nil, 500, fmt.Errorf("queue publish job: %w", err)
+		}
+		return &modelsv1.CreateScheduledPostResponse{
+			ScheduledPostID: sp.ID,
+			OverallStatus:   "scheduled",
+			PublishNow:      false,
+			Results:         results,
+		}, 200, nil
 	}
 
 	_ = repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, string(entities.ScheduledStatusSubmitting), stateJSON)
@@ -119,7 +158,7 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 			inner[fmt.Sprintf("%d", cid)] = map[string]any{"error": res.ErrorMessage}
 			continue
 		}
-		igUserID, err := instagramUserIDFromMetadata(ch.Metadata)
+		igUserID, err := instagram.UserIDFromChannelMetadata(ch.Metadata)
 		if err != nil {
 			res.ErrorMessage = err.Error()
 			results = append(results, res)
@@ -130,7 +169,7 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 		pubPayload := publishing.SchedulePayload{
 			PostType:     payload.PostType,
 			Caption:      payload.Caption,
-			PublishNow:   req.PublishNow,
+			PublishNow:   true,
 			ScheduledAt:  schedUTC,
 			ImageURL:     payload.ImageURL,
 			VideoURL:     payload.VideoURL,
@@ -157,22 +196,17 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	overall := "failed"
 	finalStatus := string(entities.ScheduledStatusFailed)
 	if successN == len(req.ChannelIDs) {
-		if req.PublishNow {
-			overall = "published"
-			finalStatus = string(entities.ScheduledStatusPublished)
-		} else {
-			overall = "scheduled"
-			finalStatus = string(entities.ScheduledStatusScheduled)
-		}
+		overall = "published"
+		finalStatus = string(entities.ScheduledStatusPublished)
 	} else if successN > 0 {
 		overall = "partial_failure"
-		if req.PublishNow {
-			finalStatus = string(entities.ScheduledStatusFailed)
-		} else {
-			finalStatus = string(entities.ScheduledStatusScheduled)
-		}
+		finalStatus = string(entities.ScheduledStatusFailed)
 	}
 	_ = repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, finalStatus, stateBytes)
+
+	if finalStatus == string(entities.ScheduledStatusPublished) {
+		mediapublish.MarkLinkedMediaAssetsPublished(ctx, ownerID, mediaJSON)
+	}
 
 	resp := &modelsv1.CreateScheduledPostResponse{
 		ScheduledPostID: sp.ID,
@@ -279,22 +313,6 @@ func validatePlatforms(platforms []string) error {
 		}
 	}
 	return nil
-}
-
-func instagramUserIDFromMetadata(meta []byte) (string, error) {
-	var m map[string]interface{}
-	if err := json.Unmarshal(meta, &m); err != nil {
-		return "", fmt.Errorf("invalid channel metadata")
-	}
-	id, ok := m["id"].(string)
-	if !ok || id == "" {
-		// numeric id in JSON
-		if v, ok := m["id"].(float64); ok {
-			return fmt.Sprintf("%.0f", v), nil
-		}
-		return "", fmt.Errorf("instagram user id missing in channel metadata")
-	}
-	return id, nil
 }
 
 func strPtrOrNil(s string) *string {

@@ -67,11 +67,26 @@ func CreateScheduledPostHandler(c *gin.Context) {
 		utils.SendError(c, code, err.Error())
 		return
 	}
-	httpStatus := http.StatusOK
-	if resp.OverallStatus == "partial_failure" {
-		httpStatus = http.StatusMultiStatus
+	switch resp.OverallStatus {
+	case "failed":
+		c.JSON(http.StatusUnprocessableEntity, gin.H{
+			"status": "error",
+			"msg":    "scheduled post failed",
+			"data":   resp,
+		})
+	case "partial_failure":
+		c.JSON(http.StatusMultiStatus, gin.H{
+			"status": "warning",
+			"msg":    "scheduled post partially processed",
+			"data":   resp,
+		})
+	default:
+		c.JSON(http.StatusOK, gin.H{
+			"status": "success",
+			"msg":    "scheduled post processed",
+			"data":   resp,
+		})
 	}
-	c.JSON(httpStatus, gin.H{"status": "success", "msg": "scheduled post processed", "data": resp})
 }
 
 // GetScheduledPostHandler godoc

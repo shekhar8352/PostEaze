@@ -366,6 +366,7 @@ func PublishMediaAsset(ctx context.Context, userIDStr string, assetID int64, req
 		mediaKind = "video"
 	}
 
+	assetIDCopy := assetID
 	schedReq := &modelsv1.CreateScheduledPostRequest{
 		ChannelIDs: req.ChannelIDs,
 		Platforms:  []string{"instagram"},
@@ -374,7 +375,7 @@ func PublishMediaAsset(ctx context.Context, userIDStr string, assetID int64, req
 		Caption:    req.Caption,
 		Media: modelsv1.ScheduledMediaPayload{
 			Items: []modelsv1.ScheduledMediaItem{
-				{Kind: mediaKind, URL: version.BlobURL},
+				{Kind: mediaKind, URL: version.BlobURL, MediaAssetID: &assetIDCopy},
 			},
 		},
 	}
@@ -384,7 +385,7 @@ func PublishMediaAsset(ctx context.Context, userIDStr string, assetID int64, req
 		return resp, code, err
 	}
 
-	_ = repositories.UpdateMediaAssetStatus(ctx, assetID, ownerID, string(entities.MediaAssetStatusPublished))
+	// Status is set by CreateScheduledPost on full publish success via mediapublish.MarkLinkedMediaAssetsPublished.
 	return resp, code, nil
 }
 
