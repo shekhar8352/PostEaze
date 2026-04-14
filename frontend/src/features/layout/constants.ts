@@ -23,6 +23,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     icon: Icons.Calendar,
     path: '/calendar',
   },
+  {
+    label: 'Workspace',
+    icon: Icons.Photo,
+    path: '/workspace',
+  },
 ];
 
 // Channel navigation items
