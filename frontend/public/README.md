@@ -4,14 +4,14 @@ This folder contains static assets that are served directly by Vite during devel
 
 ## Contents
 
-- **vite.svg**: Default Vite logo used as the application favicon
+- **favicon.svg**: Application favicon (PostEaze calendar mark)
 
 ## Asset Management
 
 ### Static File Serving
 
 Assets in the `public` folder are:
-- Served directly at the root path during development (`/vite.svg`)
+- Served directly at the root path during development (for example `/favicon.svg`)
 - Copied to the build output directory during production builds
 - Accessible via absolute URLs without import statements
 - Not processed by Vite's build pipeline (no bundling, minification, or hash generation)
@@ -21,13 +21,13 @@ Assets in the `public` folder are:
 #### Referencing Public Assets
 ```html
 <!-- In HTML files -->
-<link rel="icon" type="image/svg+xml" href="/vite.svg" />
+<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 <img src="/logo.png" alt="Logo" />
 ```
 
 ```tsx
 // In React components
-<img src="/vite.svg" alt="Vite logo" />
+<img src="/favicon.svg" alt="" />
 ```
 
 #### When to Use Public Assets
