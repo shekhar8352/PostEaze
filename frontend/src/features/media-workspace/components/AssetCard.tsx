@@ -28,9 +28,10 @@ const statusColor: Record<string, string> = {
 };
 
 export function AssetCard({ asset, onClick, onDelete }: AssetCardProps) {
-  const currentVersion = asset.versions?.find(
-    (v) => v.id === asset.current_version_id
-  );
+  const versions = asset.versions;
+  const currentVersion =
+    versions?.find((v) => v.id === asset.current_version_id) ??
+    (versions?.length ? versions[versions.length - 1] : undefined);
   const thumbnailUrl = currentVersion?.blob_url;
   const isVideo = asset.asset_type === "video";
 

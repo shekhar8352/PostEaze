@@ -4,6 +4,8 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/utils/database"
 )
@@ -22,6 +24,40 @@ func CreateMediaVersion(ctx context.Context, v *entities.MediaVersion) error {
 		v.MediaAssetID, v.VersionNumber, v.Label, v.BlobURL, v.BlobPathKey,
 		v.FileName, v.ContentType, v.FileSize, v.Metadata, v.Notes,
 	).Scan(&v.ID, &v.CreatedAt)
+}
+
+// ListCurrentVersionsForAssets returns the current version row for each listed asset ID (same owner).
+// Used by list APIs so clients can render thumbnails without loading full version history per asset.
+func ListCurrentVersionsForAssets(ctx context.Context, ownerID uuid.UUID, assetIDs []int64) (map[int64]entities.MediaVersion, error) {
+	out := make(map[int64]entities.MediaVersion)
+	if len(assetIDs) == 0 {
+		return out, nil
+	}
+	db := database.GetDB()
+	q := `
+		SELECT v.id, v.media_asset_id, v.version_number, v.label, v.blob_url, v.blob_path_key,
+		       v.file_name, v.content_type, v.file_size, v.metadata, v.notes, v.created_at
+		FROM media_versions v
+		INNER JOIN media_assets a ON a.id = v.media_asset_id AND a.current_version_id = v.id
+		WHERE a.owner_user_id = $1 AND a.id = ANY($2)
+	`
+	rows, err := db.QueryContext(ctx, q, ownerID, pq.Array(assetIDs))
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var v entities.MediaVersion
+		if err := rows.Scan(
+			&v.ID, &v.MediaAssetID, &v.VersionNumber, &v.Label, &v.BlobURL,
+			&v.BlobPathKey, &v.FileName, &v.ContentType, &v.FileSize,
+			&v.Metadata, &v.Notes, &v.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		out[v.MediaAssetID] = v
+	}
+	return out, rows.Err()
 }
 
 func ListVersionsByAssetID(ctx context.Context, assetID int64) ([]entities.MediaVersion, error) {

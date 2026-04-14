@@ -133,9 +133,22 @@ func ListMediaAssets(ctx context.Context, userIDStr string, q modelsv1.ListMedia
 		return nil, 500, err
 	}
 
+	assetIDs := make([]int64, 0, len(assets))
+	for i := range assets {
+		assetIDs = append(assetIDs, assets[i].ID)
+	}
+	currentByAssetID, err := repositories.ListCurrentVersionsForAssets(ctx, ownerID, assetIDs)
+	if err != nil {
+		return nil, 500, err
+	}
+
 	items := make([]modelsv1.MediaAssetResponse, 0, len(assets))
 	for i := range assets {
-		items = append(items, *mapAssetToResponse(&assets[i], nil))
+		var versions []entities.MediaVersion
+		if v, ok := currentByAssetID[assets[i].ID]; ok {
+			versions = []entities.MediaVersion{v}
+		}
+		items = append(items, *mapAssetToResponse(&assets[i], versions))
 	}
 
 	return &modelsv1.MediaAssetListResponse{
