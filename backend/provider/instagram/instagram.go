@@ -36,6 +36,7 @@ type InstagramProvider interface {
 	// Content publishing (Instagram Graph — graph.instagram.com by default).
 	CreateMediaContainer(ctx context.Context, accessToken, igUserID string, req *ContentPublishRequest) (creationID string, err error)
 	CreateCarouselContainers(ctx context.Context, accessToken, igUserID string, imageURLs []string, caption string, scheduledAt *time.Time) (parentCreationID string, err error)
+	GetMediaContainerStatus(ctx context.Context, accessToken, creationID string) (ContainerStatusResponse, error)
 	PublishMedia(ctx context.Context, accessToken, igUserID, creationID string) (publishedMediaID string, err error)
 }
 

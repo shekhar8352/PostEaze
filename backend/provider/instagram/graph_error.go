@@ -13,22 +13,34 @@ type GraphAPIError struct {
 	Message      string
 	Type         string
 	FBTraceID    string
+	// User-facing strings Meta sometimes includes (more useful than code=1 "unknown error").
+	UserTitle string
+	UserMsg   string
 }
 
 func (e *GraphAPIError) Error() string {
 	if e == nil {
 		return ""
 	}
-	return fmt.Sprintf("instagram graph API: %s (code=%d, error_subcode=%d)", e.Message, e.Code, e.ErrorSubcode)
+	s := fmt.Sprintf("instagram graph API: %s (code=%d, error_subcode=%d)", e.Message, e.Code, e.ErrorSubcode)
+	if e.UserTitle != "" || e.UserMsg != "" {
+		s += fmt.Sprintf(" [%s]", strings.TrimSpace(e.UserTitle+" "+e.UserMsg))
+	}
+	if e.FBTraceID != "" {
+		s += fmt.Sprintf(" fbtrace_id=%s", e.FBTraceID)
+	}
+	return s
 }
 
 type graphErrorEnvelope struct {
 	Error struct {
-		Code         float64 `json:"code"`
-		ErrorSubcode float64 `json:"error_subcode"`
-		Message      string  `json:"message"`
-		Type         string  `json:"type"`
-		FBTraceID    string  `json:"fbtrace_id"`
+		Code            float64 `json:"code"`
+		ErrorSubcode    float64 `json:"error_subcode"`
+		Message         string  `json:"message"`
+		Type            string  `json:"type"`
+		FBTraceID       string  `json:"fbtrace_id"`
+		ErrorUserTitle  string  `json:"error_user_title"`
+		ErrorUserMsg   string `json:"error_user_msg"`
 	} `json:"error"`
 }
 
@@ -47,6 +59,8 @@ func GraphAPIErrorFromBody(body []byte) (*GraphAPIError, bool) {
 		Message:      env.Error.Message,
 		Type:         env.Error.Type,
 		FBTraceID:    env.Error.FBTraceID,
+		UserTitle:    env.Error.ErrorUserTitle,
+		UserMsg:      env.Error.ErrorUserMsg,
 	}, true
 }
 
