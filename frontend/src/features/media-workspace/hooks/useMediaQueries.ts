@@ -5,7 +5,7 @@ import {
 } from "@tanstack/react-query";
 import { notifications } from "@mantine/notifications";
 import { mediaApi } from "../services/mediaApi";
-import type { PublishPayload, UpdateMediaAssetPayload } from "../types";
+import type { UpdateMediaAssetPayload } from "../types";
 
 export const mediaKeys = {
   all: ["media-assets"] as const,
@@ -149,27 +149,3 @@ export function useSetCurrentVersion() {
   });
 }
 
-export function usePublishMediaAsset() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: ({
-      assetId,
-      ...body
-    }: PublishPayload & { assetId: number }) =>
-      mediaApi.publish(assetId, body),
-    onSuccess: (_data, vars) => {
-      void qc.invalidateQueries({ queryKey: mediaKeys.all });
-      void qc.invalidateQueries({
-        queryKey: mediaKeys.detail(vars.assetId),
-      });
-      notifications.show({
-        title: "Published",
-        message: "Media published to selected channels.",
-        color: "green",
-      });
-    },
-    onError: (e: Error) => {
-      notifications.show({ title: "Error", message: e.message, color: "red" });
-    },
-  });
-}
