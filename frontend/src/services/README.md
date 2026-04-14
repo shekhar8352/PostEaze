@@ -22,6 +22,8 @@ import { apiClient } from "@/services/api/client";
 const { data } = await apiClient.get("/v1/channels");
 ```
 
+Multipart features (e.g. **media-workspace** `POST /v1/media-assets`) set `Content-Type: multipart/form-data` explicitly and often use a longer timeout; see `features/media-workspace/services/mediaApi.ts`.
+
 If your backend is mounted at `/api/v1`, ensure `VITE_API_BASE_URL` is e.g. `http://localhost:8080/api` so requests hit `/api/v1/...`.
 
 ## Configuration
@@ -37,4 +39,5 @@ Redevelopment CORS on the API allows `http://localhost:5173` by default.
 ## Related documentation
 
 - [`../features/README.md`](../features/README.md) — feature APIs and TanStack Query usage
+- [`../features/media-workspace/README.md`](../features/media-workspace/README.md) — media API usage
 - [`../app/store/README.md`](../app/store/README.md) — Redux (orthogonal to HTTP)

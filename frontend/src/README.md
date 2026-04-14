@@ -20,7 +20,7 @@ TypeScript/React source for the PostEaze web app.
 | Path | Purpose |
 |------|---------|
 | `app/` | Providers, **`routes/`** (including `ProtectedLayout`, `MainLayout` usage), **`store/`** Redux, **`theme/`** design tokens, shell CSS |
-| `features/` | Feature modules: **auth**, **layout**, **landing**, **dashboard**, **channels**, **analytics**, **calendar** (scheduled posts), etc. |
+| `features/` | Feature modules: **auth**, **layout**, **landing**, **dashboard**, **channels**, **analytics**, **calendar** (scheduled posts), **media-workspace**, etc. |
 | `services/` | Shared API client, interceptors; see README there |
 | `utils/` | Cross-feature helpers |
 | `assets/` | Images/SVG imported through Vite |
@@ -35,5 +35,6 @@ Feature route arrays are merged in **`app/routes/index.tsx`**. Authenticated app
 - [`app/routes/README.md`](./app/routes/README.md)
 - [`app/store/README.md`](./app/store/README.md)
 - [`features/README.md`](./features/README.md)
+- [`features/media-workspace/README.md`](./features/media-workspace/README.md)
 - [`services/README.md`](./services/README.md)
 - [`test/README.md`](./test/README.md)

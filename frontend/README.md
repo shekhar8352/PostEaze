@@ -1,6 +1,6 @@
 # PostEaze Frontend
 
-React SPA for PostEaze: auth (Firebase + JWT), dashboard, Instagram channels, analytics, and a **calendar** for scheduled posts. Uses a feature-based layout with a shared shell (sidebar/header).
+React SPA for PostEaze: auth (Firebase + JWT), dashboard, Instagram channels, analytics, a **calendar** for scheduled posts, and a **media workspace** (assets, versions, publish to schedule). Uses a feature-based layout with a shared shell (sidebar/header).
 
 ## Architecture
 
@@ -25,7 +25,7 @@ React SPA for PostEaze: auth (Firebase + JWT), dashboard, Instagram channels, an
 ```
 src/
 ├── app/                 # App shell: providers, routes, Redux store, theme, global styles
-├── features/            # Feature modules (auth, layout, dashboard, channels, analytics, calendar, landing)
+├── features/            # Feature modules (auth, layout, dashboard, channels, analytics, calendar, media-workspace, landing)
 ├── services/            # api/client, interceptors, legacy axios re-export
 ├── utils/               # Shared helpers (grow as needed)
 ├── assets/              # Bundled static assets
@@ -38,7 +38,7 @@ src/
 - **Providers** (`app/App.tsx`): Redux → TanStack Query → Auth → Mantine → Router.
 - **API base URL**: `import.meta.env.VITE_API_BASE_URL` or default `http://localhost:8080/api` (`services/api/client.ts`). Must match your Go server port and include `/api` if that is how the backend is mounted.
 - **Auth**: JWT access token attached by interceptors (`services/api/interceptors.ts`); refresh flow coordinated with the API.
-- **Protected UI**: `ProtectedLayout` + `MainLayout` wrap dashboard, analytics, channels, calendar, and the in-app home route.
+- **Protected UI**: `ProtectedLayout` + `MainLayout` wrap dashboard, analytics, channels, calendar, media workspace (`/workspace`), and the in-app home route.
 
 ## Getting started
 
@@ -70,6 +70,7 @@ npx vitest run       # single run (e.g. CI)
 
 - [`src/README.md`](src/README.md) — source tree overview
 - [`src/features/README.md`](src/features/README.md) — feature modules
+- [`src/features/media-workspace/README.md`](src/features/media-workspace/README.md) — media assets, versions, publish
 - [`src/app/routes/README.md`](src/app/routes/README.md) — route composition
 - [`src/app/store/README.md`](src/app/store/README.md) — Redux store
 - [`src/services/README.md`](src/services/README.md) — HTTP client
