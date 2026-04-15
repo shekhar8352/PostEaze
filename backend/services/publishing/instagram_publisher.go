@@ -3,6 +3,7 @@ package publishing
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/shekhar8352/PostEaze/provider/instagram"
@@ -53,9 +54,61 @@ func (p *InstagramPublisher) Schedule(ctx context.Context, accessToken, igUserID
 	if err != nil {
 		return "", "", err
 	}
+
+	// Meta must finish ingesting remote media (status FINISHED) before media_publish.
+	// We previously skipped this for scheduled posts, which led to immediate media_publish
+	// while the container was still IN_PROGRESS and opaque errors (e.g. code=1).
+	if err := p.waitForContainerReady(ctx, accessToken, creationID); err != nil {
+		return creationID, "", err
+	}
 	publishedMediaID, err = p.API.PublishMedia(ctx, accessToken, igUserID, creationID)
+	if err != nil && payload.PublishNow && isContainerNotReadyError(err) {
+		if waitErr := p.waitForContainerReady(ctx, accessToken, creationID); waitErr != nil {
+			return creationID, "", waitErr
+		}
+		publishedMediaID, err = p.API.PublishMedia(ctx, accessToken, igUserID, creationID)
+	}
 	if err != nil {
 		return creationID, "", err
 	}
 	return creationID, publishedMediaID, nil
+}
+
+func (p *InstagramPublisher) waitForContainerReady(ctx context.Context, accessToken, creationID string) error {
+	const (
+		maxWait      = 90 * time.Second
+		pollInterval = 3 * time.Second
+	)
+	deadline := time.Now().Add(maxWait)
+	var lastStatus string
+	for time.Now().Before(deadline) {
+		status, err := p.API.GetMediaContainerStatus(ctx, accessToken, creationID)
+		if err != nil {
+			return err
+		}
+		code := strings.ToUpper(strings.TrimSpace(status.StatusCode))
+		lastStatus = code
+		switch code {
+		case "FINISHED", "PUBLISHED":
+			return nil
+		case "ERROR", "EXPIRED":
+			return fmt.Errorf("instagram container is not publishable: status_code=%s status=%s", status.StatusCode, status.Status)
+		}
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case <-time.After(pollInterval):
+		}
+	}
+	return fmt.Errorf("timed out waiting for instagram container readiness (last_status=%s)", lastStatus)
+}
+
+func isContainerNotReadyError(err error) bool {
+	if err == nil {
+		return false
+	}
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "code=9007") ||
+		strings.Contains(msg, "error_subcode=2207027") ||
+		strings.Contains(msg, "media id is not available")
 }
