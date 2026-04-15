@@ -10,6 +10,8 @@ export type PostType = "image" | "video" | "carousel";
 export interface ScheduledMediaItem {
   url: string;
   kind: "image" | "video";
+  /** When set, backend marks this workspace asset `published` after a successful Instagram post */
+  media_asset_id?: number;
 }
 
 export interface CreateScheduledPostRequest {
@@ -57,3 +59,12 @@ export interface ListScheduledPostsResponse {
 }
 
 export type CalendarViewMode = "month" | "week" | "day";
+
+/** react-big-calendar event shape for scheduled posts */
+export interface CalendarScheduledEvent {
+  id: number;
+  title: string;
+  start: Date;
+  end: Date;
+  resource: ScheduledPostListItem;
+}
