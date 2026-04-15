@@ -60,8 +60,3 @@ export interface UpdateMediaAssetPayload {
   title?: string;
   status?: "draft" | "ready";
 }
-
-export interface PublishPayload {
-  channel_ids: number[];
-  caption: string;
-}

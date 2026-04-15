@@ -1,17 +1,30 @@
 import { useState } from "react";
 import {
+  Box,
   Button,
+  CloseButton,
   Group,
+  Image,
   Modal,
+  Paper,
+  Progress,
   Stack,
   Text,
   TextInput,
   Textarea,
-  rem,
+  ThemeIcon,
 } from "@mantine/core";
 import { Dropzone, IMAGE_MIME_TYPE } from "@mantine/dropzone";
-import { IconUpload, IconPhoto, IconX } from "@tabler/icons-react";
+import {
+  IconUpload,
+  IconX,
+  IconCloudUpload,
+  IconFile,
+  IconVideo,
+  IconVersions,
+} from "@tabler/icons-react";
 import { useAddVersion } from "../hooks/useMediaQueries";
+import { useMediaWorkspaceSurfaces } from "../hooks/useMediaWorkspaceSurfaces";
 
 const VIDEO_MIME_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
 const ALL_MIME_TYPES = [...IMAGE_MIME_TYPE, ...VIDEO_MIME_TYPES];
@@ -23,18 +36,28 @@ interface AddVersionModalProps {
   assetId: number;
 }
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 export function AddVersionModal({
   opened,
   onClose,
   assetId,
 }: AddVersionModalProps) {
   const [file, setFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [label, setLabel] = useState("");
   const [notes, setNotes] = useState("");
   const addVersion = useAddVersion();
+  const surfaces = useMediaWorkspaceSurfaces();
 
   const reset = () => {
+    if (preview) URL.revokeObjectURL(preview);
     setFile(null);
+    setPreview(null);
     setLabel("");
     setNotes("");
   };
@@ -42,6 +65,21 @@ export function AddVersionModal({
   const handleClose = () => {
     reset();
     onClose();
+  };
+
+  const handleDrop = (files: File[]) => {
+    const f = files[0];
+    if (!f) return;
+    setFile(f);
+    if (f.type.startsWith("image/")) {
+      setPreview(URL.createObjectURL(f));
+    }
+  };
+
+  const handleRemoveFile = () => {
+    if (preview) URL.revokeObjectURL(preview);
+    setFile(null);
+    setPreview(null);
   };
 
   const handleSubmit = () => {
@@ -57,66 +95,156 @@ export function AddVersionModal({
     );
   };
 
+  const isVideo = file?.type.startsWith("video/");
+
   return (
     <Modal
       opened={opened}
       onClose={handleClose}
-      title="Add New Version"
+      title={
+        <Group gap="xs">
+          <ThemeIcon variant="light" color="violet" size="sm" radius="xl">
+            <IconVersions size={14} />
+          </ThemeIcon>
+          <Text fw={600}>Add New Version</Text>
+        </Group>
+      }
       size="lg"
+      radius="lg"
+      overlayProps={{ backgroundOpacity: 0.4, blur: 4 }}
     >
-      <Stack gap="md">
+      <Stack gap="lg">
+        {/* Dropzone or file preview */}
         {!file ? (
           <Dropzone
-            onDrop={(files) => setFile(files[0] ?? null)}
+            onDrop={handleDrop}
             maxSize={MAX_SIZE}
             accept={ALL_MIME_TYPES}
             multiple={false}
+            radius="lg"
+            style={surfaces.dropzoneVersion}
           >
-            <Group
+            <Stack
+              align="center"
               justify="center"
-              gap="xl"
-              mih={140}
+              gap="md"
+              mih={160}
               style={{ pointerEvents: "none" }}
             >
               <Dropzone.Accept>
-                <IconUpload style={{ width: rem(42), height: rem(42) }} stroke={1.5} />
+                <ThemeIcon variant="light" color="violet" size={64} radius="xl">
+                  <IconUpload size={32} stroke={1.5} />
+                </ThemeIcon>
               </Dropzone.Accept>
               <Dropzone.Reject>
-                <IconX style={{ width: rem(42), height: rem(42) }} stroke={1.5} color="red" />
+                <ThemeIcon variant="light" color="red" size={64} radius="xl">
+                  <IconX size={32} stroke={1.5} />
+                </ThemeIcon>
               </Dropzone.Reject>
               <Dropzone.Idle>
-                <IconPhoto style={{ width: rem(42), height: rem(42) }} stroke={1.5} opacity={0.4} />
+                <ThemeIcon
+                  variant="light"
+                  color="violet"
+                  size={64}
+                  radius="xl"
+                  style={{ opacity: 0.8 }}
+                >
+                  <IconCloudUpload size={32} stroke={1.5} />
+                </ThemeIcon>
               </Dropzone.Idle>
-              <div>
-                <Text size="lg" inline>
-                  Drop the new version file here
+              <Stack gap={4} align="center">
+                <Text size="md" fw={600} c="var(--mantine-color-text)">
+                  Drop the new version file
                 </Text>
-                <Text size="sm" c="dimmed" inline mt={4}>
-                  Max 50 MB
+                <Text size="sm" c="dimmed">
+                  or{" "}
+                  <Text span c="violet" fw={500}>
+                    browse files
+                  </Text>{" "}
+                  · Max 50 MB
                 </Text>
-              </div>
-            </Group>
+              </Stack>
+            </Stack>
           </Dropzone>
         ) : (
-          <Group gap="xs">
-            <Text size="sm" fw={500}>
-              {file.name}
-            </Text>
-            <Text size="xs" c="dimmed">
-              ({(file.size / (1024 * 1024)).toFixed(1)} MB)
-            </Text>
-            <Button variant="subtle" size="xs" color="red" onClick={() => setFile(null)}>
-              Remove
-            </Button>
-          </Group>
+          <Paper p="md" radius="lg" withBorder>
+            <Group wrap="nowrap" gap="md">
+              {preview ? (
+                <Image
+                  src={preview}
+                  alt="Preview"
+                  w={72}
+                  h={72}
+                  radius="md"
+                  fit="cover"
+                />
+              ) : (
+                <Box
+                  style={{
+                    width: 72,
+                    height: 72,
+                    borderRadius: 12,
+                    background:
+                      "linear-gradient(135deg, var(--mantine-color-violet-1), var(--mantine-color-violet-2))",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    flexShrink: 0,
+                  }}
+                >
+                  {isVideo ? (
+                    <IconVideo
+                      size={28}
+                      color="var(--mantine-color-violet-5)"
+                    />
+                  ) : (
+                    <IconFile
+                      size={28}
+                      color="var(--mantine-color-violet-5)"
+                    />
+                  )}
+                </Box>
+              )}
+
+              <Stack gap={2} style={{ flex: 1, minWidth: 0 }}>
+                <Text size="sm" fw={600} lineClamp={1}>
+                  {file.name}
+                </Text>
+                <Text size="xs" c="dimmed">
+                  {formatFileSize(file.size)}
+                </Text>
+                {addVersion.isPending && (
+                  <Progress
+                    size="xs"
+                    radius="xl"
+                    animated
+                    value={100}
+                    color="violet"
+                    mt={4}
+                  />
+                )}
+              </Stack>
+
+              <CloseButton
+                onClick={handleRemoveFile}
+                variant="subtle"
+                color="gray"
+                size="sm"
+              />
+            </Group>
+          </Paper>
         )}
 
-        <TextInput
-          label="Label"
-          placeholder="e.g. edited, color_graded, final"
-          value={label}
-          onChange={(e) => setLabel(e.currentTarget.value)}
-        />
+        {/* Form fields */}
+        <Group grow>
+          <TextInput
+            label="Label"
+            placeholder="e.g. edited, color_graded, final"
+            value={label}
+            onChange={(e) => setLabel(e.currentTarget.value)}
+            radius="md"
+          />
+        </Group>
 
         <Textarea
           label="Notes"
@@ -124,16 +252,26 @@ export function AddVersionModal({
           value={notes}
           onChange={(e) => setNotes(e.currentTarget.value)}
           minRows={2}
+          radius="md"
         />
 
-        <Group justify="flex-end">
-          <Button variant="default" onClick={handleClose}>
+        {/* Actions */}
+        <Group justify="flex-end" mt="xs">
+          <Button
+            variant="subtle"
+            color="gray"
+            onClick={handleClose}
+            radius="md"
+          >
             Cancel
           </Button>
           <Button
             onClick={handleSubmit}
             loading={addVersion.isPending}
             disabled={!file}
+            radius="md"
+            variant="gradient"
+            gradient={{ from: "violet", to: "blue", deg: 135 }}
           >
             Upload Version
           </Button>

@@ -28,7 +28,11 @@ export const scheduledPostService = {
     const res = await apiClient.post<ApiSuccessEnvelope<CreateScheduledPostResponse>>(
       "/v1/scheduled-posts",
       body,
-      { validateStatus: () => true }
+      {
+        // Instagram "publish now" can take longer while container processing completes.
+        timeout: 120_000,
+        validateStatus: () => true,
+      }
     );
     if (res.status >= 400) {
       const msg = (res.data as { msg?: string })?.msg ?? "Request failed";
