@@ -5,14 +5,15 @@ import {
   Badge,
   Button,
   Group,
+  Loader,
   Modal,
   MultiSelect,
   SegmentedControl,
+  Select,
   SimpleGrid,
   Stack,
   Text,
   Textarea,
-  TextInput,
   Title,
 } from "@mantine/core";
 import { useReducedMotion } from "@mantine/hooks";
@@ -25,6 +26,8 @@ import {
   IconUsers,
 } from "@tabler/icons-react";
 import type { BaseChannelDisplay } from "@/features/channels/types/base.types";
+import { useMediaAssets } from "@/features/media-workspace/hooks/useMediaQueries";
+import type { MediaAsset } from "@/features/media-workspace/types";
 import { useCreateScheduledPost } from "../hooks/useScheduledPostsQueries";
 import type { PostType } from "../types";
 import styles from "./SchedulePostModal.module.css";
@@ -72,6 +75,15 @@ function instagramMediaUrlHint(url: string): string | null {
   return null;
 }
 
+function publishUrlForAsset(asset: MediaAsset): string | null {
+  const v =
+    asset.current_version_id != null
+      ? asset.versions?.find((x) => x.id === asset.current_version_id)
+      : asset.versions?.[0];
+  const u = v?.blob_url?.trim();
+  return u && u.startsWith("https://") ? u : null;
+}
+
 function defaultSlotString(initial: Date | null): string {
   const d =
     initial ??
@@ -97,16 +109,37 @@ type TimingMode = "now" | "later";
 export function SchedulePostModal({ opened, onClose, initialStart, channels }: SchedulePostModalProps) {
   const reduceMotion = useReducedMotion();
   const createMutation = useCreateScheduledPost();
+  const { data: mediaList, isLoading: mediaLoading } = useMediaAssets(undefined, 100, 0);
   const [step, setStep] = useState(0);
   const [timingMode, setTimingMode] = useState<TimingMode>("later");
   const [scheduledAtStr, setScheduledAtStr] = useState<string | null>(null);
   const [channelValues, setChannelValues] = useState<string[]>([]);
   const [postType, setPostType] = useState<PostType>("image");
   const [caption, setCaption] = useState("");
-  const [imageUrl, setImageUrl] = useState("");
-  const [videoUrl, setVideoUrl] = useState("");
-  const [carouselUrls, setCarouselUrls] = useState("");
+  /** Single image or video — asset id as string for Select */
+  const [selectedAssetId, setSelectedAssetId] = useState<string | null>(null);
+  /** Carousel — ordered asset ids */
+  const [carouselAssetIds, setCarouselAssetIds] = useState<string[]>([]);
   const [contentError, setContentError] = useState<string | null>(null);
+
+  const assetsReady = useMemo(() => {
+    return (mediaList?.assets ?? []).filter((a) => publishUrlForAsset(a) != null);
+  }, [mediaList]);
+
+  const photoAssets = useMemo(
+    () => assetsReady.filter((a) => a.asset_type === "photo"),
+    [assetsReady]
+  );
+  const videoAssets = useMemo(
+    () => assetsReady.filter((a) => a.asset_type === "video"),
+    [assetsReady]
+  );
+
+  const assetById = useMemo(() => {
+    const m = new Map<number, MediaAsset>();
+    for (const a of assetsReady) m.set(a.id, a);
+    return m;
+  }, [assetsReady]);
 
   useEffect(() => {
     if (opened) {
@@ -116,16 +149,20 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
       setChannelValues([]);
       setPostType("image");
       setCaption("");
-      setImageUrl("");
-      setVideoUrl("");
-      setCarouselUrls("");
+      setSelectedAssetId(null);
+      setCarouselAssetIds([]);
       setContentError(null);
     }
   }, [opened, initialStart]);
 
   useEffect(() => {
+    setSelectedAssetId(null);
+    setCarouselAssetIds([]);
+  }, [postType]);
+
+  useEffect(() => {
     setContentError(null);
-  }, [postType, imageUrl, videoUrl, carouselUrls]);
+  }, [postType, selectedAssetId, carouselAssetIds]);
 
   const igChannels = useMemo(
     () => channels.filter((c) => c.provider === "instagram"),
@@ -141,39 +178,93 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     [igChannels]
   );
 
+  const photoSelectData = useMemo(
+    () =>
+      photoAssets.map((a) => ({
+        value: String(a.id),
+        label: `${a.title} (#${a.id})`,
+      })),
+    [photoAssets]
+  );
+
+  const videoSelectData = useMemo(
+    () =>
+      videoAssets.map((a) => ({
+        value: String(a.id),
+        label: `${a.title} (#${a.id})`,
+      })),
+    [videoAssets]
+  );
+
+  const carouselSelectData = useMemo(
+    () =>
+      photoAssets.map((a) => ({
+        value: String(a.id),
+        label: `${a.title} (#${a.id})`,
+      })),
+    [photoAssets]
+  );
+
+  const mediaSummaryLabel = (): string => {
+    if (postType === "carousel") {
+      if (carouselAssetIds.length === 0) return "—";
+      return carouselAssetIds
+        .map((id) => assetById.get(Number(id))?.title ?? id)
+        .join(", ");
+    }
+    if (!selectedAssetId) return "—";
+    const a = assetById.get(Number(selectedAssetId));
+    return a ? `${a.title} (#${a.id})` : "—";
+  };
+
   const canNextStep0 =
     timingMode === "now" || (scheduledAtStr != null && scheduledAtStr.length > 0 && dayjs(scheduledAtStr).isValid());
   const canNextStep1 = channelValues.length > 0;
 
   const buildMediaItems = () => {
     if (postType === "image") {
-      return [{ url: imageUrl.trim(), kind: "image" as const }];
+      if (!selectedAssetId) return [];
+      const a = assetById.get(Number(selectedAssetId));
+      const url = a ? publishUrlForAsset(a) : null;
+      return url ? [{ url, kind: "image" as const, media_asset_id: a.id }] : [];
     }
     if (postType === "video") {
-      return [{ url: videoUrl.trim(), kind: "video" as const }];
+      if (!selectedAssetId) return [];
+      const a = assetById.get(Number(selectedAssetId));
+      const url = a ? publishUrlForAsset(a) : null;
+      return url ? [{ url, kind: "video" as const, media_asset_id: a.id }] : [];
     }
-    const lines = carouselUrls
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean);
-    return lines.map((url) => ({ url, kind: "image" as const }));
+    return carouselAssetIds
+      .map((id) => assetById.get(Number(id)))
+      .filter((a): a is MediaAsset => Boolean(a))
+      .map((a) => ({ url: publishUrlForAsset(a)!, kind: "image" as const, media_asset_id: a.id }));
   };
 
   const validateStep2 = (): string | null => {
     const items = buildMediaItems();
     if (postType === "image") {
-      if (items.length !== 1 || !items[0].url.startsWith("https://")) return "One HTTPS image URL required";
+      if (!selectedAssetId) return "Select a photo from your workspace";
+      if (items.length !== 1) return "Selected photo has no usable HTTPS URL (add a version in Media Workspace)";
       const hint = instagramMediaUrlHint(items[0].url);
       if (hint) return hint;
     }
     if (postType === "video") {
-      if (items.length !== 1 || !items[0].url.startsWith("https://")) return "One HTTPS video URL required";
+      if (!selectedAssetId) return "Select a video from your workspace";
+      if (items.length !== 1) return "Selected video has no usable HTTPS URL (add a version in Media Workspace)";
       const hint = instagramMediaUrlHint(items[0].url);
       if (hint) return hint;
     }
     if (postType === "carousel") {
-      if (items.length < 2 || items.length > 10) return "Enter 2–10 image URLs (one per line)";
-      if (items.some((i) => !i.url.startsWith("https://"))) return "All carousel URLs must be HTTPS";
+      if (carouselAssetIds.length < 2 || carouselAssetIds.length > 10) {
+        return "Select 2–10 photos from your workspace";
+      }
+      for (const idStr of carouselAssetIds) {
+        const a = assetById.get(Number(idStr));
+        if (!a || !publishUrlForAsset(a)) {
+          return "One or more selected photos are missing a public HTTPS URL";
+        }
+      }
+      if (items.length < 2) return "Could not resolve media for all selected photos";
       for (const i of items) {
         const hint = instagramMediaUrlHint(i.url);
         if (hint) return hint;
@@ -390,44 +481,80 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
               value={caption}
               onChange={(e) => setCaption(e.target.value)}
             />
-            {postType === "image" && (
-              <Stack gap={6}>
-                <TextInput
-                  label="Image URL (HTTPS)"
-                  placeholder="https://cdn.example.com/photo.jpg"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                />
-                <Text className={styles.hint}>
-                  Use a direct link Meta can fetch as JPEG—not Google Drive “view” pages.{" "}
-                  <a href="https://developers.facebook.com/docs/instagram-platform/content-publishing/" target="_blank" rel="noreferrer">
-                    Content publishing docs
-                  </a>
+            {mediaLoading ? (
+              <Group gap="sm" py="md">
+                <Loader size="sm" />
+                <Text size="sm" c="dimmed">
+                  Loading workspace media…
                 </Text>
-              </Stack>
-            )}
-            {postType === "video" && (
-              <Stack gap={6}>
-                <TextInput
-                  label="Video URL (HTTPS)"
-                  placeholder="https://…"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                />
-                <Text className={styles.hint}>Direct HTTPS URL to the video file—not a player or share page.</Text>
-              </Stack>
-            )}
-            {postType === "carousel" && (
-              <Textarea
-                label="Image URLs (one per line, 2–10, HTTPS)"
-                placeholder={"https://example.com/a.jpg\nhttps://example.com/b.jpg"}
-                minRows={4}
-                value={carouselUrls}
-                onChange={(e) => setCarouselUrls(e.target.value)}
-              />
+              </Group>
+            ) : (
+              <>
+                {postType === "image" && (
+                  <Stack gap={6}>
+                    <Select
+                      label="Photo from workspace"
+                      description="Upload and version photos in Media Workspace first"
+                      placeholder={photoSelectData.length ? "Choose a photo asset" : "No photos with a current version yet"}
+                      data={photoSelectData}
+                      value={selectedAssetId}
+                      onChange={setSelectedAssetId}
+                      searchable
+                      nothingFoundMessage="No matches"
+                      disabled={photoSelectData.length === 0}
+                    />
+                    {photoSelectData.length === 0 && (
+                      <Text size="sm" className={styles.hint}>
+                        Add a photo in Media Workspace and set a current version so it appears here.
+                      </Text>
+                    )}
+                  </Stack>
+                )}
+                {postType === "video" && (
+                  <Stack gap={6}>
+                    <Select
+                      label="Video from workspace"
+                      description="Upload videos in Media Workspace first"
+                      placeholder={videoSelectData.length ? "Choose a video asset" : "No videos with a current version yet"}
+                      data={videoSelectData}
+                      value={selectedAssetId}
+                      onChange={setSelectedAssetId}
+                      searchable
+                      nothingFoundMessage="No matches"
+                      disabled={videoSelectData.length === 0}
+                    />
+                    {videoSelectData.length === 0 && (
+                      <Text size="sm" className={styles.hint}>
+                        Add a video in Media Workspace and set a current version so it appears here.
+                      </Text>
+                    )}
+                  </Stack>
+                )}
+                {postType === "carousel" && (
+                  <Stack gap={6}>
+                    <MultiSelect
+                      label="Photos (2–10)"
+                      description="Select multiple photo assets; order is kept as selected"
+                      placeholder={carouselSelectData.length ? "Pick 2–10 photos" : "No photos available"}
+                      data={carouselSelectData}
+                      value={carouselAssetIds}
+                      onChange={setCarouselAssetIds}
+                      searchable
+                      maxDropdownHeight={280}
+                      nothingFoundMessage="No matches"
+                      disabled={carouselSelectData.length === 0}
+                    />
+                    {carouselSelectData.length < 2 && (
+                      <Text size="sm" className={styles.hint}>
+                        You need at least two photo assets with a current version for a carousel.
+                      </Text>
+                    )}
+                  </Stack>
+                )}
+              </>
             )}
             {contentError && (
-              <Alert color="red" variant="light" title="Fix media URLs">
+              <Alert color="red" variant="light" title="Fix media selection">
                 {contentError}
               </Alert>
             )}
@@ -477,7 +604,9 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
               <div className={`${styles.summaryCard} ${styles.summaryCardWide}`}>
                 <div className={styles.summaryKey}>Media</div>
                 <div className={styles.summaryValue}>
-                  {postType === "carousel" ? `${buildMediaItems().length} images` : buildMediaItems()[0]?.url ?? "—"}
+                  {postType === "carousel"
+                    ? `${carouselAssetIds.length} photos: ${mediaSummaryLabel()}`
+                    : mediaSummaryLabel()}
                 </div>
               </div>
             </SimpleGrid>

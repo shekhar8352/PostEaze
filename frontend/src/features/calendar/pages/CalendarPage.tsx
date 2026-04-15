@@ -31,9 +31,11 @@ import { enUS } from "date-fns/locale/en-US";
 import { Calendar, dateFnsLocalizer, type View } from "react-big-calendar";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { useChannels } from "@/features/channels/services/channelQueries";
+import { CalendarEventBlock } from "../components/CalendarEventBlock";
 import { SchedulePostModal } from "../components/SchedulePostModal";
 import { useScheduledPostsRange } from "../hooks/useScheduledPostsQueries";
-import type { CalendarViewMode, ScheduledPostListItem } from "../types";
+import type { CalendarScheduledEvent, CalendarViewMode } from "../types";
+import { getCalendarPostStatusKey } from "../utils/postStatus";
 import "./calendar-overrides.css";
 import styles from "./CalendarPage.module.css";
 
@@ -99,14 +101,6 @@ function getNavLabel(view: CalendarViewMode, anchor: Date): string {
   return format(anchor, "EEEE, MMMM d, yyyy");
 }
 
-type CalEvent = {
-  id: number;
-  title: string;
-  start: Date;
-  end: Date;
-  resource: ScheduledPostListItem;
-};
-
 const SEG_CLASS_NAMES = {
   root: styles.segRoot,
   indicator: styles.segIndicator,
@@ -135,7 +129,7 @@ export default function CalendarPage() {
 
   const rbcView: View = viewMode === "month" ? "month" : viewMode === "week" ? "week" : "day";
 
-  const events: CalEvent[] = useMemo(() => {
+  const events: CalendarScheduledEvent[] = useMemo(() => {
     const posts = data?.posts ?? [];
     return posts.map((p) => {
       const start = new Date(p.scheduled_at);
@@ -152,9 +146,12 @@ export default function CalendarPage() {
   const stats = useMemo(() => {
     const posts = data?.posts ?? [];
     const total = posts.length;
-    const scheduled = posts.filter((p) => p.status === "scheduled").length;
+    const scheduled = posts.filter((p) => getCalendarPostStatusKey(p.status) === "scheduled").length;
     const published = posts.filter((p) => p.status === "published").length;
-    const failed = posts.filter((p) => p.status === "failed" || p.status === "partial_failure").length;
+    const failed = posts.filter((p) => {
+      const k = getCalendarPostStatusKey(p.status);
+      return k === "failed";
+    }).length;
     return { total, scheduled, published, failed };
   }, [data?.posts]);
 
@@ -273,6 +270,26 @@ export default function CalendarPage() {
         </div>
       </div>
 
+      {/* ─── Status legend (matches event colors) ─── */}
+      <div className={styles.statusLegend} aria-label="Post status colors">
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendSwatch} ${styles.legendSwatchScheduled}`} />
+          Scheduled
+        </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendSwatch} ${styles.legendSwatchPublished}`} />
+          Published
+        </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendSwatch} ${styles.legendSwatchFailed}`} />
+          Failed
+        </span>
+        <span className={styles.legendItem}>
+          <span className={`${styles.legendSwatch} ${styles.legendSwatchCancelled}`} />
+          Cancelled
+        </span>
+      </div>
+
       {/* ─── Navigation bar ─── */}
       <div className={styles.navRow}>
         <div className={styles.navCenter}>
@@ -327,7 +344,7 @@ export default function CalendarPage() {
               selectable
               onSelectSlot={onSelectSlot}
               views={["month", "week", "day"]}
-              components={{ toolbar: () => null }}
+              components={{ toolbar: () => null, event: CalendarEventBlock }}
               style={{ height: viewMode === "month" ? 560 : 680 }}
               step={30}
               timeslots={2}
@@ -335,15 +352,19 @@ export default function CalendarPage() {
               max={MAX_TIME}
               scrollToTime={SCROLL_TO_TIME}
               dayLayoutAlgorithm="overlap"
-              eventPropGetter={() => ({
-                style: {
-                  borderRadius: viewMode === "month" ? 5 : 4,
-                  border: "none",
-                  fontSize: viewMode === "month" ? 11 : 11,
-                  fontWeight: 500,
-                  padding: viewMode === "month" ? "2px 6px" : "4px 8px 4px 6px",
-                },
-              })}
+              eventPropGetter={(ev) => {
+                const statusKey = getCalendarPostStatusKey(ev.resource.status);
+                return {
+                  className: `pe-cal-ev pe-cal-ev--${statusKey}`,
+                  style: {
+                    borderRadius: viewMode === "month" ? 5 : 4,
+                    border: "none",
+                    fontSize: viewMode === "month" ? 11 : 11,
+                    fontWeight: 500,
+                    padding: viewMode === "month" ? "2px 6px" : "4px 8px 4px 6px",
+                  },
+                };
+              }}
             />
           </div>
         )}

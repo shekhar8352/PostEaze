@@ -70,6 +70,53 @@
   line-height: 1.4;
 }
 
+/* ─── Status legend (event color key) ─── */
+.statusLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 20px;
+  margin-bottom: 14px;
+  padding: 10px 14px;
+  background: color-mix(in srgb, var(--pe-bg-subtle) 88%, var(--pe-bg-elevated));
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--pe-text-secondary);
+}
+
+.legendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  user-select: none;
+}
+
+.legendSwatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #000 12%, transparent);
+}
+
+.legendSwatchScheduled {
+  background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+}
+
+.legendSwatchPublished {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.legendSwatchFailed {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 100%);
+}
+
+.legendSwatchCancelled {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
+
 /* ─── Navigation row (< date >) ─── */
 .navRow {
   display: flex;
@@ -193,14 +240,16 @@
 
 .statIconAmber {
   composes: statIcon;
-  background: rgba(255, 159, 10, 0.14);
-  color: #ff9f0a;
+  /* Sky — matches “scheduled / in flight” event color on calendar */
+  background: rgba(14, 165, 233, 0.14);
+  color: #0284c7;
 }
 
 .statIconPurple {
   composes: statIcon;
-  background: rgba(175, 82, 222, 0.14);
-  color: #af52de;
+  /* Rose — matches failed event color */
+  background: rgba(244, 63, 94, 0.14);
+  color: #e11d48;
 }
 
 .statBody {
