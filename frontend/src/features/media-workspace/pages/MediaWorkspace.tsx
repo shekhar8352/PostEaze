@@ -10,12 +10,22 @@ import {
   Title,
   Center,
   Pagination,
+  Paper,
+  Box,
+  TextInput,
+  Badge,
 } from "@mantine/core";
-import { IconPlus, IconPhotoVideo } from "@tabler/icons-react";
+import {
+  IconPlus,
+  IconUpload,
+  IconSearch,
+  IconCloudUpload,
+} from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { useMediaAssets, useDeleteMediaAsset } from "../hooks/useMediaQueries";
 import { AssetCard } from "../components/AssetCard";
 import { MediaUploader } from "../components/MediaUploader";
+import { useMediaWorkspaceSurfaces } from "../hooks/useMediaWorkspaceSurfaces";
 
 const PAGE_SIZE = 20;
 
@@ -23,8 +33,10 @@ export default function MediaWorkspace() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const deleteAsset = useDeleteMediaAsset();
+  const surfaces = useMediaWorkspaceSurfaces();
 
   const status = statusFilter === "all" ? undefined : statusFilter;
   const offset = (page - 1) * PAGE_SIZE;
@@ -33,53 +45,174 @@ export default function MediaWorkspace() {
 
   const totalPages = data ? Math.ceil(data.total / PAGE_SIZE) : 0;
 
+  const filteredAssets = data?.assets.filter((a) =>
+    searchQuery
+      ? a.title.toLowerCase().includes(searchQuery.toLowerCase())
+      : true
+  );
+
   return (
-    <Stack gap="lg" p="md">
-      <Group justify="space-between">
-        <Title order={2}>Media Workspace</Title>
+    <Stack gap="xl" p="md">
+      {/* Page header */}
+      <Group justify="space-between" align="flex-end">
+        <Box>
+          <Title
+            order={2}
+            style={{ letterSpacing: "-0.02em" }}
+          >
+            Media Workspace
+          </Title>
+          <Text size="sm" c="dimmed" mt={4}>
+            Upload and version assets; schedule or publish from the Calendar
+          </Text>
+        </Box>
         <Button
-          leftSection={<IconPlus size={16} />}
+          size="md"
+          radius="md"
+          leftSection={<IconUpload size={18} />}
           onClick={() => setUploadOpen(true)}
+          variant="gradient"
+          gradient={{ from: "blue", to: "cyan", deg: 135 }}
+          style={{
+            boxShadow: "0 4px 12px rgba(34,139,230,0.25)",
+            transition: "transform 150ms ease, box-shadow 150ms ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.transform = "translateY(-1px)";
+            e.currentTarget.style.boxShadow =
+              "0 6px 16px rgba(34,139,230,0.35)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.transform = "translateY(0)";
+            e.currentTarget.style.boxShadow =
+              "0 4px 12px rgba(34,139,230,0.25)";
+          }}
         >
           Upload Media
         </Button>
       </Group>
 
-      <SegmentedControl
-        value={statusFilter}
-        onChange={(val) => {
-          setStatusFilter(val);
-          setPage(1);
-        }}
-        data={[
-          { label: "All", value: "all" },
-          { label: "Drafts", value: "draft" },
-          { label: "Ready", value: "ready" },
-          { label: "Published", value: "published" },
-        ]}
-      />
+      {/* Filter + Search bar */}
+      <Paper p="sm" radius="lg" withBorder>
+        <Group justify="space-between" wrap="wrap">
+          <SegmentedControl
+            value={statusFilter}
+            onChange={(val) => {
+              setStatusFilter(val);
+              setPage(1);
+            }}
+            radius="md"
+            data={[
+              { label: "All", value: "all" },
+              { label: "Drafts", value: "draft" },
+              { label: "Ready", value: "ready" },
+              { label: "Published", value: "published" },
+            ]}
+          />
+          <TextInput
+            placeholder="Search assets…"
+            leftSection={<IconSearch size={16} />}
+            radius="md"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.currentTarget.value)}
+            style={{ minWidth: 240 }}
+          />
+        </Group>
+      </Paper>
 
+      {/* Summary badges */}
+      {data && data.total > 0 && (
+        <Group gap="sm">
+          <Badge variant="light" color="gray" size="lg" radius="md">
+            {data.total} asset{data.total !== 1 ? "s" : ""}
+          </Badge>
+          {statusFilter !== "all" && (
+            <Badge variant="dot" color="blue" size="lg" radius="md">
+              Filtered: {statusFilter}
+            </Badge>
+          )}
+        </Group>
+      )}
+
+      {/* Content */}
       {isLoading ? (
-        <Center mih={300}>
-          <Loader />
-        </Center>
-      ) : !data || data.assets.length === 0 ? (
-        <Center mih={300}>
-          <Stack align="center" gap="xs">
-            <IconPhotoVideo size={64} opacity={0.2} />
-            <Text c="dimmed">No media assets yet.</Text>
-            <Button
-              variant="light"
-              onClick={() => setUploadOpen(true)}
-            >
-              Upload your first media
-            </Button>
+        <Center mih={400}>
+          <Stack align="center" gap="md">
+            <Loader size="lg" type="dots" />
+            <Text size="sm" c="dimmed">
+              Loading your media…
+            </Text>
           </Stack>
+        </Center>
+      ) : !filteredAssets || filteredAssets.length === 0 ? (
+        <Center mih={400}>
+          <Paper
+            p="xl"
+            radius="xl"
+            withBorder
+            style={{
+              borderStyle: "dashed",
+              borderWidth: 2,
+              borderColor: "var(--mantine-color-gray-3)",
+              textAlign: "center",
+              maxWidth: 480,
+            }}
+          >
+            <Stack align="center" gap="lg">
+              <Box
+                style={{
+                  width: 100,
+                  height: 100,
+                  borderRadius: "50%",
+                  ...surfaces.emptyStateIconOrb,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <IconCloudUpload
+                  size={48}
+                  style={{
+                    color: surfaces.isDark
+                      ? "var(--mantine-color-blue-4)"
+                      : "var(--mantine-color-blue-6)",
+                  }}
+                  stroke={1.5}
+                />
+              </Box>
+              <Stack gap={4} align="center">
+                <Text fw={600} size="lg">
+                  {searchQuery
+                    ? "No matching assets"
+                    : "Your workspace is empty"}
+                </Text>
+                <Text size="sm" c="dimmed" maw={320}>
+                  {searchQuery
+                    ? `No assets match "${searchQuery}". Try a different search.`
+                    : "Upload photos and videos to manage versions and compare edits. Use Calendar to schedule or publish."}
+                </Text>
+              </Stack>
+              {!searchQuery && (
+                <Button
+                  variant="light"
+                  size="md"
+                  radius="md"
+                  leftSection={<IconPlus size={18} />}
+                  onClick={() => setUploadOpen(true)}
+                >
+                  Upload your first media
+                </Button>
+              )}
+            </Stack>
+          </Paper>
         </Center>
       ) : (
         <>
-          <SimpleGrid cols={{ base: 1, sm: 2, md: 3, lg: 4 }} spacing="md">
-            {data.assets.map((asset) => (
+          <SimpleGrid
+            cols={{ base: 1, xs: 2, sm: 2, md: 3, lg: 4 }}
+            spacing="lg"
+          >
+            {filteredAssets.map((asset) => (
               <AssetCard
                 key={asset.id}
                 asset={asset}
@@ -90,11 +223,13 @@ export default function MediaWorkspace() {
           </SimpleGrid>
 
           {totalPages > 1 && (
-            <Center>
+            <Center mt="lg">
               <Pagination
                 value={page}
                 onChange={setPage}
                 total={totalPages}
+                radius="md"
+                withEdges
               />
             </Center>
           )}

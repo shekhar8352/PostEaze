@@ -6,12 +6,16 @@ import {
   Box,
   Button,
   Center,
+  Divider,
   Grid,
   Group,
   Image,
   Loader,
+  Menu,
+  Paper,
   Stack,
   Text,
+  ThemeIcon,
   Title,
   Tooltip,
 } from "@mantine/core";
@@ -19,20 +23,31 @@ import {
   IconArrowLeft,
   IconPlus,
   IconColumns,
-  IconSend,
+  IconCalendar,
   IconTrash,
+  IconDots,
+  IconPhoto,
+  IconVideo,
+  IconDownload,
 } from "@tabler/icons-react";
+import { Link } from "react-router-dom";
 import {
   useMediaAsset,
   useDeleteMediaAsset,
   useSetCurrentVersion,
   useDeleteVersion,
 } from "../hooks/useMediaQueries";
+import { useMediaWorkspaceSurfaces } from "../hooks/useMediaWorkspaceSurfaces";
 import { VersionTimeline } from "../components/VersionTimeline";
 import { VersionCompare } from "../components/VersionCompare";
 import { AddVersionModal } from "../components/AddVersionModal";
-import { PublishDialog } from "../components/PublishDialog";
 import type { MediaVersion } from "../types";
+
+const statusConfig: Record<string, { color: string; label: string }> = {
+  draft: { color: "gray", label: "Draft" },
+  ready: { color: "blue", label: "Ready" },
+  published: { color: "green", label: "Published" },
+};
 
 export default function MediaDetail() {
   const { assetId } = useParams<{ assetId: string }>();
@@ -43,30 +58,48 @@ export default function MediaDetail() {
   const deleteAsset = useDeleteMediaAsset();
   const setCurrent = useSetCurrentVersion();
   const deleteVer = useDeleteVersion();
+  const surfaces = useMediaWorkspaceSurfaces();
 
-  const [selectedVersion, setSelectedVersion] = useState<MediaVersion | null>(null);
+  const [selectedVersion, setSelectedVersion] =
+    useState<MediaVersion | null>(null);
   const [compareMode, setCompareMode] = useState(false);
   const [compareLeft, setCompareLeft] = useState<MediaVersion | null>(null);
   const [addVersionOpen, setAddVersionOpen] = useState(false);
-  const [publishOpen, setPublishOpen] = useState(false);
 
   if (isLoading) {
     return (
-      <Center mih={400}>
-        <Loader />
+      <Center mih={500}>
+        <Stack align="center" gap="md">
+          <Loader size="lg" type="dots" />
+          <Text size="sm" c="dimmed">
+            Loading asset…
+          </Text>
+        </Stack>
       </Center>
     );
   }
 
   if (!asset) {
     return (
-      <Center mih={400}>
-        <Stack align="center">
-          <Text c="dimmed">Asset not found</Text>
-          <Button variant="light" onClick={() => navigate("/workspace")}>
-            Back to Workspace
-          </Button>
-        </Stack>
+      <Center mih={500}>
+        <Paper p="xl" radius="xl" withBorder style={{ textAlign: "center" }}>
+          <Stack align="center" gap="md">
+            <ThemeIcon variant="light" color="gray" size={64} radius="xl">
+              <IconPhoto size={32} />
+            </ThemeIcon>
+            <Text fw={600}>Asset not found</Text>
+            <Text size="sm" c="dimmed">
+              This asset may have been deleted or doesn't exist.
+            </Text>
+            <Button
+              variant="light"
+              onClick={() => navigate("/workspace")}
+              radius="md"
+            >
+              Back to Workspace
+            </Button>
+          </Stack>
+        </Paper>
       </Center>
     );
   }
@@ -78,6 +111,7 @@ export default function MediaDetail() {
     versions[versions.length - 1] ??
     null;
   const isVideo = asset.asset_type === "video";
+  const cfg = statusConfig[asset.status] ?? statusConfig.draft;
 
   const handleVersionSelect = (v: MediaVersion) => {
     if (compareMode) {
@@ -104,20 +138,55 @@ export default function MediaDetail() {
 
   return (
     <Stack gap="lg" p="md">
-      <Group justify="space-between">
-        <Group>
-          <ActionIcon variant="subtle" onClick={() => navigate("/workspace")}>
-            <IconArrowLeft size={20} />
+      {/* Navigation breadcrumb bar */}
+      <Group justify="space-between" wrap="wrap">
+        <Group gap="sm">
+          <ActionIcon
+            variant="light"
+            color="gray"
+            size="lg"
+            radius="md"
+            onClick={() => navigate("/workspace")}
+          >
+            <IconArrowLeft size={18} />
           </ActionIcon>
-          <Title order={3}>{asset.title}</Title>
-          <Badge>{asset.status}</Badge>
-          <Badge variant="light">{asset.asset_type}</Badge>
+          <Stack gap={0}>
+            <Group gap="xs">
+              <Title order={3} style={{ letterSpacing: "-0.01em" }}>
+                {asset.title}
+              </Title>
+              <Badge
+                variant="light"
+                color={cfg.color}
+                radius="sm"
+                size="sm"
+              >
+                {cfg.label}
+              </Badge>
+              <Badge
+                variant="dot"
+                color={isVideo ? "violet" : "blue"}
+                size="sm"
+              >
+                {asset.asset_type}
+              </Badge>
+            </Group>
+            {currentVersion && (
+              <Text size="xs" c="dimmed">
+                v{currentVersion.version_number} — {currentVersion.label} —{" "}
+                {new Date(currentVersion.created_at).toLocaleDateString()}
+              </Text>
+            )}
+          </Stack>
         </Group>
-        <Group>
+
+        {/* Action buttons */}
+        <Group gap="xs">
           <Tooltip label={compareMode ? "Exit compare" : "Compare versions"}>
             <Button
               variant={compareMode ? "filled" : "light"}
               size="sm"
+              radius="md"
               leftSection={<IconColumns size={16} />}
               onClick={toggleCompare}
             >
@@ -127,44 +196,67 @@ export default function MediaDetail() {
           <Button
             variant="light"
             size="sm"
+            radius="md"
             leftSection={<IconPlus size={16} />}
             onClick={() => setAddVersionOpen(true)}
           >
             Add Version
           </Button>
           <Button
+            component={Link}
+            to="/calendar"
             size="sm"
-            leftSection={<IconSend size={16} />}
-            onClick={() => setPublishOpen(true)}
-            disabled={asset.status === "published"}
+            radius="md"
+            variant="light"
+            leftSection={<IconCalendar size={16} />}
           >
-            Publish
+            Schedule in Calendar
           </Button>
-          <Tooltip label="Delete asset">
-            <ActionIcon
-              variant="light"
-              color="red"
-              onClick={() => {
-                deleteAsset.mutate(id, {
-                  onSuccess: () => navigate("/workspace"),
-                });
-              }}
-            >
-              <IconTrash size={18} />
-            </ActionIcon>
-          </Tooltip>
+          <Menu position="bottom-end" withArrow shadow="md">
+            <Menu.Target>
+              <ActionIcon variant="light" color="gray" size="lg" radius="md">
+                <IconDots size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              {currentVersion && (
+                <Menu.Item
+                  leftSection={<IconDownload size={14} />}
+                  component="a"
+                  href={currentVersion.blob_url}
+                  target="_blank"
+                  rel="noopener"
+                >
+                  Download current
+                </Menu.Item>
+              )}
+              <Menu.Divider />
+              <Menu.Item
+                color="red"
+                leftSection={<IconTrash size={14} />}
+                onClick={() => {
+                  deleteAsset.mutate(id, {
+                    onSuccess: () => navigate("/workspace"),
+                  });
+                }}
+              >
+                Delete asset
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </Group>
       </Group>
 
-      <Grid gutter="lg">
+      <Divider />
+
+      {/* Main content grid */}
+      <Grid gutter="xl">
+        {/* Preview area */}
         <Grid.Col span={{ base: 12, md: 8 }}>
           {compareMode ? (
-            <VersionCompare
-              left={compareLeft}
-              right={selectedVersion}
-            />
+            <VersionCompare left={compareLeft} right={selectedVersion} />
           ) : currentVersion ? (
-            <Box>
+            <Paper radius="lg" withBorder style={{ overflow: "hidden" }}>
               {isVideo ? (
                 <video
                   key={currentVersion.id}
@@ -172,71 +264,148 @@ export default function MediaDetail() {
                   controls
                   style={{
                     width: "100%",
-                    maxHeight: 500,
-                    borderRadius: 8,
+                    maxHeight: 560,
+                    display: "block",
                     background: "#000",
                   }}
                 />
               ) : (
-                <Image
-                  key={currentVersion.id}
-                  src={currentVersion.blob_url}
-                  alt={currentVersion.label}
-                  fit="contain"
-                  mah={500}
-                  radius="md"
-                  style={{ background: "var(--mantine-color-gray-1)" }}
-                />
+                <Box
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minHeight: 400,
+                    maxHeight: 560,
+                    overflow: "hidden",
+                    background: surfaces.checkerboardCss,
+                  }}
+                >
+                  <Image
+                    key={currentVersion.id}
+                    src={currentVersion.blob_url}
+                    alt={currentVersion.label}
+                    fit="contain"
+                    mah={560}
+                    style={{ display: "block" }}
+                  />
+                </Box>
               )}
-              <Group mt="xs" gap="xs">
-                <Text size="sm" fw={500}>
-                  v{currentVersion.version_number} — {currentVersion.label}
-                </Text>
-                <Text size="xs" c="dimmed">
-                  {currentVersion.file_name} &middot;{" "}
-                  {(currentVersion.file_size / (1024 * 1024)).toFixed(1)} MB
-                </Text>
-              </Group>
+
+              {/* Info bar below preview — theme-aware strip (no fixed light gray) */}
+              <Box
+                style={{
+                  borderTop: surfaces.previewMetaBorderTop,
+                  background: surfaces.previewMetaBg,
+                }}
+              >
+                <Group p="sm" justify="space-between" wrap="wrap">
+                  <Group gap="xs">
+                    <Badge size="sm" variant="light" color="blue">
+                      v{currentVersion.version_number}
+                    </Badge>
+                    <Text size="sm" fw={500} c="var(--mantine-color-text)">
+                      {currentVersion.label}
+                    </Text>
+                  </Group>
+                  <Group gap="xs">
+                    <Text size="xs" c="dimmed">
+                      {currentVersion.file_name}
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      ·
+                    </Text>
+                    <Text size="xs" c="dimmed">
+                      {(currentVersion.file_size / (1024 * 1024)).toFixed(1)}{" "}
+                      MB
+                    </Text>
+                  </Group>
+                </Group>
+              </Box>
               {currentVersion.notes && (
-                <Text size="sm" c="dimmed" mt={4}>
+                <Text size="sm" c="dimmed" px="sm" pb="sm">
                   {currentVersion.notes}
                 </Text>
               )}
-            </Box>
+            </Paper>
           ) : (
-            <Center mih={300}>
-              <Text c="dimmed">No versions yet. Upload one to get started.</Text>
-            </Center>
+            <Paper
+              p="xl"
+              radius="lg"
+              style={{
+                borderStyle: "dashed",
+                borderWidth: 2,
+                borderColor: "var(--mantine-color-gray-3)",
+                textAlign: "center",
+              }}
+              withBorder
+            >
+              <Center mih={300}>
+                <Stack align="center" gap="md">
+                  <ThemeIcon
+                    variant="light"
+                    color="gray"
+                    size={64}
+                    radius="xl"
+                  >
+                    {isVideo ? (
+                      <IconVideo size={32} />
+                    ) : (
+                      <IconPhoto size={32} />
+                    )}
+                  </ThemeIcon>
+                  <Text fw={500}>No versions yet</Text>
+                  <Text size="sm" c="dimmed">
+                    Upload a file to create the first version of this asset.
+                  </Text>
+                  <Button
+                    variant="light"
+                    radius="md"
+                    leftSection={<IconPlus size={16} />}
+                    onClick={() => setAddVersionOpen(true)}
+                  >
+                    Add first version
+                  </Button>
+                </Stack>
+              </Center>
+            </Paper>
           )}
         </Grid.Col>
 
+        {/* Version sidebar */}
         <Grid.Col span={{ base: 12, md: 4 }}>
-          <Stack gap="md">
-            <Group justify="space-between">
-              <Text fw={600}>Versions</Text>
-              <Text size="xs" c="dimmed">
-                {versions.length} version{versions.length !== 1 ? "s" : ""}
-              </Text>
-            </Group>
+          <Paper p="md" radius="lg" withBorder>
+            <Stack gap="md">
+              <Group justify="space-between">
+                <Text fw={700} size="sm" tt="uppercase" c="dimmed" style={{ letterSpacing: "0.05em" }}>
+                  Version History
+                </Text>
+                <Badge size="sm" variant="light" color="gray" radius="sm">
+                  {versions.length}
+                </Badge>
+              </Group>
 
-            {versions.length === 0 ? (
-              <Text size="sm" c="dimmed">
-                No versions uploaded.
-              </Text>
-            ) : (
-              <VersionTimeline
-                versions={versions}
-                currentVersionId={asset.current_version_id}
-                onSelect={handleVersionSelect}
-                onSetCurrent={(versionId) =>
-                  setCurrent.mutate({ assetId: id, versionId })
-                }
-                onDelete={(versionId) =>
-                  deleteVer.mutate({ assetId: id, versionId })
-                }
-              />
-            )}
-          </Stack>
+              {versions.length === 0 ? (
+                <Center mih={120}>
+                  <Text size="sm" c="dimmed">
+                    No versions uploaded.
+                  </Text>
+                </Center>
+              ) : (
+                <VersionTimeline
+                  versions={versions}
+                  currentVersionId={asset.current_version_id}
+                  onSelect={handleVersionSelect}
+                  onSetCurrent={(versionId) =>
+                    setCurrent.mutate({ assetId: id, versionId })
+                  }
+                  onDelete={(versionId) =>
+                    deleteVer.mutate({ assetId: id, versionId })
+                  }
+                />
+              )}
+            </Stack>
+          </Paper>
         </Grid.Col>
       </Grid>
 
@@ -246,11 +415,6 @@ export default function MediaDetail() {
         assetId={id}
       />
 
-      <PublishDialog
-        opened={publishOpen}
-        onClose={() => setPublishOpen(false)}
-        assetId={id}
-      />
     </Stack>
   );
 }

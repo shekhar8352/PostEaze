@@ -5,7 +5,6 @@ import type {
   MediaAssetListResponse,
   MediaVersion,
   UpdateMediaAssetPayload,
-  PublishPayload,
 } from "../types";
 
 export const mediaApi = {
@@ -70,13 +69,5 @@ export const mediaApi = {
     await apiClient.put(`/v1/media-assets/${assetId}/current-version`, {
       version_id: versionId,
     });
-  },
-
-  async publish(assetId: number, body: PublishPayload): Promise<unknown> {
-    const { data } = await apiClient.post(
-      `/v1/media-assets/${assetId}/publish`,
-      body
-    );
-    return data;
   },
 };
