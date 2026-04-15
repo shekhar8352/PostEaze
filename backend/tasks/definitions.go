@@ -10,7 +10,8 @@ const (
 	TypeSyncInstagramProfiles  = "instagram:sync_profiles"
 	TypeSyncInstagramPosts     = "instagram:sync_posts"
 	TypePeriodSnapshot         = "analytics:period_snapshot"
-	TypeSyncInstagramAnalytics = "instagram:sync_analytics"
+	TypeSyncInstagramAnalytics         = "instagram:sync_analytics"
+	TypeInstagramScheduledPostPublish = "instagram:scheduled_post_publish"
 )
 
 // Queue Names
@@ -29,4 +30,9 @@ type EmailDeliveryPayload struct {
 
 type LogMessagePayload struct {
 	Message string
+}
+
+// ScheduledPostInstagramPublishPayload is enqueued for app-side scheduling (run at scheduled_at).
+type ScheduledPostInstagramPublishPayload struct {
+	ScheduledPostID int64 `json:"scheduled_post_id"`
 }
