@@ -225,13 +225,15 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     if (postType === "image") {
       if (!selectedAssetId) return [];
       const a = assetById.get(Number(selectedAssetId));
-      const url = a ? publishUrlForAsset(a) : null;
+      if (!a) return [];
+      const url = publishUrlForAsset(a);
       return url ? [{ url, kind: "image" as const, media_asset_id: a.id }] : [];
     }
     if (postType === "video") {
       if (!selectedAssetId) return [];
       const a = assetById.get(Number(selectedAssetId));
-      const url = a ? publishUrlForAsset(a) : null;
+      if (!a) return [];
+      const url = publishUrlForAsset(a);
       return url ? [{ url, kind: "video" as const, media_asset_id: a.id }] : [];
     }
     return carouselAssetIds
