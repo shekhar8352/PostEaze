@@ -51,12 +51,9 @@ func HandleLogMessageTask(ctx context.Context, t *asynq.Task) error {
 
 // HandleInstagramCommentTask handles Instagram comment events
 func HandleInstagramCommentTask(ctx context.Context, t *asynq.Task) error {
-	var change map[string]interface{}
-	if err := json.Unmarshal(t.Payload(), &change); err != nil {
-		return fmt.Errorf("json.Unmarshal failed: %v: %w", err, asynq.SkipRetry)
+	if err := processInstagramCommentPayload(ctx, t.Payload()); err != nil {
+		return err
 	}
-	utils.Logger.Info(ctx, "Processing Instagram comment: %v", change)
-	// TODO: Implement comment processing logic (e.g., save to DB, notify user)
 	return nil
 }
 

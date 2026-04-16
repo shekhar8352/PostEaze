@@ -103,6 +103,31 @@ func GetPostByProviderKey(ctx context.Context, channelID int64, provider, provid
 	return &post, nil
 }
 
+// GetFirstChannelIDForInstagramMedia returns the first channel_id from a post row that owns this Instagram media id.
+// Used when webhook payloads omit entry id (legacy task format). ok is false if no match.
+func GetFirstChannelIDForInstagramMedia(ctx context.Context, mediaID string) (channelID int64, ok bool, err error) {
+	db := database.GetDB()
+	query := `
+		SELECT (channel_ids)[1]
+		FROM posts
+		WHERE provider_post_ids->>'instagram' = $1
+		  AND cardinality(channel_ids) > 0
+		LIMIT 1
+	`
+	var cid sql.NullInt64
+	err = db.QueryRowContext(ctx, query, mediaID).Scan(&cid)
+	if err == sql.ErrNoRows {
+		return 0, false, nil
+	}
+	if err != nil {
+		return 0, false, err
+	}
+	if !cid.Valid {
+		return 0, false, nil
+	}
+	return cid.Int64, true, nil
+}
+
 // GetPostsByChannel retrieves all posts for a channel
 func GetPostsByChannel(ctx context.Context, channelID int64, limit int) ([]entities.Post, error) {
 	return GetPosts(ctx, PostFilters{

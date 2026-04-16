@@ -29,6 +29,42 @@ func CreateChannel(ctx context.Context, tx *sql.Tx, channel *entities.Channel) e
 	).Scan(&channel.ID, &channel.ConnectedAt, &channel.CreatedAt, &channel.UpdatedAt)
 }
 
+// GetChannelByProviderChannelID returns a channel by provider and external account id (e.g. Instagram user id).
+func GetChannelByProviderChannelID(ctx context.Context, provider, providerChannelID string) (*entities.Channel, error) {
+	query := `
+		SELECT id, owner_user_id, team_id, provider, provider_channel_id,
+			display_name, username, avatar_url, is_active, error_status,
+			metadata, connected_at, created_at, updated_at
+		FROM channels
+		WHERE provider = $1 AND provider_channel_id = $2 AND is_active = true
+		LIMIT 1
+	`
+	channel := &entities.Channel{}
+	err := database.GetDB().QueryRowContext(ctx, query, provider, providerChannelID).Scan(
+		&channel.ID,
+		&channel.OwnerUserID,
+		&channel.TeamID,
+		&channel.Provider,
+		&channel.ProviderChannelID,
+		&channel.DisplayName,
+		&channel.Username,
+		&channel.AvatarURL,
+		&channel.IsActive,
+		&channel.ErrorStatus,
+		&channel.Metadata,
+		&channel.ConnectedAt,
+		&channel.CreatedAt,
+		&channel.UpdatedAt,
+	)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return channel, nil
+}
+
 func GetChannelByID(ctx context.Context, channelID int64) (*entities.Channel, error) {
 	query := `
 		SELECT id, owner_user_id, team_id, provider, provider_channel_id,

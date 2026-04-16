@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hibiken/asynq"
+	"github.com/shekhar8352/PostEaze/socialcomments"
 	"github.com/shekhar8352/PostEaze/tasks"
 	"github.com/shekhar8352/PostEaze/utils"
 )
@@ -111,8 +112,12 @@ func HandleInstagramWebhookEvent(c *gin.Context) {
 					// Enqueue task based on field
 					field, _ := changeMap["field"].(string)
 
-					// Serialize the change for the task payload
-					changeJSON, err := json.Marshal(changeMap)
+					// Wrap with entry id (Instagram user id) so workers can resolve channel without scanning posts.
+					taskPayload := map[string]interface{}{
+						"entry_id": socialcomments.StringFromAny(entryMap["id"]),
+						"change":   changeMap,
+					}
+					changeJSON, err := json.Marshal(taskPayload)
 					if err != nil {
 						utils.Logger.Error(c.Request.Context(), "Failed to marshal change", err)
 						continue

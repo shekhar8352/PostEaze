@@ -13,6 +13,7 @@ Numbered SQL migrations for PostgreSQL. Each change has a matching `.up.sql` and
 | `005_instagram_audience_snapshots.up/down.sql` | Instagram audience snapshot storage (see file). |
 | `006_scheduled_posts.up/down.sql` | Scheduled posts tables for the calendar API (see file). |
 | `007_media_workspace.up/down.sql` | Media assets and versions (blob-backed workspace). |
+| `008_social_comments.up/down.sql` | Provider-agnostic `social_comments` (Instagram ingestion first; Facebook-ready). |
 
 Apply in numeric order on empty or known-state databases. For a greenfield dev DB, run `001` through the latest migration (or as required by your branch).
 
