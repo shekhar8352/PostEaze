@@ -79,9 +79,9 @@ func HandleInstagramWebhookEvent(c *gin.Context) {
 		return
 	}
 
-	// 2. Parse Payload
-	var payload map[string]interface{}
-	if err := json.Unmarshal(body, &payload); err != nil {
+	// 2. Parse Payload (UseNumber preserves large Instagram IDs)
+	payload, err := socialcomments.DecodeJSONMap(body)
+	if err != nil {
 		utils.SendError(c, http.StatusBadRequest, "Failed to parse JSON")
 		return
 	}
@@ -91,58 +91,61 @@ func HandleInstagramWebhookEvent(c *gin.Context) {
 	// 3. Process Events (Async)
 	// Meta sends a list of entries
 	entries, ok := payload["entry"].([]interface{})
-	if ok {
-		for _, entry := range entries {
-			entryMap, ok := entry.(map[string]interface{})
+	if !ok || len(entries) == 0 {
+		utils.Logger.Warn(c.Request.Context(), "Instagram webhook: entry missing or empty (object=%v)", payload["object"])
+		c.String(http.StatusOK, "EVENT_RECEIVED")
+		return
+	}
+	for _, entry := range entries {
+		entryMap, ok := entry.(map[string]interface{})
+		if !ok {
+			continue
+		}
+
+		// Each entry has a list of changes or messaging events
+		changes, ok := entryMap["changes"].([]interface{})
+		if !ok || len(changes) == 0 {
+			utils.Logger.Warn(c.Request.Context(), "Instagram webhook: entry has no changes (entry_id=%v)", entryMap["id"])
+			continue
+		}
+		for _, change := range changes {
+			changeMap, ok := change.(map[string]interface{})
 			if !ok {
 				continue
 			}
 
-			// Each entry has a list of changes or messaging events
-			// For Instagram Graph API, it's usually "changes" for comments/mentions
-			// or "messaging" for DMs (if we were handling those)
-			changes, ok := entryMap["changes"].([]interface{})
-			if ok {
-				for _, change := range changes {
-					changeMap, ok := change.(map[string]interface{})
-					if !ok {
-						continue
-					}
+			// Enqueue task based on field
+			field, _ := changeMap["field"].(string)
 
-					// Enqueue task based on field
-					field, _ := changeMap["field"].(string)
+			// Wrap with entry id (Instagram user id) so workers can resolve channel without scanning posts.
+			taskPayload := map[string]interface{}{
+				"entry_id": socialcomments.StringFromAny(entryMap["id"]),
+				"change":   changeMap,
+			}
+			changeJSON, err := json.Marshal(taskPayload)
+			if err != nil {
+				utils.Logger.Error(c.Request.Context(), "Failed to marshal change", err)
+				continue
+			}
 
-					// Wrap with entry id (Instagram user id) so workers can resolve channel without scanning posts.
-					taskPayload := map[string]interface{}{
-						"entry_id": socialcomments.StringFromAny(entryMap["id"]),
-						"change":   changeMap,
-					}
-					changeJSON, err := json.Marshal(taskPayload)
-					if err != nil {
-						utils.Logger.Error(c.Request.Context(), "Failed to marshal change", err)
-						continue
-					}
+			var taskType string
+			switch field {
+			case "comments":
+				taskType = tasks.TypeInstagramComment
+			case "mentions":
+				taskType = tasks.TypeInstagramMention
+			case "story_insights":
+				taskType = tasks.TypeInstagramStoryInsight
+			default:
+				// Log unknown field
+				utils.Logger.Info(c.Request.Context(), "Unknown webhook field: ", field)
+				continue
+			}
 
-					var taskType string
-					switch field {
-					case "comments":
-						taskType = tasks.TypeInstagramComment
-					case "mentions":
-						taskType = tasks.TypeInstagramMention
-					case "story_insights":
-						taskType = tasks.TypeInstagramStoryInsight
-					default:
-						// Log unknown field
-						utils.Logger.Info(c.Request.Context(), "Unknown webhook field: ", field)
-						continue
-					}
-
-					task := asynq.NewTask(taskType, changeJSON)
-					_, err = tasks.EnqueueTask(task, tasks.QueueMedium)
-					if err != nil {
-						utils.Logger.Error(c.Request.Context(), "Failed to enqueue task", err)
-					}
-				}
+			task := asynq.NewTask(taskType, changeJSON)
+			_, err = tasks.EnqueueTask(task, tasks.QueueMedium)
+			if err != nil {
+				utils.Logger.Error(c.Request.Context(), "Failed to enqueue task", err)
 			}
 		}
 	}

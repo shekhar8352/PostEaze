@@ -7,12 +7,12 @@ import (
 
 // InstagramCommentNormalized is a parsed Instagram "comments" webhook value.
 type InstagramCommentNormalized struct {
-	MediaID           string
-	CommentID         string
-	Text              string
-	ParentCommentID   *string
-	AuthorUserID      *string
-	AuthorUsername    *string
+	MediaID         string
+	CommentID       string
+	Text            string
+	ParentCommentID *string
+	AuthorUserID    *string
+	AuthorUsername  *string
 }
 
 // ParseInstagramCommentValue extracts fields from Meta's comments field value object.
@@ -29,7 +29,10 @@ func ParseInstagramCommentValue(value map[string]interface{}) (*InstagramComment
 		return nil, fmt.Errorf("missing comment id")
 	}
 
-	mediaID := StringFromAny(value["media_id"])
+	mediaID := firstNonEmpty(StringFromAny(value["media_id"]), StringFromAny(value["ig_media_id"]))
+	if mediaID == "" {
+		mediaID = StringFromAny(value["object_id"])
+	}
 	if mediaID == "" {
 		if m, ok := value["media"].(map[string]interface{}); ok {
 			mediaID = StringFromAny(m["id"])
@@ -47,9 +50,9 @@ func ParseInstagramCommentValue(value map[string]interface{}) (*InstagramComment
 	}
 
 	n := &InstagramCommentNormalized{
-		MediaID:   mediaID,
-		CommentID: commentID,
-		Text:      text,
+		MediaID:         mediaID,
+		CommentID:       commentID,
+		Text:            text,
 		ParentCommentID: parent,
 	}
 

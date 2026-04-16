@@ -2,7 +2,6 @@ package tasks
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
 	"github.com/hibiken/asynq"
@@ -14,9 +13,9 @@ import (
 
 // processInstagramCommentPayload parses webhook task JSON, resolves channel and post, upserts social_comments.
 func processInstagramCommentPayload(ctx context.Context, raw []byte) error {
-	var wrapper map[string]interface{}
-	if err := json.Unmarshal(raw, &wrapper); err != nil {
-		return fmt.Errorf("json.Unmarshal: %v: %w", err, asynq.SkipRetry)
+	wrapper, err := socialcomments.DecodeJSONMap(raw)
+	if err != nil {
+		return fmt.Errorf("decode task json: %v: %w", err, asynq.SkipRetry)
 	}
 
 	var change map[string]interface{}
@@ -39,6 +38,7 @@ func processInstagramCommentPayload(ctx context.Context, raw []byte) error {
 
 	norm, err := socialcomments.ParseInstagramCommentValue(value)
 	if err != nil {
+		utils.Logger.Warn(ctx, "Instagram comment parse failed: %v (value keys: check Meta payload shape)", err)
 		return fmt.Errorf("parse instagram comment: %v: %w", err, asynq.SkipRetry)
 	}
 

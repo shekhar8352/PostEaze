@@ -52,6 +52,7 @@ func HandleLogMessageTask(ctx context.Context, t *asynq.Task) error {
 // HandleInstagramCommentTask handles Instagram comment events
 func HandleInstagramCommentTask(ctx context.Context, t *asynq.Task) error {
 	if err := processInstagramCommentPayload(ctx, t.Payload()); err != nil {
+		utils.Logger.Error(ctx, "Instagram comment task failed: %v", err)
 		return err
 	}
 	return nil
