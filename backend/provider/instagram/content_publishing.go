@@ -99,7 +99,8 @@ func (p *InstagramProviderImpl) CreateMediaContainer(ctx context.Context, access
 	case ContentTypeImage:
 		return p.createImageOrVideoContainer(ctx, accessToken, igUserID, "IMAGE", req.ImageURL, "", req.Caption, req.ScheduledAt)
 	case ContentTypeVideo:
-		return p.createImageOrVideoContainer(ctx, accessToken, igUserID, "VIDEO", "", req.VideoURL, req.Caption, req.ScheduledAt)
+		// Meta deprecated media_type=VIDEO; feed video is published as REELS. See ig-user/media#creating.
+		return p.createImageOrVideoContainer(ctx, accessToken, igUserID, "REELS", "", req.VideoURL, req.Caption, req.ScheduledAt)
 	case ContentTypeCarousel:
 		return "", fmt.Errorf("use CreateCarouselContainers for carousel")
 	default:
@@ -153,11 +154,11 @@ func (p *InstagramProviderImpl) createImageOrVideoContainer(ctx context.Context,
 			return "", fmt.Errorf("image_url required")
 		}
 		body["image_url"] = imageURL
-	case "VIDEO":
+	case "REELS":
 		if videoURL == "" {
 			return "", fmt.Errorf("video_url required")
 		}
-		body["media_type"] = "VIDEO"
+		body["media_type"] = "REELS"
 		body["video_url"] = videoURL
 	default:
 		return "", fmt.Errorf("unsupported mediaType %q", mediaType)
