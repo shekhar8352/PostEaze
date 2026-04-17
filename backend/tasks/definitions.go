@@ -11,6 +11,7 @@ const (
 	TypeSyncInstagramPosts     = "instagram:sync_posts"
 	TypePeriodSnapshot         = "analytics:period_snapshot"
 	TypeSyncInstagramAnalytics         = "instagram:sync_analytics"
+	TypeSyncInstagramComments          = "instagram:sync_comments"
 	TypeInstagramScheduledPostPublish = "instagram:scheduled_post_publish"
 )
 

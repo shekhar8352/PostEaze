@@ -135,3 +135,42 @@ func TriggerInstagramAnalyticsSyncHandler(c *gin.Context) {
 		"message": "Instagram analytics sync task enqueued successfully",
 	}, "Analytics sync task triggered")
 }
+
+// TriggerInstagramCommentsSyncHandler godoc
+// @Summary      Trigger Instagram comments sync (Development Only)
+// @Description  Enqueues a job that fetches comments from Instagram Graph for synced posts and upserts social_comments.
+// @Tags         Cron Jobs
+// @Accept       json
+// @Produce      json
+// @Success      200  {object}  map[string]interface{}
+// @Failure      403  {object}  map[string]interface{}
+// @Failure      500  {object}  map[string]interface{}
+// @Router       /cron/trigger-instagram-comments [post]
+func TriggerInstagramCommentsSyncHandler(c *gin.Context) {
+	env := os.Getenv("ENV")
+	if env != "development" && env != "dev" && env != "" {
+		utils.SendError(c, http.StatusForbidden, "This endpoint is only available in development mode")
+		return
+	}
+
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
+	client := asynq.NewClient(asynq.RedisClientOpt{Addr: redisAddr})
+	defer client.Close()
+
+	task := asynq.NewTask(tasks.TypeSyncInstagramComments, nil)
+	info, err := client.Enqueue(task, asynq.Queue(tasks.QueueSlow))
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, "Failed to enqueue comments sync task: "+err.Error())
+		return
+	}
+
+	utils.SendSuccess(c, gin.H{
+		"task_id": info.ID,
+		"queue":   info.Queue,
+		"message": "Instagram comments sync task enqueued successfully",
+	}, "Comments sync task triggered")
+}

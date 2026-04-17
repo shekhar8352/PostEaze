@@ -18,6 +18,7 @@ const (
 	instagramProfileSyncSpec   = "@every 1h"
 	instagramPostsSyncSpec     = "@every 30m"
 	instagramAnalyticsSyncSpec = "@every 30m"
+	instagramCommentsSyncSpec  = "@every 5m"
 )
 
 // InitScheduler initializes the Asynq scheduler
@@ -67,6 +68,13 @@ func InitScheduler() error {
 		log.Printf("Warning: Failed to register Instagram analytics sync job: %v", err)
 	} else {
 		log.Printf("Registered Instagram analytics sync job (%s)", instagramAnalyticsSyncSpec)
+	}
+
+	commentsTask := asynq.NewTask(TypeSyncInstagramComments, nil)
+	if _, err := scheduler.Register(instagramCommentsSyncSpec, commentsTask, asynq.Queue(QueueSlow)); err != nil {
+		log.Printf("Warning: Failed to register Instagram comments sync job: %v", err)
+	} else {
+		log.Printf("Registered Instagram comments sync job (%s)", instagramCommentsSyncSpec)
 	}
 
 	// Register period snapshot task to run daily

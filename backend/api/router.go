@@ -142,6 +142,7 @@ func addV1CronRoutes(v1 *gin.RouterGroup) {
 	cronv1.POST("/trigger-instagram-sync", apiv1.TriggerInstagramSyncHandler)
 	cronv1.POST("/trigger-instagram-posts", apiv1.TriggerInstagramPostsSyncHandler)
 	cronv1.POST("/trigger-instagram-analytics", apiv1.TriggerInstagramAnalyticsSyncHandler)
+	cronv1.POST("/trigger-instagram-comments", apiv1.TriggerInstagramCommentsSyncHandler)
 }
 
 func addV1PostRoutes(v1 *gin.RouterGroup) {

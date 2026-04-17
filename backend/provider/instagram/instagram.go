@@ -28,6 +28,8 @@ type InstagramProvider interface {
 	SubscribeToWebhooks(accessToken string, pageID string, fields []string) error
 	GetPageDetails(accessToken string) (*PageDetailsResponse, error)
 	GetMedia(accessToken string, igUserID string, after string) (*MediaResponse, error)
+	// GetMediaComments lists comments on a media object (Graph API GET /{media-id}/comments).
+	GetMediaComments(accessToken string, mediaID string, after string) (*MediaCommentsResponse, error)
 	GetMediaInsights(accessToken string, mediaID string, metrics []string) (*InsightsResponse, error)
 	GetStoryInsights(accessToken string, mediaID string) (*InsightsResponse, error)
 	GetProfileInsights(accessToken string, igUserID string, metrics []string, since int64, until int64) (*InsightsResponse, error)
