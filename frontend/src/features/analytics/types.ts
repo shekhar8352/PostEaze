@@ -81,6 +81,21 @@ export interface AudienceDashboard {
   metrics: AudienceMetricBlock[];
 }
 
+export interface DailyEngagementPoint {
+  date: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  saves: number;
+  total: number;
+}
+
+export interface DailyEngagementSeriesResponse {
+  meta: DateRangeMeta;
+  series: DailyEngagementPoint[];
+  note: string;
+}
+
 export interface DashboardResponse {
   meta: DateRangeMeta;
   overview: AggregatedProfileOverview;
