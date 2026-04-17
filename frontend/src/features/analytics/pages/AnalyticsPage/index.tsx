@@ -25,6 +25,7 @@ import {
   useProfileTimeSeries,
   useStoriesAnalytics,
   useTopPosts,
+  useDailyEngagement,
 } from "../../services/analyticsQueries";
 import { AnalyticsHeader } from "../../components/AnalyticsHeader";
 import { inclusiveRange } from "../../utils/dateRange";
@@ -36,6 +37,7 @@ import { PostsActivitySummary } from "../../components/PostsActivitySummary";
 import { TopPostsTable } from "../../components/TopPostsTable";
 import { StoriesPanel } from "../../components/StoriesPanel";
 import { AudienceInsightsPanel } from "../../components/AudienceInsightsPanel";
+import { DailyEngagementSection } from "../../components/DailyEngagementSection";
 import { computePctDelta, formatCompact } from "../../utils/pctChange";
 import type { TopPostsSort } from "../../types";
 import styles from "./AnalyticsPage.module.css";
@@ -129,6 +131,10 @@ export default function AnalyticsPage() {
   const profile = useProfileTimeSeries(channelId, rangeParams);
   const stories = useStoriesAnalytics(channelId, rangeParams);
   const topPosts = useTopPosts(channelId, rangeParams, topSort, postType || undefined);
+  const dailyEngagement = useDailyEngagement(
+    resolvedPlatform === "instagram" ? channelId : null,
+    resolvedPlatform === "instagram" ? rangeParams : null
+  );
 
   const prev = comparison.data?.previous;
 
@@ -289,6 +295,17 @@ export default function AnalyticsPage() {
         </SimpleGrid>
 
         <ProfileTrendChart series={profile.data?.analytics ?? []} loading={profile.isLoading} />
+
+        {resolvedPlatform === "instagram" && (
+          <DailyEngagementSection
+            startDate={range.startDate}
+            endDate={range.endDate}
+            series={dailyEngagement.data?.series ?? []}
+            overview={dashboard.data?.posts_overview}
+            note={dailyEngagement.data?.note}
+            loading={dailyEngagement.isLoading}
+          />
+        )}
 
         <PostEngagementChart overview={dashboard.data?.posts_overview} loading={dashboard.isLoading} />
 

@@ -18,6 +18,8 @@ export const analyticsKeys = {
     sort: TopPostsSort,
     postType?: string
   ) => [...analyticsKeys.all, "topPosts", channelId, range, sort, postType ?? ""] as const,
+  dailyEngagement: (channelId: number, range: DateRangeParams) =>
+    [...analyticsKeys.all, "dailyEngagement", channelId, range] as const,
 };
 
 export function useAnalyticsDashboard(channelId: number | null, range: DateRangeParams | null) {
@@ -73,6 +75,14 @@ export function useTopPosts(
     ),
     queryFn: () =>
       analyticsService.getTopPosts(channelId!, range!, { sort, limit: 15, postType }),
+    enabled: Boolean(channelId && range?.startDate && range?.endDate),
+  });
+}
+
+export function useDailyEngagement(channelId: number | null, range: DateRangeParams | null) {
+  return useQuery({
+    queryKey: analyticsKeys.dailyEngagement(channelId ?? 0, range ?? { startDate: "", endDate: "" }),
+    queryFn: () => analyticsService.getDailyEngagement(channelId!, range!),
     enabled: Boolean(channelId && range?.startDate && range?.endDate),
   });
 }

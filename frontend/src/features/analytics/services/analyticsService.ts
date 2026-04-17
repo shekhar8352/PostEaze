@@ -2,6 +2,7 @@ import apiClient from "@/services/api/client";
 import type {
   ApiSuccessEnvelope,
   ComparisonResponse,
+  DailyEngagementSeriesResponse,
   DashboardResponse,
   ProfileAnalyticsResponse,
   StoryAnalyticsResponse,
@@ -58,6 +59,17 @@ export const analyticsService = {
           start_date: range.startDate,
           end_date: range.endDate,
           limit: 0,
+        })}`
+      )
+    );
+  },
+
+  getDailyEngagement(channelId: number, range: DateRangeParams) {
+    return unwrap(
+      apiClient.get<ApiSuccessEnvelope<DailyEngagementSeriesResponse>>(
+        `/v1/channels/${channelId}/analytics/daily-engagement${qs({
+          start_date: range.startDate,
+          end_date: range.endDate,
         })}`
       )
     );
