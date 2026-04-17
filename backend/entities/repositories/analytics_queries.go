@@ -415,6 +415,70 @@ func GetTopPosts(ctx context.Context, channelID int64, limit int, startDate, end
 	return topPosts, rows.Err()
 }
 
+// DailyPostEngagementRow is summed day-over-day deltas for post-level metrics (UTC calendar day).
+type DailyPostEngagementRow struct {
+	Date     time.Time
+	Likes    int64
+	Comments int64
+	Shares   int64
+	Saves    int64
+}
+
+// GetDailyPostEngagementSeries returns per-day sums of (metric_today - metric_yesterday) per post,
+// using all snapshots up to endDate so the first in-range day has a meaningful prior row when it exists.
+// When there is no prior row for a post, that post contributes 0 for that day (avoids counting lifetime totals as “daily”).
+func GetDailyPostEngagementSeries(ctx context.Context, channelID int64, startDate, endDate time.Time) ([]DailyPostEngagementRow, error) {
+	db := database.GetDB()
+	query := `
+		WITH ordered AS (
+			SELECT
+				pa.post_id,
+				pa.date::date AS d,
+				COALESCE(pa.likes, 0)::bigint AS likes,
+				COALESCE(pa.comments, 0)::bigint AS comments,
+				COALESCE(pa.shares, 0)::bigint AS shares,
+				COALESCE(pa.saves, 0)::bigint AS saves,
+				LAG(COALESCE(pa.likes, 0)) OVER (PARTITION BY pa.post_id ORDER BY pa.date) AS prev_likes,
+				LAG(COALESCE(pa.comments, 0)) OVER (PARTITION BY pa.post_id ORDER BY pa.date) AS prev_comments,
+				LAG(COALESCE(pa.shares, 0)) OVER (PARTITION BY pa.post_id ORDER BY pa.date) AS prev_shares,
+				LAG(COALESCE(pa.saves, 0)) OVER (PARTITION BY pa.post_id ORDER BY pa.date) AS prev_saves
+			FROM instagram_post_analytics pa
+			INNER JOIN posts p ON p.id = pa.post_id AND $1 = ANY(p.channel_ids)
+			WHERE pa.channel_id = $1
+				AND pa.date::date <= $3::date
+		),
+		deltas AS (
+			SELECT
+				d,
+				CASE WHEN prev_likes IS NULL THEN 0 ELSE GREATEST(0, likes - prev_likes) END AS dl,
+				CASE WHEN prev_comments IS NULL THEN 0 ELSE GREATEST(0, comments - prev_comments) END AS dc,
+				CASE WHEN prev_shares IS NULL THEN 0 ELSE GREATEST(0, shares - prev_shares) END AS ds,
+				CASE WHEN prev_saves IS NULL THEN 0 ELSE GREATEST(0, saves - prev_saves) END AS dz
+			FROM ordered
+			WHERE d >= $2::date AND d <= $3::date
+		)
+		SELECT d, COALESCE(SUM(dl), 0), COALESCE(SUM(dc), 0), COALESCE(SUM(ds), 0), COALESCE(SUM(dz), 0)
+		FROM deltas
+		GROUP BY d
+		ORDER BY d ASC
+	`
+	rows, err := db.QueryContext(ctx, query, channelID, startDate, endDate)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var out []DailyPostEngagementRow
+	for rows.Next() {
+		var r DailyPostEngagementRow
+		if err := rows.Scan(&r.Date, &r.Likes, &r.Comments, &r.Shares, &r.Saves); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
+
 func nullableString(s *string) interface{} {
 	if s == nil {
 		return nil

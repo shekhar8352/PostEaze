@@ -324,6 +324,54 @@ func GetChannelDashboardHandler(c *gin.Context) {
 	utils.SendSuccess(c, resp, "Dashboard retrieved successfully")
 }
 
+// GetDailyPostEngagementHandler godoc
+// @Summary      Daily post engagement (estimated deltas)
+// @Description  Per-day sums of likes/comments/shares/saves gained vs the prior stored snapshot per post (UTC). First snapshot for a post in history contributes 0.
+// @Tags         Analytics
+// @Router       /channels/{channelId}/analytics/daily-engagement [get]
+// @Security     BearerAuth
+func GetDailyPostEngagementHandler(c *gin.Context) {
+	channelID, err := strconv.ParseInt(c.Param("channelId"), 10, 64)
+	if err != nil {
+		utils.SendError(c, http.StatusBadRequest, "Invalid channel ID")
+		return
+	}
+
+	startDate, endDate := utils.ParseDateRange(c)
+
+	rows, err := repositories.GetDailyPostEngagementSeries(c.Request.Context(), channelID, startDate, endDate)
+	if err != nil {
+		utils.SendError(c, http.StatusInternalServerError, "Failed to fetch daily engagement: "+err.Error())
+		return
+	}
+
+	series := make([]modelsv1.DailyEngagementPoint, 0, len(rows))
+	for _, r := range rows {
+		likes := int(r.Likes)
+		comments := int(r.Comments)
+		shares := int(r.Shares)
+		saves := int(r.Saves)
+		series = append(series, modelsv1.DailyEngagementPoint{
+			Date:     utils.FormatAnalyticsDate(r.Date),
+			Likes:    likes,
+			Comments: comments,
+			Shares:   shares,
+			Saves:    saves,
+			Total:    likes + comments + shares + saves,
+		})
+	}
+
+	resp := modelsv1.DailyEngagementSeriesResponse{
+		Meta: modelsv1.DateRangeMeta{
+			StartDate: utils.FormatAnalyticsDate(startDate),
+			EndDate:   utils.FormatAnalyticsDate(endDate),
+		},
+		Series: series,
+		Note:   "Daily values estimate new activity by comparing each post’s metrics to the previous day we have on file. Missing sync days can show as zero.",
+	}
+	utils.SendSuccess(c, resp, "Daily engagement retrieved successfully")
+}
+
 // GetPeriodComparisonHandler godoc
 // @Router       /channels/{channelId}/analytics/comparison [get]
 // @Security     BearerAuth

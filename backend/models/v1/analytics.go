@@ -100,13 +100,13 @@ type TopPostItem struct {
 	ThumbnailURL *string `json:"thumbnail_url,omitempty"`
 	Permalink    *string `json:"permalink,omitempty"`
 	Impressions  int     `json:"impressions"`
-	Reach       int     `json:"reach"`
-	Likes       int     `json:"likes"`
-	Comments    int     `json:"comments"`
-	Saves       int     `json:"saves"`
-	Shares      int     `json:"shares"`
-	Plays       int     `json:"plays"`
-	Engagement  int     `json:"engagement"`
+	Reach        int     `json:"reach"`
+	Likes        int     `json:"likes"`
+	Comments     int     `json:"comments"`
+	Saves        int     `json:"saves"`
+	Shares       int     `json:"shares"`
+	Plays        int     `json:"plays"`
+	Engagement   int     `json:"engagement"`
 }
 
 // TopPostsResponse is GET .../analytics/top-posts.
@@ -228,4 +228,21 @@ type AudienceSnapshotsResponse struct {
 	Meta       DateRangeMeta          `json:"meta"`
 	Pagination PaginationMeta         `json:"pagination"`
 	Snapshots  []AudienceSnapshotItem `json:"snapshots"`
+}
+
+// DailyEngagementPoint is summed estimated day-over-day engagement across posts for one UTC day.
+type DailyEngagementPoint struct {
+	Date     string `json:"date"`
+	Likes    int    `json:"likes"`
+	Comments int    `json:"comments"`
+	Shares   int    `json:"shares"`
+	Saves    int    `json:"saves"`
+	Total    int    `json:"total"`
+}
+
+// DailyEngagementSeriesResponse is GET .../analytics/daily-engagement.
+type DailyEngagementSeriesResponse struct {
+	Meta   DateRangeMeta          `json:"meta"`
+	Series []DailyEngagementPoint `json:"series"`
+	Note   string                 `json:"note"`
 }

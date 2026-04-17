@@ -194,6 +194,7 @@ func addV1AnalyticsRoutes(v1 *gin.RouterGroup) {
 
 		analyticsv1.GET("/posts/:postId", apiv1.GetPostInsightsHandler)
 		analyticsv1.GET("/dashboard", apiv1.GetChannelDashboardHandler)
+		analyticsv1.GET("/daily-engagement", apiv1.GetDailyPostEngagementHandler)
 		analyticsv1.GET("/comparison", apiv1.GetPeriodComparisonHandler)
 		analyticsv1.GET("/stories", apiv1.GetStoryAnalyticsHandler)
 		analyticsv1.GET("/audience", apiv1.GetAudienceSnapshotsHandler)
