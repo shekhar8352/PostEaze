@@ -106,3 +106,188 @@
   color: var(--pe-text-muted);
   font-size: 0.9375rem;
 }
+
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  align-items: stretch;
+  width: 100%;
+}
+
+@media (min-width: 992px) {
+  .twoCol {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.pipelineBody {
+  width: 100%;
+  max-width: 52rem;
+}
+
+.subsectionHeading {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--pe-text-muted);
+  line-height: 1.3;
+}
+
+.pipelineBar {
+  display: flex;
+  width: 100%;
+  height: 14px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--pe-border);
+  margin-top: 0;
+  border: 1px solid var(--pe-border-strong);
+  box-sizing: border-box;
+}
+
+.pipelineSegment {
+  height: 100%;
+  min-width: 2px;
+  transition: opacity 0.15s ease;
+}
+
+.pipelineLegend {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(auto-fill, minmax(9.5rem, 1fr));
+  gap: 0.5rem 0.75rem;
+  margin-top: 1rem;
+  align-items: center;
+}
+
+.legendSwatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex-shrink: 0;
+  border: 1px solid var(--pe-border-strong);
+}
+
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+}
+
+.analyticsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem 1rem;
+}
+
+@media (min-width: 36em) {
+  .analyticsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.analyticsMetric {
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--pe-radius-md);
+  background: var(--pe-accent-subtle);
+  border: 1px solid var(--pe-border);
+}
+
+.analyticsMetricLabel {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--pe-text-muted);
+}
+
+.analyticsMetricValue {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--pe-text);
+  margin-top: 0.15rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.topPostCard {
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md);
+  padding: 0.65rem 0.75rem;
+  background: var(--pe-bg-elevated);
+  transition: border-color 0.15s ease;
+}
+
+.topPostCard:hover {
+  border-color: var(--pe-border-strong);
+}
+
+.nextUpList {
+  width: 100%;
+  border: 1px solid var(--pe-border);
+  border-radius: var(--pe-radius-md);
+  padding: 0.25rem 0.75rem;
+}
+
+.miniPostRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--pe-border);
+}
+
+.miniPostRow:last-of-type {
+  border-bottom: none;
+}
+
+.statCardAttention {
+  border-color: rgba(250, 82, 82, 0.45);
+}
+
+.kpiGrid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 36em) {
+  .kpiGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 75em) {
+  .kpiGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.statCardRoot {
+  min-width: 0;
+  height: 100%;
+}
+
+.peakStrip {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    rgba(77, 171, 247, 0.08) 0%,
+    transparent 42%,
+    rgba(77, 171, 247, 0.05) 100%
+  );
+  border-radius: inherit;
+}
+
+.peakStripWrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--pe-radius-lg);
+}
