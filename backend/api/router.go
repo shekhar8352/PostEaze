@@ -68,6 +68,7 @@ func Init() error {
 		addV1PostRoutes(v1)
 		addV1ScheduledPostRoutes(v1)
 		addV1MediaAssetRoutes(v1)
+		addV1StudioRoutes(v1)
 	}
 
 	// Swagger endpoint
@@ -179,6 +180,51 @@ func addV1MediaAssetRoutes(v1 *gin.RouterGroup) {
 		assets.DELETE("/:id/versions/:vid", apiv1.DeleteVersionHandler)
 		assets.PUT("/:id/current-version", apiv1.SetCurrentVersionHandler)
 		assets.POST("/:id/publish", apiv1.PublishMediaAssetHandler)
+	}
+}
+
+func addV1StudioRoutes(v1 *gin.RouterGroup) {
+	studios := v1.Group(constants.StudiosRoute)
+	studios.Use(middleware.AuthMiddleware())
+	{
+		studios.GET("/default", apiv1.EnsureStudioHandler)
+		studios.PUT("/:id", apiv1.UpdateStudioHandler)
+		studios.GET("/:id/board", apiv1.GetStudioBoardHandler)
+
+		studios.GET("/:id/phases", apiv1.ListPhasesHandler)
+		studios.POST("/:id/phases", apiv1.CreatePhaseHandler)
+		studios.POST("/:id/phases/reorder", apiv1.ReorderPhasesHandler)
+
+		studios.POST("/:id/pieces", apiv1.CreatePieceHandler)
+	}
+
+	phases := v1.Group(constants.PhasesRoute)
+	phases.Use(middleware.AuthMiddleware())
+	{
+		phases.PUT("/:phaseId", apiv1.UpdatePhaseHandler)
+		phases.DELETE("/:phaseId", apiv1.DeletePhaseHandler)
+	}
+
+	pieces := v1.Group(constants.PiecesRoute)
+	pieces.Use(middleware.AuthMiddleware())
+	{
+		pieces.GET("/:pieceId", apiv1.GetPieceHandler)
+		pieces.PUT("/:pieceId", apiv1.UpdatePieceHandler)
+		pieces.DELETE("/:pieceId", apiv1.DeletePieceHandler)
+		pieces.POST("/:pieceId/move", apiv1.MovePieceHandler)
+		pieces.PUT("/:pieceId/status", apiv1.SetPieceStatusHandler)
+
+		pieces.POST("/:pieceId/assets", apiv1.LinkPieceAssetHandler)
+		pieces.DELETE("/:pieceId/assets/:assetId", apiv1.UnlinkPieceAssetHandler)
+
+		pieces.POST("/:pieceId/scheduled-posts", apiv1.LinkPieceScheduledPostHandler)
+		pieces.DELETE("/:pieceId/scheduled-posts/:scheduledPostId", apiv1.UnlinkPieceScheduledPostHandler)
+
+		pieces.GET("/:pieceId/activities", apiv1.ListPieceActivitiesHandler)
+
+		pieces.GET("/:pieceId/comments", apiv1.ListPieceCommentsHandler)
+		pieces.POST("/:pieceId/comments", apiv1.CreatePieceCommentHandler)
+		pieces.DELETE("/:pieceId/comments/:commentId", apiv1.DeletePieceCommentHandler)
 	}
 }
 
