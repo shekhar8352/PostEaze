@@ -171,22 +171,47 @@ func (m *TeamMember) BindRawRow(code int, row database.Scanner) error {
 	case CreateTeamMember:
 		return row.Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt)
 	case GetTeamMemberByID, GetMembersByTeamID, GetTeamsByUserID, GetAllTeamMembers:
-		return row.Scan(
+		var permissionsRaw []byte
+		if err := row.Scan(
 			&m.ID, &m.TeamID, &m.UserID, &m.Role, &m.Status,
-			&m.JoinedAt, &m.InvitedBy, &m.Permissions, &m.IsPrimary,
+			&m.JoinedAt, &m.InvitedBy, &permissionsRaw, &m.IsPrimary,
 			&m.LastActiveAt, &m.CreatedAt, &m.UpdatedAt,
-		)
+		); err != nil {
+			return err
+		}
+		return decodePermissions(permissionsRaw, &m.Permissions)
 	case UpdateTeamMemberRole:
 		return row.Scan(&m.ID, &m.Role, &m.UpdatedAt)
 	case UpdateTeamMemberStatus:
 		return row.Scan(&m.ID, &m.Status, &m.UpdatedAt)
 	case UpdateTeamMemberPermissions:
-		return row.Scan(&m.ID, &m.Permissions, &m.UpdatedAt)
+		var permissionsRaw []byte
+		if err := row.Scan(&m.ID, &permissionsRaw, &m.UpdatedAt); err != nil {
+			return err
+		}
+		return decodePermissions(permissionsRaw, &m.Permissions)
 	case UpdateTeamMemberLastActive:
 		return row.Scan(&m.ID, &m.LastActiveAt, &m.UpdatedAt)
 	case DeleteTeamMember:
 		return row.Scan(&m.ID)
 	}
+	return nil
+}
+
+// decodePermissions unmarshals a jsonb column payload into the target map.
+// Postgres returns jsonb as []byte via lib/pq, so we can't scan straight into
+// map[string]interface{}. An empty/NULL payload yields an empty map rather than
+// nil so downstream code can safely read keys.
+func decodePermissions(raw []byte, dst *map[string]interface{}) error {
+	if len(raw) == 0 {
+		*dst = map[string]interface{}{}
+		return nil
+	}
+	out := map[string]interface{}{}
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return err
+	}
+	*dst = out
 	return nil
 }
 
