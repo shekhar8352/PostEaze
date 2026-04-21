@@ -107,6 +107,10 @@ func ExecuteInstagramPublishAtScheduledTime(ctx context.Context, scheduledPostID
 	if finalStatus == string(entities.ScheduledStatusPublished) {
 		mediapublish.MarkLinkedMediaAssetsPublished(ctx, sp.OwnerUserID, sp.Media)
 	}
+	// Propagate lifecycle to any linked Studio Piece (move to published/log failure).
+	if OnPostFinalized != nil {
+		_ = OnPostFinalized(ctx, sp.ID, finalStatus == string(entities.ScheduledStatusPublished))
+	}
 	if successN < len(channelIDs) {
 		// Avoid Asynq retries re-publishing channels that already succeeded.
 		return fmt.Errorf("instagram publish incomplete for scheduled_post %d (%d/%d channels ok): %w",
