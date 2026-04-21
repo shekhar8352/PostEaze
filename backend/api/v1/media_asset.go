@@ -62,6 +62,8 @@ func UploadMediaHandler(c *gin.Context) {
 // @Param        title formData string true  "Asset title"
 // @Param        asset_type formData string true "photo or video"
 // @Param        label formData string false "Version label (default: raw)"
+// @Param        piece_id formData int false "Optional Studio Piece ID to auto-link the new asset to"
+// @Param        role formData string false "Role when auto-linking to a Piece (script|raw|edit|thumbnail|final|attachment)"
 // @Success      200 {object} map[string]interface{}
 // @Router       /media-assets [post]
 func CreateMediaAssetHandler(c *gin.Context) {
@@ -98,6 +100,20 @@ func CreateMediaAssetHandler(c *gin.Context) {
 		return
 	}
 
+	// Optional Studio Piece auto-linking. Accept from either query string or form body
+	// so the upload-to-piece flow works for both REST clients and multipart forms.
+	pieceIDStr := firstNonEmpty(c.Query("piece_id"), c.PostForm("piece_id"))
+	linkRole := firstNonEmpty(c.Query("role"), c.PostForm("role"))
+	var pieceID int64
+	if pieceIDStr != "" {
+		pid, err := strconv.ParseInt(pieceIDStr, 10, 64)
+		if err != nil {
+			utils.SendError(c, http.StatusBadRequest, "invalid piece_id")
+			return
+		}
+		pieceID = pid
+	}
+
 	contentType := header.Header.Get("Content-Type")
 	upload, code, err := businessv1.UploadMedia(
 		c.Request.Context(), userIDStr.(string),
@@ -118,7 +134,29 @@ func CreateMediaAssetHandler(c *gin.Context) {
 		utils.SendError(c, code, err.Error())
 		return
 	}
-	utils.SendSuccess(c, resp, "Media asset created")
+
+	msg := "Media asset created"
+	if pieceID > 0 && resp != nil {
+		linkReq := &modelsv1.LinkAssetRequest{MediaAssetID: resp.ID, Role: linkRole}
+		if _, linkErr := businessv1.LinkPieceAsset(c.Request.Context(), userIDStr.(string), pieceID, linkReq); linkErr != nil {
+			// Asset was created successfully; surface link failure in the response
+			// message without rolling back so the client can retry linking.
+			msg = "Media asset created but linking to piece failed: " + linkErr.Error()
+		} else {
+			msg = "Media asset created and linked to piece"
+		}
+	}
+	utils.SendSuccess(c, resp, msg)
+}
+
+// firstNonEmpty returns the first non-empty string from the provided candidates.
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if v != "" {
+			return v
+		}
+	}
+	return ""
 }
 
 // ListMediaAssetsHandler godoc

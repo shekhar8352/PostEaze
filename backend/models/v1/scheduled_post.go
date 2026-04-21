@@ -13,11 +13,14 @@ type ScheduledMediaItem struct {
 type CreateScheduledPostRequest struct {
 	ChannelIDs  []int64               `json:"channel_ids" binding:"required,min=1"`
 	Platforms   []string              `json:"platforms" binding:"required,min=1"`
-	PublishNow  bool                  `json:"publish_now"`                 // if true, post immediately (no scheduled_publish_time)
-	ScheduledAt *time.Time            `json:"scheduled_at"`                // required when publish_now is false
+	PublishNow  bool                  `json:"publish_now"`                  // if true, post immediately (no scheduled_publish_time)
+	ScheduledAt *time.Time            `json:"scheduled_at"`                 // required when publish_now is false
 	PostType    string                `json:"post_type" binding:"required"` // image | video | carousel
 	Caption     string                `json:"caption"`
 	Media       ScheduledMediaPayload `json:"media" binding:"required"`
+	// PieceID, when set, auto-links the created scheduled post to a Studio
+	// Piece. Failures to link are logged but do not fail the schedule request.
+	PieceID *int64 `json:"piece_id,omitempty"`
 }
 
 // ScheduledMediaPayload wraps items for storage and validation.
