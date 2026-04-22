@@ -23,6 +23,11 @@ export interface CreateScheduledPostRequest {
   post_type: PostType;
   caption: string;
   media: { items: ScheduledMediaItem[] };
+  /**
+   * Optional Studio Piece to auto-link after the scheduled post is created.
+   * Backend silently ignores link failures so schedule calls stay resilient.
+   */
+  piece_id?: number;
 }
 
 export interface ChannelScheduleResult {

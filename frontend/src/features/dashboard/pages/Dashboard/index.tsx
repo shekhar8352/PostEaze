@@ -12,6 +12,7 @@ import {
     DashboardInstagramPulse,
     DashboardKpiGrid,
     DashboardPostPipeline,
+    DashboardStudioPipeline,
 } from './components';
 import { useDashboardDateRanges } from './hooks/useDashboardDateRanges';
 import type { DashboardKpiStat } from './types';
@@ -104,13 +105,16 @@ const DashboardPage = () => {
                         postsError={postsError}
                         onNavigateCalendar={() => navigate('/calendar')}
                     />
-                    <DashboardInstagramPulse
-                        analyticsRange={analyticsRange}
-                        instagramChannel={instagramChannel}
-                        analyticsDashboard={analyticsDashboard}
-                        analyticsLoading={analyticsLoading}
+                    <DashboardStudioPipeline
+                        onNavigateStudio={() => navigate('/studio')}
                     />
                 </div>
+                <DashboardInstagramPulse
+                    analyticsRange={analyticsRange}
+                    instagramChannel={instagramChannel}
+                    analyticsDashboard={analyticsDashboard}
+                    analyticsLoading={analyticsLoading}
+                />
                 <DashboardChannelsSection
                     channels={channelCards}
                     onNavigateChannel={(path) => navigate(path)}

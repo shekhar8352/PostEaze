@@ -63,6 +63,12 @@ import {
   IconVideo,
   IconFile,
   IconFileText,
+  IconLayoutKanban,
+  IconClock,
+  IconExternalLink,
+  IconSend,
+  IconDots,
+  IconGripVertical,
 
   // Theme Icons
   IconSun,
@@ -127,6 +133,12 @@ export const Icons = {
   Video: IconVideo,
   File: IconFile,
   FileText: IconFileText,
+  Kanban: IconLayoutKanban,
+  Clock: IconClock,
+  ExternalLink: IconExternalLink,
+  Send: IconSend,
+  Dots: IconDots,
+  GripVertical: IconGripVertical,
 
   // Theme
   Sun: IconSun,
