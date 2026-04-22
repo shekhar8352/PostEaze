@@ -22,10 +22,14 @@ import {
   IconCloudUpload,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
+import { notifications } from "@mantine/notifications";
 import { useMediaAssets, useDeleteMediaAsset } from "../hooks/useMediaQueries";
 import { AssetCard } from "../components/AssetCard";
 import { MediaUploader } from "../components/MediaUploader";
 import { useMediaWorkspaceSurfaces } from "../hooks/useMediaWorkspaceSurfaces";
+import { LinkToPieceModal } from "@/features/studio/components/LinkToPieceModal";
+import { useLinkAsset } from "@/features/studio/hooks/useStudioQueries";
+import type { MediaAsset } from "../types";
 
 const PAGE_SIZE = 20;
 
@@ -34,8 +38,12 @@ export default function MediaWorkspace() {
   const [page, setPage] = useState(1);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [linkAssetTarget, setLinkAssetTarget] = useState<MediaAsset | null>(
+    null
+  );
   const navigate = useNavigate();
   const deleteAsset = useDeleteMediaAsset();
+  const linkAsset = useLinkAsset();
   const surfaces = useMediaWorkspaceSurfaces();
 
   const status = statusFilter === "all" ? undefined : statusFilter;
@@ -218,6 +226,7 @@ export default function MediaWorkspace() {
                 asset={asset}
                 onClick={(id) => navigate(`/workspace/${id}`)}
                 onDelete={(id) => deleteAsset.mutate(id)}
+                onLinkToPiece={(target) => setLinkAssetTarget(target)}
               />
             ))}
           </SimpleGrid>
@@ -239,6 +248,36 @@ export default function MediaWorkspace() {
       <MediaUploader
         opened={uploadOpen}
         onClose={() => setUploadOpen(false)}
+      />
+
+      <LinkToPieceModal
+        opened={linkAssetTarget !== null}
+        onClose={() => setLinkAssetTarget(null)}
+        title="Link asset to a Piece"
+        description={
+          linkAssetTarget
+            ? `Pick a Piece to attach "${linkAssetTarget.title}" to. You can change or remove the link later from the Piece detail view.`
+            : undefined
+        }
+        ctaLabel="Link asset"
+        isSubmitting={linkAsset.isPending}
+        onSelect={async (piece) => {
+          if (!linkAssetTarget) return;
+          try {
+            await linkAsset.mutateAsync({
+              pieceId: piece.id,
+              body: { media_asset_id: linkAssetTarget.id },
+            });
+            notifications.show({
+              color: "green",
+              title: "Linked to Piece",
+              message: `"${linkAssetTarget.title}" is now attached to ${piece.title}.`,
+            });
+            setLinkAssetTarget(null);
+          } catch {
+            // useLinkAsset surfaces its own error notification
+          }
+        }}
       />
     </Stack>
   );
