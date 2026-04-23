@@ -17,6 +17,7 @@ func CreateTeamMember(ctx context.Context, tx database.Database, body modelsv1.T
 		Status:      body.Status,
 		InvitedBy:   body.InvitedBy,
 		Permissions: body.Permissions,
+		IsPrimary:   body.IsPrimary,
 	}
 	err := tx.QueryRaw(ctx, &data, entities.CreateTeamMember)
 	return &data, err

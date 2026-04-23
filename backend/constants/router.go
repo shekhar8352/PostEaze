@@ -42,4 +42,8 @@ const (
 
 	MediaRoute       = "/media"
 	MediaAssetsRoute = "/media-assets"
+
+	StudiosRoute = "/studios"
+	PhasesRoute  = "/phases"
+	PiecesRoute  = "/pieces"
 )

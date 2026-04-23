@@ -90,6 +90,18 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 		return nil, 500, err
 	}
 
+	// Optionally auto-link to a Studio Piece. Linking failures are logged via
+	// the business layer's activity pipeline but never fail the schedule call;
+	// the scheduled post has already been persisted at this point.
+	if req.PieceID != nil && *req.PieceID > 0 {
+		if _, err := LinkPieceScheduledPost(ctx, userIDStr, *req.PieceID, &modelsv1.LinkScheduledPostRequest{
+			ScheduledPostID: sp.ID,
+		}); err != nil {
+			// Swallow but continue – the caller can retry linking from the UI.
+			_ = err
+		}
+	}
+
 	// Future posts: queue Asynq job at scheduled_at; Meta does not document scheduled_publish_time on IG /media.
 	if !req.PublishNow {
 		stateMap := map[string]any{
@@ -207,6 +219,9 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	if finalStatus == string(entities.ScheduledStatusPublished) {
 		mediapublish.MarkLinkedMediaAssetsPublished(ctx, ownerID, mediaJSON)
 	}
+
+	// Propagate lifecycle to any linked Studio Piece (move to published / log failure).
+	_ = OnScheduledPostPublished(ctx, sp.ID, finalStatus == string(entities.ScheduledStatusPublished))
 
 	resp := &modelsv1.CreateScheduledPostResponse{
 		ScheduledPostID: sp.ID,

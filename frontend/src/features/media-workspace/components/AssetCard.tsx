@@ -18,6 +18,7 @@ import {
   IconVideo,
   IconClock,
   IconVersions,
+  IconLayoutKanban,
 } from "@tabler/icons-react";
 import type { MediaAsset } from "../types";
 
@@ -25,6 +26,12 @@ interface AssetCardProps {
   asset: MediaAsset;
   onClick: (id: number) => void;
   onDelete: (id: number) => void;
+  /**
+   * Optional callback invoked when the user chooses "Link to Piece"
+   * from the card's overflow menu. When omitted, the menu item is
+   * hidden so callers opt-in explicitly.
+   */
+  onLinkToPiece?: (asset: MediaAsset) => void;
 }
 
 const statusConfig: Record<string, { color: string; label: string }> = {
@@ -54,7 +61,12 @@ function formatRelativeDate(iso: string): string {
   });
 }
 
-export function AssetCard({ asset, onClick, onDelete }: AssetCardProps) {
+export function AssetCard({
+  asset,
+  onClick,
+  onDelete,
+  onLinkToPiece,
+}: AssetCardProps) {
   const versions = asset.versions;
   const currentVersion =
     versions?.find((v) => v.id === asset.current_version_id) ??
@@ -189,6 +201,20 @@ export function AssetCard({ asset, onClick, onDelete }: AssetCardProps) {
             </ActionIcon>
           </Menu.Target>
           <Menu.Dropdown>
+            {onLinkToPiece && (
+              <>
+                <Menu.Item
+                  leftSection={<IconLayoutKanban size={14} />}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onLinkToPiece(asset);
+                  }}
+                >
+                  Link to Piece
+                </Menu.Item>
+                <Menu.Divider />
+              </>
+            )}
             <Menu.Item
               color="red"
               leftSection={<IconTrash size={14} />}

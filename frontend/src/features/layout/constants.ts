@@ -19,6 +19,11 @@ export const MAIN_NAV_ITEMS: NavItem[] = [
     path: '/analytics',
   },
   {
+    label: 'Studio',
+    icon: Icons.Kanban,
+    path: '/studio',
+  },
+  {
     label: 'Calendar',
     icon: Icons.Calendar,
     path: '/calendar',
