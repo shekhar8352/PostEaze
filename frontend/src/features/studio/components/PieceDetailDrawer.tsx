@@ -153,7 +153,7 @@ export function PieceDetailDrawer({
           <PieceCommentsPanel pieceId={piece.id} />
 
           <Divider my="sm" label="Activity" labelPosition="left" />
-          <PieceActivityFeed pieceId={piece.id} />
+          <PieceActivityFeed pieceId={piece.id} phases={phases} />
         </Stack>
       )}
     </Drawer>
