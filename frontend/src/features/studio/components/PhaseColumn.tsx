@@ -133,7 +133,12 @@ export function PhaseColumn({
         style={{ flex: 1, minHeight: 0, overflowY: "auto" }}
       >
         {pieces.map((piece) => (
-          <PieceCard key={piece.id} piece={piece} onClick={onPieceClick} />
+          <PieceCard
+            key={piece.id}
+            piece={piece}
+            accentColor={phase.color || undefined}
+            onClick={onPieceClick}
+          />
         ))}
 
         {adding && (
