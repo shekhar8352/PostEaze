@@ -616,11 +616,18 @@ func MovePiece(ctx context.Context, userIDStr string, pieceID int64, req *models
 	if err := repositories.MovePiece(ctx, pieceID, req.PhaseID, position); err != nil {
 		return nil, 500, err
 	}
+	fromPhase, err := repositories.GetPhaseByID(ctx, piece.PhaseID)
+	if err != nil {
+		return nil, 500, err
+	}
+	if fromPhase == nil || fromPhase.StudioID != studio.ID {
+		return nil, 500, fmt.Errorf("from phase not found for piece")
+	}
 	actor := parseUserID(userIDStr)
 	logPieceActivity(ctx, pieceID, actor, entities.PieceActivityMoved, map[string]any{
-		"from_phase_id": piece.PhaseID,
-		"to_phase_id":   req.PhaseID,
-		"position":      position,
+		"from_phase": fromPhase.Name,
+		"to_phase":   targetPhase.Name,
+		"position":   position,
 	})
 	piece.PhaseID, piece.Position = req.PhaseID, position
 	return mapPieceToResponse(piece), 200, nil
@@ -814,11 +821,18 @@ func LinkPieceScheduledPost(ctx context.Context, userIDStr string, pieceID int64
 		pos, perr := nextPositionInPhase(ctx, scheduledPhase.ID)
 		if perr == nil {
 			_ = repositories.MovePiece(ctx, pieceID, scheduledPhase.ID, pos)
-			logPieceActivity(ctx, pieceID, actor, entities.PieceActivityMoved, map[string]any{
-				"from_phase_id": piece.PhaseID,
-				"to_phase_id":   scheduledPhase.ID,
-				"reason":        "auto_scheduled",
-			})
+			fromName := ""
+			if fromPhase, ferr := repositories.GetPhaseByID(ctx, piece.PhaseID); ferr == nil && fromPhase != nil {
+				fromName = fromPhase.Name
+			}
+			payload := map[string]any{
+				"to_phase": scheduledPhase.Name,
+				"reason":   "auto_scheduled",
+			}
+			if fromName != "" {
+				payload["from_phase"] = fromName
+			}
+			logPieceActivity(ctx, pieceID, actor, entities.PieceActivityMoved, payload)
 		}
 	}
 	return 200, nil

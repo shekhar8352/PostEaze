@@ -123,6 +123,10 @@ export default function StudioBoard() {
   const activePiece = activePieceId
     ? board.pieces.find((p) => p.id === activePieceId) ?? null
     : null;
+  const activePieceAccent =
+    activePiece != null
+      ? phases.find((ph) => ph.id === activePiece.phase_id)?.color
+      : undefined;
 
   const handleDragStart = (event: DragStartEvent) => {
     const id = Number(event.active.id);
@@ -298,7 +302,13 @@ export default function StudioBoard() {
         </Box>
 
         <DragOverlay>
-          {activePiece ? <PieceCard piece={activePiece} dragging /> : null}
+          {activePiece ? (
+            <PieceCard
+              piece={activePiece}
+              dragging
+              accentColor={activePieceAccent || undefined}
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
 
