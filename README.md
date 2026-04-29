@@ -24,6 +24,7 @@ PostEaze is a social media management platform for influencers and marketing tea
 - **Posts & scheduling** — List posts, create and manage scheduled posts; calendar views on the frontend.
 - **Analytics** — Instagram channel analytics (profile, posts, audience, stories, comparisons, etc.) with access controls.
 - **Media workspace** — Uploads, versioned assets, publish flow into scheduled posts.
+- **Studio** — Per-team content pipeline: customizable **phases**, **pieces** (cards) with media links, scheduled-post links, comments, and activity; Kanban board UI and dashboard pipeline widget; see [`frontend/src/features/studio/README.md`](./frontend/src/features/studio/README.md) and [`backend/docs/studio-pipeline.md`](./backend/docs/studio-pipeline.md).
 - **Teams** — Multi-user team model on the API.
 - **Jobs** — Asynq workers for sync and related background work.
 
@@ -57,6 +58,7 @@ Sub-project docs: [`frontend/README.md`](./frontend/README.md), [`backend/README
 | Frontend architecture, scripts, env | [`frontend/README.md`](./frontend/README.md) |
 | Backend architecture, Swagger, migrations, env | [`backend/README.md`](./backend/README.md) |
 | Firebase + API auth notes | [`backend/docs/firebase-authentication.md`](./backend/docs/firebase-authentication.md) |
+| Studio pipeline (pieces, phases, API) | [`backend/docs/studio-pipeline.md`](./backend/docs/studio-pipeline.md); UI: [`frontend/src/features/studio/README.md`](./frontend/src/features/studio/README.md) |
 
 ## Prerequisites
 
