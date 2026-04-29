@@ -14,6 +14,7 @@ Feature-based folders: each module owns pages, components, routes, and usually *
 | **analytics** | Instagram analytics UI at `/analytics` |
 | **calendar** | Scheduled posts calendar at `/calendar`; uses `/api/v1/scheduled-posts` |
 | **media-workspace** | Media library at `/workspace` and asset detail at `/workspace/:assetId`; `/api/v1/media-assets` (+ multipart upload/version); see [media-workspace/README.md](./media-workspace/README.md) |
+| **studio** | Kanban board at `/studio`, settings at `/studio/settings`; phases and pieces, links to media + scheduled posts; see [studio/README.md](./studio/README.md) |
 
 ## Typical feature layout
 
@@ -43,3 +44,4 @@ feature/
 - [`../services/README.md`](../services/README.md)
 - [`layout/README.md`](./layout/README.md)
 - [`media-workspace/README.md`](./media-workspace/README.md)
+- [`studio/README.md`](./studio/README.md)

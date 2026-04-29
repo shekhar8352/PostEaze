@@ -6,7 +6,7 @@ Central routing for the SPA: **`index.tsx`** composes feature `RouteObject[]` ar
 
 | File | Role |
 |------|------|
-| `index.tsx` | Merges auth + protected tree (dashboard, analytics, landing home, channels, calendar, media workspace) + catch-all 404 |
+| `index.tsx` | Merges auth + protected tree (dashboard, analytics, landing home, channels, calendar, media workspace, studio) + catch-all 404 |
 | `ProtectedRoute.tsx` | `ProtectedLayout` — requires authenticated user |
 | `PublicRoute.tsx` | Redirects authenticated users away from public auth pages |
 | `NotFound.tsx` | 404 |
@@ -33,6 +33,8 @@ Central routing for the SPA: **`index.tsx`** composes feature `RouteObject[]` ar
 | `/calendar` | calendar (scheduled posts) |
 | `/workspace` | media-workspace (asset grid / upload) |
 | `/workspace/:assetId` | media-workspace (detail, versions, publish) |
+| `/studio` | studio (Kanban board) |
+| `/studio/settings` | studio (phases + labels) |
 | `/channels/instagram` | channels |
 
 **Special**
@@ -57,4 +59,5 @@ Central routing for the SPA: **`index.tsx`** composes feature `RouteObject[]` ar
 
 - [`../../features/README.md`](../../features/README.md)
 - [`../../features/media-workspace/README.md`](../../features/media-workspace/README.md)
+- [`../../features/studio/README.md`](../../features/studio/README.md)
 - [`../store/README.md`](../store/README.md)
