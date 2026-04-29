@@ -1,6 +1,6 @@
 # PostEaze Backend
 
-Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Facebook channels, Meta OAuth and analytics sync, webhooks, scheduled posts, media workspace (versioned assets and publish-to-scheduled-post), background jobs (Asynq/Redis), and channel analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
+Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Facebook channels, Meta OAuth and analytics sync, webhooks, scheduled posts, **Studio** (per-team phases and pieces with media and scheduled-post links), media workspace (versioned assets and publish-to-scheduled-post), background jobs (Asynq/Redis), and channel analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
 
 ## Architecture overview
 
@@ -15,8 +15,8 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Fa
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
 │  Business — business/v1 (auth, user, team, channel, log,       │
-│            scheduled posts, media assets, analytics, Meta,   │
-│            posts)                                              │
+│            scheduled posts, media assets, analytics, Meta,      │
+│            studio / phases / pieces, posts)                      │
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
@@ -24,12 +24,16 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Fa
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│  Infrastructure — configs, Redis, encryption, Firebase        │
+│  Infrastructure — configs, Redis, encryption, Firebase, blob    │
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│  Providers — Meta / Instagram Graph API, insights              │
-│  Tasks — Asynq client (API) + worker (cmd/worker)             │
+│  Helpers — services/studio (fractional index, phase templates)  │
+└─────────────────────────┬───────────────────────────────────┘
+                          │
+┌─────────────────────────▼───────────────────────────────────┐
+│  Providers — Meta / Instagram Graph API, insights               │
+│  Tasks — Asynq client (API) + worker (cmd/worker)               │
 └───────────────────────────────────────────────────────────────┘
 ```
 
@@ -47,18 +51,19 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Fa
 |------|------|
 | `main.go` | Startup: env, configs, DB, Redis, encryption, Firebase, Asynq client, router, HTTP client |
 | `api/` | Router, Swagger, `v1` handlers, Instagram webhooks |
-| `business/v1/` | Domain logic (Firebase auth, users, teams, channels, logs, scheduled posts, analytics, Meta) |
+| `business/v1/` | Domain logic (Firebase auth, users, teams, channels, logs, scheduled posts, media, analytics, Meta, **studio/pieces**, posts) |
 | `entities/` | `RawEntity` SQL patterns; `repositories/` data access |
 | `models/v1/` | Request/response and shared structs |
 | `migrations/` | Numbered `*.up.sql` / `*.down.sql` |
 | `middleware/` | Logging, JWT auth, roles, Instagram analytics access |
 | `provider/` | Meta Graph API, Instagram OAuth, insights |
 | `services/` | Email, Redis, Meta, Instagram orchestration |
+| `services/studio/` | Fractional indexing + default phase templates for the Studio pipeline |
 | `tasks/` | Asynq task definitions, handlers, scheduler |
 | `cmd/worker/` | Standalone worker process |
 | `utils/` | Config, DB, env, flags, HTTP, JWT, Firebase, Redis, encryption |
 | `resources/configs/` | Per-environment YAML (`dev/`, `cug/`, `prod/`) |
-| `docs/` | Generated Swagger (`swagger.json`, `swagger.yaml`, `docs.go`) |
+| `docs/` | Generated Swagger + human guides (`firebase-authentication.md`, `studio-pipeline.md`, …) |
 
 ## Service initialization (`main.go`)
 
@@ -87,6 +92,7 @@ Base path: `/api/v1` unless noted.
 | Posts | `GET /posts` | JWT |
 | Scheduled posts | `GET /scheduled-posts`, `POST /scheduled-posts`, `GET /scheduled-posts/:id`, `DELETE /scheduled-posts/:id` | JWT — list supports calendar range query params (see handlers) |
 | Media workspace | `POST /media/upload`; `GET|POST /media-assets`, `GET|PUT|DELETE /media-assets/:id`, `POST /media-assets/:id/versions`, `DELETE /media-assets/:id/versions/:vid`, `PUT /media-assets/:id/current-version`, `POST /media-assets/:id/publish` | JWT — upload and versioning; publish creates a scheduled post from the current version |
+| Studio | `/studios/*`, `/phases/*`, `/pieces/*` (board, phases, pieces, move, assets, scheduled posts, comments, activities) | JWT — see [`docs/studio-pipeline.md`](docs/studio-pipeline.md) |
 | Analytics | See below | JWT + `RequireInstagramChannelAnalyticsAccess` (Instagram channel) |
 | Dev | `POST /dev/generate-token` | Test JWT helpers when `ENV=development` / `dev` |
 | Cron (dev-oriented) | `POST /cron/trigger-instagram-sync`, `.../trigger-instagram-posts`, `.../trigger-instagram-analytics` | Guarded by `ENV` in handlers |
@@ -173,3 +179,4 @@ Structured logs under `logs/` (see [`logs/README.md`](logs/README.md)); HTTP log
 - [`business/README.md`](business/README.md), [`tasks/README.md`](tasks/README.md)
 - [`migrations/README.md`](migrations/README.md), [`middleware/README.md`](middleware/README.md)
 - [`docs/firebase-authentication.md`](docs/firebase-authentication.md)
+- [`docs/studio-pipeline.md`](docs/studio-pipeline.md), [`services/studio/README.md`](services/studio/README.md)

@@ -16,6 +16,7 @@ All routes below are prefixed with `/api/v1` unless stated. Request/response bod
 | `posts.go` | List posts for authenticated user |
 | `scheduled_post.go` | Scheduled posts CRUD + calendar listing |
 | `media_asset.go` | Media upload, assets, versions, current version, publish to scheduled post |
+| `studio.go` | Studios, phases, pieces, moves, asset/post links, comments, activities |
 | `analytics.go` | Instagram analytics under `/channels/:channelId/analytics` |
 | `dev.go` | Development-only test JWT |
 | `cron.go` | Dev-oriented triggers for background sync jobs |
@@ -116,6 +117,10 @@ All routes require JWT (`AuthMiddleware`).
 | PUT | `/media-assets/:id/current-version` | Set active version |
 | POST | `/media-assets/:id/publish` | Create a scheduled post from the current version (body: channels, caption, schedule) |
 
+## Studio (`/studios`, `/phases`, `/pieces`)
+
+JWT required (`AuthMiddleware`). Full route map and semantics: **[`docs/studio-pipeline.md`](../../docs/studio-pipeline.md)** (`EnsureStudio`, board, phases CRUD/reorder, pieces CRUD/move/status, asset and scheduled-post links, comments, activities).
+
 ## Analytics (`/channels/:channelId/analytics`)
 
 All routes require JWT and `RequireInstagramChannelAnalyticsAccess` (user must own channel or have team access; Instagram provider).
@@ -166,3 +171,4 @@ Manual enqueue of background jobs (handlers restrict non-dev `ENV` — see `cron
 - [Business v1](../../business/v1/README.md)
 - [Models v1](../../models/v1/README.md)
 - [Middleware](../../middleware/README.md)
+- [Studio pipeline](../../docs/studio-pipeline.md)
