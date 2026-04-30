@@ -8,6 +8,7 @@ Orchestrates domain rules between HTTP handlers and repositories. Stateless func
 - **Users & teams** — User lookup/update; team create, list, update, status.
 - **Channels** — Instagram channel creation and related flows (via services/repositories).
 - **Media workspace** — Upload to blob storage, CRUD on `media_assets` / `media_versions`, set current version, publish into scheduled posts.
+- **Studio** — Team studios, phases, pieces, moves, asset/scheduled-post links, comments, activities (`studio.go` in `v1/`).
 - **Logs** — Read structured log files for admin/debug (`ReadLogsByDate`, `ReadLogsByLogID`).
 
 ## Patterns
@@ -26,11 +27,12 @@ Orchestrates domain rules between HTTP handlers and repositories. Stateless func
 
 ## Layout
 
-- **`v1/`** — Current implementation (`auth.go`, `user.go`, `team.go`, `channel.go`, `scheduled_post.go`, `media_asset.go`, `log.go`, …)
+- **`v1/`** — Current implementation (`auth.go`, `user.go`, `team.go`, `channel.go`, `scheduled_post.go`, `media_asset.go`, `studio.go`, `log.go`, …)
 
 ## Related documentation
 
 - [API v1](../api/v1/README.md)
 - [Business v1](./v1/README.md)
 - [Entities](../entities/README.md)
+- [Studio pipeline](../docs/studio-pipeline.md)
 - [Repositories](../entities/repositories/README.md)

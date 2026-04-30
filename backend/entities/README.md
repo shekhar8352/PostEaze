@@ -24,6 +24,7 @@ All entities implement the `database.RawEntity` interface which provides:
 - **team.go** — Team and membership queries
 - **channel.go** (and related) — Social channel + token storage
 - **media_asset.go**, **media_version.go** — Media workspace rows and query codes
+- **studio.go**, **phase.go**, **piece.go** — Studio pipeline (team board, columns, work items, joins)
 - **repositories/** — Repository functions calling `QueryRaw` / transactions
 
 ## Entity structure

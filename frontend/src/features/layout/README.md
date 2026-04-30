@@ -2,7 +2,7 @@
 
 ## Overview
 
-The PostEaze layout system uses Mantine's AppShell component to provide a consistent, responsive layout with sidebar navigation and nested channel navigation. **Main** nav items (dashboard, analytics, calendar, **Workspace** → `/workspace`) live in `constants.ts` as `MAIN_NAV_ITEMS`; the Workspace entry drives the [media-workspace](../media-workspace/README.md) feature.
+The PostEaze layout system uses Mantine's AppShell component to provide a consistent, responsive layout with sidebar navigation and nested channel navigation. **Main** nav items (dashboard, analytics, calendar, **Studio** → `/studio`, **Workspace** → `/workspace`) live in `constants.ts` as `MAIN_NAV_ITEMS`; Workspace drives [media-workspace](../media-workspace/README.md) and Studio drives the [studio](../studio/README.md) feature.
 
 ## Structure
 
