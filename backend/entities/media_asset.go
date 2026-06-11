@@ -15,13 +15,19 @@ const (
 )
 
 type MediaAsset struct {
-	ID               int64     `db:"id"`
-	OwnerUserID      uuid.UUID `db:"owner_user_id"`
+	ID               int64      `db:"id"`
+	OwnerUserID      uuid.UUID  `db:"owner_user_id"`
 	TeamID           *uuid.UUID `db:"team_id"`
-	Title            string    `db:"title"`
-	AssetType        string    `db:"asset_type"` // "photo" | "video"
-	Status           string    `db:"status"`
-	CurrentVersionID *int64    `db:"current_version_id"`
-	CreatedAt        time.Time `db:"created_at"`
-	UpdatedAt        time.Time `db:"updated_at"`
+	Title            string     `db:"title"`
+	AssetType        string     `db:"asset_type"` // "photo" | "video"
+	Status           string     `db:"status"`
+	DriveFileID      *string    `db:"drive_file_id"`
+	CurrentVersionID *int64     `db:"current_version_id"`
+	CreatedAt        time.Time  `db:"created_at"`
+	UpdatedAt        time.Time  `db:"updated_at"`
 }
+
+const (
+	StorageProviderBlob        = "blob"
+	StorageProviderGoogleDrive = "google_drive"
+)
