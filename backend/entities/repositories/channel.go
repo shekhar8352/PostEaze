@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"database/sql"
+	"time"
 
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/utils/database"
@@ -113,6 +114,16 @@ func CreateChannelToken(ctx context.Context, tx *sql.Tx, token *entities.Channel
 		token.ExpiresAt,
 		token.Revoked,
 	).Scan(&token.ID, &token.IssuedAt, &token.CreatedAt)
+}
+
+func UpdateChannelTokenAccess(ctx context.Context, tokenID int64, accessToken []byte, expiresAt *time.Time) error {
+	q := `
+		UPDATE channel_tokens
+		SET access_token = $2, expires_at = $3, last_used_at = NOW()
+		WHERE id = $1
+	`
+	_, err := database.GetDB().ExecContext(ctx, q, tokenID, accessToken, expiresAt)
+	return err
 }
 
 func GetLatestTokenByChannelID(ctx context.Context, channelID int64) (*entities.ChannelToken, error) {

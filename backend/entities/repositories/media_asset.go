@@ -13,12 +13,12 @@ import (
 func CreateMediaAsset(ctx context.Context, a *entities.MediaAsset) error {
 	db := database.GetDB()
 	q := `
-		INSERT INTO media_assets (owner_user_id, team_id, title, asset_type, status)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO media_assets (owner_user_id, team_id, title, asset_type, status, drive_file_id)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id, created_at, updated_at
 	`
 	return db.QueryRowContext(ctx, q,
-		a.OwnerUserID, a.TeamID, a.Title, a.AssetType, a.Status,
+		a.OwnerUserID, a.TeamID, a.Title, a.AssetType, a.Status, a.DriveFileID,
 	).Scan(&a.ID, &a.CreatedAt, &a.UpdatedAt)
 }
 
@@ -26,14 +26,14 @@ func GetMediaAssetByID(ctx context.Context, id int64, ownerID uuid.UUID) (*entit
 	db := database.GetDB()
 	q := `
 		SELECT id, owner_user_id, team_id, title, asset_type, status,
-		       current_version_id, created_at, updated_at
+		       drive_file_id, current_version_id, created_at, updated_at
 		FROM media_assets
 		WHERE id = $1 AND owner_user_id = $2
 	`
 	var a entities.MediaAsset
 	err := db.QueryRowContext(ctx, q, id, ownerID).Scan(
 		&a.ID, &a.OwnerUserID, &a.TeamID, &a.Title, &a.AssetType,
-		&a.Status, &a.CurrentVersionID, &a.CreatedAt, &a.UpdatedAt,
+		&a.Status, &a.DriveFileID, &a.CurrentVersionID, &a.CreatedAt, &a.UpdatedAt,
 	)
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -57,7 +57,7 @@ func ListMediaAssets(ctx context.Context, f ListMediaAssetsFilters) ([]entities.
 	countBase := `SELECT COUNT(*) FROM media_assets WHERE owner_user_id = $1`
 	queryBase := `
 		SELECT id, owner_user_id, team_id, title, asset_type, status,
-		       current_version_id, created_at, updated_at
+		       drive_file_id, current_version_id, created_at, updated_at
 		FROM media_assets
 		WHERE owner_user_id = $1
 	`
@@ -89,7 +89,7 @@ func ListMediaAssets(ctx context.Context, f ListMediaAssetsFilters) ([]entities.
 		var a entities.MediaAsset
 		if err := rows.Scan(
 			&a.ID, &a.OwnerUserID, &a.TeamID, &a.Title, &a.AssetType,
-			&a.Status, &a.CurrentVersionID, &a.CreatedAt, &a.UpdatedAt,
+			&a.Status, &a.DriveFileID, &a.CurrentVersionID, &a.CreatedAt, &a.UpdatedAt,
 		); err != nil {
 			return nil, 0, err
 		}
