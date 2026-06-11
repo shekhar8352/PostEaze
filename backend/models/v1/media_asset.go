@@ -36,6 +36,7 @@ type MediaAssetResponse struct {
 	Title            string                 `json:"title"`
 	AssetType        string                 `json:"asset_type"`
 	Status           string                 `json:"status"`
+	DriveFileID      string                 `json:"drive_file_id,omitempty"`
 	CurrentVersionID *int64                 `json:"current_version_id"`
 	Versions         []MediaVersionResponse `json:"versions,omitempty"`
 	CreatedAt        string                 `json:"created_at"`
@@ -43,16 +44,20 @@ type MediaAssetResponse struct {
 }
 
 type MediaVersionResponse struct {
-	ID            int64  `json:"id"`
-	VersionNumber int    `json:"version_number"`
-	Label         string `json:"label"`
-	BlobURL       string `json:"blob_url"`
-	FileName      string `json:"file_name"`
-	ContentType   string `json:"content_type"`
-	FileSize      int64  `json:"file_size"`
-	Metadata      any    `json:"metadata"`
-	Notes         string `json:"notes"`
-	CreatedAt     string `json:"created_at"`
+	ID              int64  `json:"id"`
+	VersionNumber   int    `json:"version_number"`
+	Label           string `json:"label"`
+	StorageProvider string `json:"storage_provider"`
+	BlobURL         string `json:"blob_url"`
+	StreamURL       string `json:"stream_url,omitempty"`
+	DriveFileID     string `json:"drive_file_id,omitempty"`
+	DriveRevisionID string `json:"drive_revision_id,omitempty"`
+	FileName        string `json:"file_name"`
+	ContentType     string `json:"content_type"`
+	FileSize        int64  `json:"file_size"`
+	Metadata        any    `json:"metadata"`
+	Notes           string `json:"notes"`
+	CreatedAt       string `json:"created_at"`
 }
 
 type MediaAssetListResponse struct {

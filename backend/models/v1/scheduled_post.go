@@ -4,9 +4,10 @@ import "time"
 
 // ScheduledMediaItem is one URL in the media JSON payload.
 type ScheduledMediaItem struct {
-	URL            string `json:"url" binding:"required"`
+	URL            string `json:"url"`
 	Kind           string `json:"kind" binding:"required"` // image | video
-	MediaAssetID   *int64 `json:"media_asset_id,omitempty"` // when set, asset is marked published after successful post
+	MediaAssetID   *int64 `json:"media_asset_id,omitempty"`
+	MediaVersionID *int64 `json:"media_version_id,omitempty"`
 }
 
 // CreateScheduledPostRequest is the body for POST /scheduled-posts.
