@@ -64,7 +64,13 @@ func ExecuteInstagramPublishAtScheduledTime(ctx context.Context, scheduledPostID
 	pubPayload.ScheduledAt = time.Time{}
 
 	successN := 0
-	channelIDs := []int64(sp.ChannelIDs)
+	var channelIDs []int64
+	for _, cid := range sp.ChannelIDs {
+		ch, err := repositories.GetChannelByID(ctx, cid)
+		if err == nil && ch != nil && ch.Provider == "instagram" {
+			channelIDs = append(channelIDs, cid)
+		}
+	}
 	for _, cid := range channelIDs {
 		tok, err := repositories.GetLatestTokenByChannelID(ctx, cid)
 		if err != nil {
@@ -186,6 +192,8 @@ func mustInstagramFetchableMediaURL(s string) error {
 	path := strings.ToLower(u.Path)
 	q := strings.ToLower(u.RawQuery)
 	switch {
+	case strings.Contains(path, "/media/stream/"):
+		return nil
 	case strings.Contains(host, "drive.google.com"):
 		if strings.Contains(path, "/file/d/") || strings.Contains(path, "/file/u/") ||
 			strings.HasPrefix(path, "/open") {
