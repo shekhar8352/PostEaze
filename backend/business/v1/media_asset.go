@@ -6,12 +6,14 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/shekhar8352/PostEaze/entities"
 	"github.com/shekhar8352/PostEaze/entities/repositories"
 	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 	"github.com/shekhar8352/PostEaze/utils/blobstore"
+	"github.com/shekhar8352/PostEaze/utils/mediasign"
 )
 
 const maxUploadSize = 50 << 20 // 50 MB
@@ -69,16 +71,17 @@ func CreateMediaAsset(ctx context.Context, userIDStr string, req *modelsv1.Creat
 	}
 
 	version := &entities.MediaVersion{
-		MediaAssetID:  asset.ID,
-		VersionNumber: 1,
-		Label:         label,
-		BlobURL:       upload.URL,
-		BlobPathKey:   upload.Pathname,
-		FileName:      req.Title,
-		ContentType:   upload.ContentType,
-		FileSize:      upload.FileSize,
-		Metadata:      []byte(`{}`),
-		Notes:         "",
+		MediaAssetID:    asset.ID,
+		VersionNumber:   1,
+		Label:           label,
+		StorageProvider: entities.StorageProviderBlob,
+		BlobURL:         upload.URL,
+		BlobPathKey:     upload.Pathname,
+		FileName:        req.Title,
+		ContentType:     upload.ContentType,
+		FileSize:        upload.FileSize,
+		Metadata:        []byte(`{}`),
+		Notes:           "",
 	}
 	if err := repositories.CreateMediaVersion(ctx, version); err != nil {
 		return nil, 500, fmt.Errorf("create version: %w", err)
@@ -243,16 +246,17 @@ func AddVersion(ctx context.Context, userIDStr string, assetID int64, req *model
 	}
 
 	version := &entities.MediaVersion{
-		MediaAssetID:  assetID,
-		VersionNumber: nextNum,
-		Label:         label,
-		BlobURL:       upload.URL,
-		BlobPathKey:   upload.Pathname,
-		FileName:      upload.Pathname,
-		ContentType:   upload.ContentType,
-		FileSize:      upload.FileSize,
-		Metadata:      []byte(`{}`),
-		Notes:         req.Notes,
+		MediaAssetID:    assetID,
+		VersionNumber:   nextNum,
+		Label:           label,
+		StorageProvider: entities.StorageProviderBlob,
+		BlobURL:         upload.URL,
+		BlobPathKey:     upload.Pathname,
+		FileName:        upload.Pathname,
+		ContentType:     upload.ContentType,
+		FileSize:        upload.FileSize,
+		Metadata:        []byte(`{}`),
+		Notes:           req.Notes,
 	}
 	if err := repositories.CreateMediaVersion(ctx, version); err != nil {
 		return nil, 500, err
@@ -291,8 +295,10 @@ func DeleteVersion(ctx context.Context, userIDStr string, assetID int64, version
 		return 500, err
 	}
 
-	if store := blobstore.Get(); store != nil {
-		_ = store.Delete(ctx, []string{version.BlobURL})
+	if version.StorageProvider == entities.StorageProviderBlob && version.BlobURL != "" {
+		if store := blobstore.Get(); store != nil {
+			_ = store.Delete(ctx, []string{version.BlobURL})
+		}
 	}
 
 	if asset.CurrentVersionID != nil && *asset.CurrentVersionID == versionID {
@@ -366,7 +372,17 @@ func PublishMediaAsset(ctx context.Context, userIDStr string, assetID int64, req
 		mediaKind = "video"
 	}
 
+	if err := ValidateMediaForInstagram(version, postType); err != nil {
+		return nil, 400, err
+	}
+
+	mediaURL, err := ResolveVersionMediaURL(version)
+	if err != nil {
+		return nil, 400, err
+	}
+
 	assetIDCopy := assetID
+	versionIDCopy := version.ID
 	schedReq := &modelsv1.CreateScheduledPostRequest{
 		ChannelIDs: req.ChannelIDs,
 		Platforms:  []string{"instagram"},
@@ -375,7 +391,7 @@ func PublishMediaAsset(ctx context.Context, userIDStr string, assetID int64, req
 		Caption:    req.Caption,
 		Media: modelsv1.ScheduledMediaPayload{
 			Items: []modelsv1.ScheduledMediaItem{
-				{Kind: mediaKind, URL: version.BlobURL, MediaAssetID: &assetIDCopy},
+				{Kind: mediaKind, URL: mediaURL, MediaAssetID: &assetIDCopy, MediaVersionID: &versionIDCopy},
 			},
 		},
 	}
@@ -401,6 +417,9 @@ func mapAssetToResponse(a *entities.MediaAsset, versions []entities.MediaVersion
 		CreatedAt:        modelsv1.FormatTime(a.CreatedAt),
 		UpdatedAt:        modelsv1.FormatTime(a.UpdatedAt),
 	}
+	if a.DriveFileID != nil {
+		resp.DriveFileID = *a.DriveFileID
+	}
 	if versions != nil {
 		resp.Versions = make([]modelsv1.MediaVersionResponse, 0, len(versions))
 		for i := range versions {
@@ -413,18 +432,35 @@ func mapAssetToResponse(a *entities.MediaAsset, versions []entities.MediaVersion
 func mapVersionToResponse(v *entities.MediaVersion) *modelsv1.MediaVersionResponse {
 	var meta any
 	_ = json.Unmarshal(v.Metadata, &meta)
-	return &modelsv1.MediaVersionResponse{
-		ID:            v.ID,
-		VersionNumber: v.VersionNumber,
-		Label:         v.Label,
-		BlobURL:       v.BlobURL,
-		FileName:      v.FileName,
-		ContentType:   v.ContentType,
-		FileSize:      v.FileSize,
-		Metadata:      meta,
-		Notes:         v.Notes,
-		CreatedAt:     modelsv1.FormatTime(v.CreatedAt),
+	sp := v.StorageProvider
+	if sp == "" {
+		sp = entities.StorageProviderBlob
 	}
+	resp := &modelsv1.MediaVersionResponse{
+		ID:              v.ID,
+		VersionNumber:   v.VersionNumber,
+		Label:           v.Label,
+		StorageProvider: sp,
+		BlobURL:         v.BlobURL,
+		FileName:        v.FileName,
+		ContentType:     v.ContentType,
+		FileSize:        v.FileSize,
+		Metadata:        meta,
+		Notes:           v.Notes,
+		CreatedAt:       modelsv1.FormatTime(v.CreatedAt),
+	}
+	if v.DriveFileID != nil {
+		resp.DriveFileID = *v.DriveFileID
+	}
+	if v.DriveRevisionID != nil {
+		resp.DriveRevisionID = *v.DriveRevisionID
+	}
+	if sp == entities.StorageProviderGoogleDrive {
+		if streamURL, err := mediasign.SignedStreamURL(v.ID, 6*time.Hour); err == nil {
+			resp.StreamURL = streamURL
+		}
+	}
+	return resp
 }
 
 func extensionFromContentType(ct string) string {

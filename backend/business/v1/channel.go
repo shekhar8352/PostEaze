@@ -4,13 +4,37 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
 
 	"github.com/google/uuid"
 	"github.com/shekhar8352/PostEaze/entities/repositories"
 	modelsv1 "github.com/shekhar8352/PostEaze/models/v1"
 	"github.com/shekhar8352/PostEaze/services/instagram_service"
+	"github.com/shekhar8352/PostEaze/services/youtube_service"
 	"github.com/shekhar8352/PostEaze/utils/encryption"
 )
+
+func CreateYouTubeChannel(ctx context.Context, req modelsv1.CreateYouTubeChannelRequest, userID string) (*modelsv1.CreateYouTubeChannelResponse, error) {
+	ownerUserID, err := uuid.Parse(userID)
+	if err != nil {
+		return nil, err
+	}
+	svc := youtube_service.NewYouTubeService()
+	redirectURI := req.RedirectURI
+	if redirectURI == "" {
+		redirectURI = os.Getenv("GOOGLE_OAUTH_REDIRECT_URI")
+	}
+	// Redirect URI is validated inside service via env; pass code only
+	_ = redirectURI
+	ch, err := svc.CreateChannel(ctx, req.Code, ownerUserID, nil)
+	if err != nil {
+		return nil, err
+	}
+	return &modelsv1.CreateYouTubeChannelResponse{
+		ChannelID:   ch.ChannelID,
+		ChannelName: ch.ChannelName,
+	}, nil
+}
 
 func CreateInstagramChannel(ctx context.Context, req modelsv1.CreateInstagramChannelRequest, userID string) (*modelsv1.CreateInstagramChannelResponse, error) {
 	service := instagram_service.NewInstagramService()
