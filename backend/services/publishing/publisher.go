@@ -8,6 +8,7 @@ import (
 // Platform identifiers for multi-platform expansion.
 const (
 	PlatformInstagram = "instagram"
+	PlatformYouTube   = "youtube"
 )
 
 // SchedulePayload is platform-agnostic input for a single channel publish attempt.
