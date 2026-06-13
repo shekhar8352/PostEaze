@@ -20,6 +20,7 @@ import { useReducedMotion } from "@mantine/hooks";
 import { DateTimePicker } from "@mantine/dates";
 import {
   IconBrandInstagram,
+  IconBrandYoutube,
   IconCircleCheck,
   IconClock,
   IconPhotoPlus,
@@ -28,6 +29,7 @@ import {
 import type { BaseChannelDisplay } from "@/features/channels/types/base.types";
 import { useMediaAssets } from "@/features/media-workspace/hooks/useMediaQueries";
 import type { MediaAsset } from "@/features/media-workspace/types";
+import { currentVersionForAsset, versionMediaUrl } from "@/features/media-workspace/types";
 import { useCreateScheduledPost } from "../hooks/useScheduledPostsQueries";
 import type { PostType } from "../types";
 import styles from "./SchedulePostModal.module.css";
@@ -76,12 +78,12 @@ function instagramMediaUrlHint(url: string): string | null {
 }
 
 function publishUrlForAsset(asset: MediaAsset): string | null {
-  const v =
-    asset.current_version_id != null
-      ? asset.versions?.find((x) => x.id === asset.current_version_id)
-      : asset.versions?.[0];
-  const u = v?.blob_url?.trim();
-  return u && u.startsWith("https://") ? u : null;
+  return versionMediaUrl(currentVersionForAsset(asset));
+}
+
+function versionIdForAsset(asset: MediaAsset): number | null {
+  const v = currentVersionForAsset(asset);
+  return v?.id ?? null;
 }
 
 function defaultSlotString(initial: Date | null): string {
@@ -123,7 +125,10 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
   const [contentError, setContentError] = useState<string | null>(null);
 
   const assetsReady = useMemo(() => {
-    return (mediaList?.assets ?? []).filter((a) => publishUrlForAsset(a) != null);
+    return (mediaList?.assets ?? []).filter((a) => {
+      const v = currentVersionForAsset(a);
+      return v != null && (publishUrlForAsset(a) != null || v.id > 0);
+    });
   }, [mediaList]);
 
   const photoAssets = useMemo(
@@ -164,19 +169,40 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     setContentError(null);
   }, [postType, selectedAssetId, carouselAssetIds]);
 
-  const igChannels = useMemo(
-    () => channels.filter((c) => c.provider === "instagram"),
+  const scheduleChannels = useMemo(
+    () => channels.filter((c) => c.provider === "instagram" || c.provider === "youtube"),
     [channels]
   );
 
   const channelOptions = useMemo(
     () =>
-      igChannels.map((c) => ({
+      scheduleChannels.map((c) => ({
         value: String(c.channel_id),
-        label: c.channelName || `Channel ${c.channel_id}`,
+        label: `${c.channelName || `Channel ${c.channel_id}`} (${c.provider})`,
       })),
-    [igChannels]
+    [scheduleChannels]
   );
+
+  const selectedChannelMeta = useMemo(
+    () => scheduleChannels.filter((c) => channelValues.includes(String(c.channel_id))),
+    [scheduleChannels, channelValues]
+  );
+
+  const selectedPlatforms = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of selectedChannelMeta) set.add(c.provider);
+    return Array.from(set);
+  }, [selectedChannelMeta]);
+
+  const hasYouTube = selectedPlatforms.includes("youtube");
+  const hasInstagram = selectedPlatforms.includes("instagram");
+  const youtubeOnly = hasYouTube && !hasInstagram;
+
+  useEffect(() => {
+    if (youtubeOnly && postType !== "video") {
+      setPostType("video");
+    }
+  }, [youtubeOnly, postType]);
 
   const photoSelectData = useMemo(
     () =>
@@ -222,24 +248,36 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
   const canNextStep1 = channelValues.length > 0;
 
   const buildMediaItems = () => {
+    const pack = (a: MediaAsset, kind: "image" | "video") => {
+      const url = publishUrlForAsset(a);
+      const media_version_id = versionIdForAsset(a) ?? undefined;
+      if (!url && !media_version_id) return null;
+      return {
+        ...(url ? { url } : {}),
+        kind,
+        media_asset_id: a.id,
+        media_version_id,
+      };
+    };
     if (postType === "image") {
       if (!selectedAssetId) return [];
       const a = assetById.get(Number(selectedAssetId));
       if (!a) return [];
-      const url = publishUrlForAsset(a);
-      return url ? [{ url, kind: "image" as const, media_asset_id: a.id }] : [];
+      const item = pack(a, "image");
+      return item ? [item] : [];
     }
     if (postType === "video") {
       if (!selectedAssetId) return [];
       const a = assetById.get(Number(selectedAssetId));
       if (!a) return [];
-      const url = publishUrlForAsset(a);
-      return url ? [{ url, kind: "video" as const, media_asset_id: a.id }] : [];
+      const item = pack(a, "video");
+      return item ? [item] : [];
     }
     return carouselAssetIds
       .map((id) => assetById.get(Number(id)))
       .filter((a): a is MediaAsset => Boolean(a))
-      .map((a) => ({ url: publishUrlForAsset(a)!, kind: "image" as const, media_asset_id: a.id }));
+      .map((a) => pack(a, "image"))
+      .filter((x): x is NonNullable<typeof x> => x != null);
   };
 
   const validateStep2 = (): string | null => {
@@ -247,14 +285,23 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
     if (postType === "image") {
       if (!selectedAssetId) return "Select a photo from your workspace";
       if (items.length !== 1) return "Selected photo has no usable HTTPS URL (add a version in Media Workspace)";
-      const hint = instagramMediaUrlHint(items[0].url);
-      if (hint) return hint;
+      if (items[0].url) {
+        const hint = instagramMediaUrlHint(items[0].url);
+        if (hint) return hint;
+      }
     }
     if (postType === "video") {
       if (!selectedAssetId) return "Select a video from your workspace";
-      if (items.length !== 1) return "Selected video has no usable HTTPS URL (add a version in Media Workspace)";
-      const hint = instagramMediaUrlHint(items[0].url);
-      if (hint) return hint;
+      if (items.length !== 1) {
+        return "Selected video has no current version (add a version in Media Workspace)";
+      }
+      if (hasInstagram && items[0].url) {
+        const hint = instagramMediaUrlHint(items[0].url);
+        if (hint) return hint;
+      }
+      if (hasYouTube && !items[0].media_version_id && !items[0].url) {
+        return "YouTube requires a video version from Media Workspace";
+      }
     }
     if (postType === "carousel") {
       if (carouselAssetIds.length < 2 || carouselAssetIds.length > 10) {
@@ -268,6 +315,7 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
       }
       if (items.length < 2) return "Could not resolve media for all selected photos";
       for (const i of items) {
+        if (!i.url) continue;
         const hint = instagramMediaUrlHint(i.url);
         if (hint) return hint;
       }
@@ -287,24 +335,22 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
       if (!scheduledAt.isValid()) return;
     }
     const channelIds = channelValues.map((v) => Number(v));
+    const platforms =
+      selectedPlatforms.length > 0 ? selectedPlatforms : (["instagram"] as string[]);
+    const base = {
+      channel_ids: channelIds,
+      platforms,
+      post_type: postType,
+      caption: caption.trim(),
+      media: { items: buildMediaItems() },
+    };
     const body =
       timingMode === "now"
-        ? {
-            channel_ids: channelIds,
-            platforms: ["instagram"],
-            publish_now: true,
-            post_type: postType,
-            caption: caption.trim(),
-            media: { items: buildMediaItems() },
-          }
+        ? { ...base, publish_now: true }
         : {
-            channel_ids: channelIds,
-            platforms: ["instagram"],
+            ...base,
             publish_now: false,
             scheduled_at: dayjs(scheduledAtStr!).toDate().toISOString(),
-            post_type: postType,
-            caption: caption.trim(),
-            media: { items: buildMediaItems() },
           };
     try {
       await createMutation.mutateAsync(body);
@@ -323,13 +369,23 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
   const modalTitle = (
     <div className={styles.titleBlock}>
       <div className={styles.kicker}>
-        <IconBrandInstagram size={14} stroke={1.75} aria-hidden />
-        Instagram
+        {hasYouTube ? (
+          <IconBrandYoutube size={14} stroke={1.75} aria-hidden />
+        ) : (
+          <IconBrandInstagram size={14} stroke={1.75} aria-hidden />
+        )}
+        {hasYouTube && hasInstagram
+          ? "Instagram & YouTube"
+          : hasYouTube
+            ? "YouTube"
+            : "Instagram"}
       </div>
       <Title order={3} className={styles.title}>
         New post
       </Title>
-      <Text className={styles.subtitle}>Schedule or publish feed content in four short steps—timing, channels, media, review.</Text>
+      <Text className={styles.subtitle}>
+        Schedule or publish to Instagram and/or YouTube—timing, channels, media, review.
+      </Text>
     </div>
   );
 
@@ -425,16 +481,16 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
             {channelOptions.length === 0 ? (
               <div className={styles.emptyChannels}>
                 <Text size="sm" fw={600} c="var(--pe-text)">
-                  No Instagram channels yet
+                  No channels yet
                 </Text>
                 <Text size="sm" mt={6} className={styles.hint}>
-                  Connect an Instagram account in Channels, then return here to schedule.
+                  Connect Instagram or YouTube in Channels, then return here to schedule.
                 </Text>
               </div>
             ) : (
               <MultiSelect
                 label="Channels"
-                description="Pick every account that should receive this post"
+                description="Instagram supports image, video, and carousel. YouTube supports video only."
                 placeholder="Select one or more"
                 data={channelOptions}
                 value={channelValues}
@@ -467,15 +523,26 @@ export function SchedulePostModal({ opened, onClose, initialStart, channels }: S
                 fullWidth
                 color="blue"
                 classNames={MODAL_SEGMENTED_CLASS_NAMES}
-                data={POST_TYPES.map((p) => ({ value: p.value, label: p.label }))}
+                data={POST_TYPES.filter((p) =>
+                  youtubeOnly ? p.value === "video" : true
+                ).map((p) => ({ value: p.value, label: p.label }))}
                 value={postType}
                 onChange={(v) => setPostType(v as PostType)}
+                disabled={youtubeOnly}
               />
             </div>
             <Textarea
-              label="Caption"
-              description="Optional — appears below your media on Instagram"
-              placeholder="Write something your audience will want to engage with…"
+              label={hasYouTube ? "Title / caption" : "Caption"}
+              description={
+                hasYouTube
+                  ? "Used as the YouTube video title (and Instagram caption when both are selected)"
+                  : "Optional — appears below your media on Instagram"
+              }
+              placeholder={
+                hasYouTube
+                  ? "Video title for YouTube…"
+                  : "Write something your audience will want to engage with…"
+              }
               minRows={3}
               autosize
               minLength={0}

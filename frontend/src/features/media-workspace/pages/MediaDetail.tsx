@@ -41,7 +41,9 @@ import { useMediaWorkspaceSurfaces } from "../hooks/useMediaWorkspaceSurfaces";
 import { VersionTimeline } from "../components/VersionTimeline";
 import { VersionCompare } from "../components/VersionCompare";
 import { AddVersionModal } from "../components/AddVersionModal";
+import { DriveRevisionsPanel } from "../components/DriveRevisionsPanel";
 import type { MediaVersion } from "../types";
+import { versionMediaUrl } from "../types";
 
 const statusConfig: Record<string, { color: string; label: string }> = {
   draft: { color: "gray", label: "Draft" },
@@ -219,11 +221,11 @@ export default function MediaDetail() {
               </ActionIcon>
             </Menu.Target>
             <Menu.Dropdown>
-              {currentVersion && (
+              {currentVersion && versionMediaUrl(currentVersion) && (
                 <Menu.Item
                   leftSection={<IconDownload size={14} />}
                   component="a"
-                  href={currentVersion.blob_url}
+                  href={versionMediaUrl(currentVersion)!}
                   target="_blank"
                   rel="noopener"
                 >
@@ -260,7 +262,7 @@ export default function MediaDetail() {
               {isVideo ? (
                 <video
                   key={currentVersion.id}
-                  src={currentVersion.blob_url}
+                  src={versionMediaUrl(currentVersion) ?? undefined}
                   controls
                   style={{
                     width: "100%",
@@ -283,7 +285,7 @@ export default function MediaDetail() {
                 >
                   <Image
                     key={currentVersion.id}
-                    src={currentVersion.blob_url}
+                    src={versionMediaUrl(currentVersion) ?? undefined}
                     alt={currentVersion.label}
                     fit="contain"
                     mah={560}
@@ -304,6 +306,11 @@ export default function MediaDetail() {
                     <Badge size="sm" variant="light" color="blue">
                       v{currentVersion.version_number}
                     </Badge>
+                    {currentVersion.storage_provider === "google_drive" && (
+                      <Badge size="sm" variant="light" color="violet">
+                        Drive
+                      </Badge>
+                    )}
                     <Text size="sm" fw={500} c="var(--mantine-color-text)">
                       {currentVersion.label}
                     </Text>
@@ -408,6 +415,10 @@ export default function MediaDetail() {
           </Paper>
         </Grid.Col>
       </Grid>
+
+      {asset.drive_file_id && (
+        <DriveRevisionsPanel assetId={id} driveFileId={asset.drive_file_id} />
+      )}
 
       <AddVersionModal
         opened={addVersionOpen}
