@@ -13,6 +13,7 @@ const (
 	TypeSyncInstagramAnalytics         = "instagram:sync_analytics"
 	TypeSyncInstagramComments          = "instagram:sync_comments"
 	TypeInstagramScheduledPostPublish = "instagram:scheduled_post_publish"
+	TypeYouTubeScheduledPostPublish   = "youtube:scheduled_post_publish"
 )
 
 // Queue Names

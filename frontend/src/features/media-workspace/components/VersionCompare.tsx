@@ -12,6 +12,7 @@ import {
 } from "@mantine/core";
 import { IconArrowRight, IconPhoto } from "@tabler/icons-react";
 import type { MediaVersion } from "../types";
+import { versionMediaUrl } from "../types";
 import { useMediaWorkspaceSurfaces } from "../hooks/useMediaWorkspaceSurfaces";
 
 interface VersionCompareProps {
@@ -98,7 +99,7 @@ function VersionPanel({
       {/* Media */}
       {isVideo ? (
         <video
-          src={version.blob_url}
+          src={versionMediaUrl(version) ?? undefined}
           controls
           style={{
             width: "100%",
@@ -120,7 +121,7 @@ function VersionPanel({
           }}
         >
           <Image
-            src={version.blob_url}
+            src={versionMediaUrl(version) ?? undefined}
             alt={version.label}
             fit="contain"
             mah={380}

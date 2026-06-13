@@ -8,10 +8,12 @@ export interface ApiSuccessEnvelope<T> {
 export type PostType = "image" | "video" | "carousel";
 
 export interface ScheduledMediaItem {
-  url: string;
+  url?: string;
   kind: "image" | "video";
   /** When set, backend marks this workspace asset `published` after a successful Instagram post */
   media_asset_id?: number;
+  /** Preferred for Drive-backed and YouTube uploads */
+  media_version_id?: number;
 }
 
 export interface CreateScheduledPostRequest {

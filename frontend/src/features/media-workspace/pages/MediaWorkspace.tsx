@@ -20,6 +20,7 @@ import {
   IconUpload,
   IconSearch,
   IconCloudUpload,
+  IconBrandGoogleDrive,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { notifications } from "@mantine/notifications";
@@ -30,6 +31,8 @@ import { useMediaWorkspaceSurfaces } from "../hooks/useMediaWorkspaceSurfaces";
 import { LinkToPieceModal } from "@/features/studio/components/LinkToPieceModal";
 import { useLinkAsset } from "@/features/studio/hooks/useStudioQueries";
 import type { MediaAsset } from "../types";
+import { GoogleDriveConnectCard } from "@/features/integrations/components/GoogleDriveConnectCard";
+import { DriveImportModal } from "../components/DriveImportModal";
 
 const PAGE_SIZE = 20;
 
@@ -37,6 +40,7 @@ export default function MediaWorkspace() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [driveImportOpen, setDriveImportOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [linkAssetTarget, setLinkAssetTarget] = useState<MediaAsset | null>(
     null
@@ -74,31 +78,44 @@ export default function MediaWorkspace() {
             Upload and version assets; schedule or publish from the Calendar
           </Text>
         </Box>
-        <Button
-          size="md"
-          radius="md"
-          leftSection={<IconUpload size={18} />}
-          onClick={() => setUploadOpen(true)}
-          variant="gradient"
-          gradient={{ from: "blue", to: "cyan", deg: 135 }}
-          style={{
-            boxShadow: "0 4px 12px rgba(34,139,230,0.25)",
-            transition: "transform 150ms ease, box-shadow 150ms ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.transform = "translateY(-1px)";
-            e.currentTarget.style.boxShadow =
-              "0 6px 16px rgba(34,139,230,0.35)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow =
-              "0 4px 12px rgba(34,139,230,0.25)";
-          }}
-        >
-          Upload Media
-        </Button>
+        <Group gap="sm">
+          <Button
+            size="md"
+            radius="md"
+            variant="light"
+            leftSection={<IconBrandGoogleDrive size={18} />}
+            onClick={() => setDriveImportOpen(true)}
+          >
+            Import from Drive
+          </Button>
+          <Button
+            size="md"
+            radius="md"
+            leftSection={<IconUpload size={18} />}
+            onClick={() => setUploadOpen(true)}
+            variant="gradient"
+            gradient={{ from: "blue", to: "cyan", deg: 135 }}
+            style={{
+              boxShadow: "0 4px 12px rgba(34,139,230,0.25)",
+              transition: "transform 150ms ease, box-shadow 150ms ease",
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.transform = "translateY(-1px)";
+              e.currentTarget.style.boxShadow =
+                "0 6px 16px rgba(34,139,230,0.35)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "translateY(0)";
+              e.currentTarget.style.boxShadow =
+                "0 4px 12px rgba(34,139,230,0.25)";
+            }}
+          >
+            Upload Media
+          </Button>
+        </Group>
       </Group>
+
+      <GoogleDriveConnectCard />
 
       {/* Filter + Search bar */}
       <Paper p="sm" radius="lg" withBorder>
@@ -248,6 +265,11 @@ export default function MediaWorkspace() {
       <MediaUploader
         opened={uploadOpen}
         onClose={() => setUploadOpen(false)}
+      />
+
+      <DriveImportModal
+        opened={driveImportOpen}
+        onClose={() => setDriveImportOpen(false)}
       />
 
       <LinkToPieceModal

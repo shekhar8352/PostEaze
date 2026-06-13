@@ -68,8 +68,12 @@ func Init() error {
 		addV1PostRoutes(v1)
 		addV1ScheduledPostRoutes(v1)
 		addV1MediaAssetRoutes(v1)
+		addV1IntegrationRoutes(v1)
 		addV1StudioRoutes(v1)
 	}
+
+	// Public signed media stream (no JWT — Meta/YouTube fetch via URL)
+	api.GET("/v1/media/stream/:versionId", apiv1.StreamMediaHandler)
 
 	// Swagger endpoint
 	api.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -128,6 +132,9 @@ func addV1ChannelRoutes(v1 *gin.RouterGroup) {
 	facebookv1 := channelv1.Group(constants.FacebookRoute)
 	facebookv1.POST(constants.CreateFacebookChannel, middleware.AuthMiddleware(), apiv1.CreateFacebookChannelHandler)
 
+	youtubev1 := channelv1.Group("/youtube")
+	youtubev1.POST("/create", middleware.AuthMiddleware(), apiv1.CreateYouTubeChannelHandler)
+
 	webhookv1 := v1.Group(constants.WebhookRoute)
 	webhookv1.GET(constants.InstagramWebhook, webhooks.HandleInstagramWebhookVerify)
 	webhookv1.POST(constants.InstagramWebhook, webhooks.HandleInstagramWebhookEvent)
@@ -158,6 +165,25 @@ func addV1ScheduledPostRoutes(v1 *gin.RouterGroup) {
 		sp.POST("", apiv1.CreateScheduledPostHandler)
 		sp.GET("/:id", apiv1.GetScheduledPostHandler)
 		sp.DELETE("/:id", apiv1.CancelScheduledPostHandler)
+	}
+}
+
+func addV1IntegrationRoutes(v1 *gin.RouterGroup) {
+	gd := v1.Group("/integrations/google-drive")
+	gd.Use(middleware.AuthMiddleware())
+	{
+		gd.POST("/connect", apiv1.ConnectGoogleDriveHandler)
+		gd.GET("", apiv1.GetGoogleDriveStatusHandler)
+		gd.DELETE("", apiv1.DisconnectGoogleDriveHandler)
+		gd.GET("/files", apiv1.ListGoogleDriveFilesHandler)
+		gd.GET("/files/:fileId/revisions", apiv1.ListGoogleDriveRevisionsHandler)
+	}
+
+	assets := v1.Group("/media-assets")
+	assets.Use(middleware.AuthMiddleware())
+	{
+		assets.POST("/import/google-drive", apiv1.ImportGoogleDriveHandler)
+		assets.POST("/:id/versions/import-drive-revision", apiv1.ImportDriveRevisionHandler)
 	}
 }
 

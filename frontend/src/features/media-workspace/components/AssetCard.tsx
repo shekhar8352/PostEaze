@@ -71,7 +71,8 @@ export function AssetCard({
   const currentVersion =
     versions?.find((v) => v.id === asset.current_version_id) ??
     (versions?.length ? versions[versions.length - 1] : undefined);
-  const thumbnailUrl = currentVersion?.blob_url;
+  const thumbnailUrl =
+    currentVersion?.stream_url?.trim() || currentVersion?.blob_url;
   const isVideo = asset.asset_type === "video";
   const cfg = statusConfig[asset.status] ?? statusConfig.draft;
 

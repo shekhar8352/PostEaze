@@ -48,21 +48,22 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 			return nil, 400, err
 		}
 	}
+	if err := resolveScheduledMediaItems(ctx, ownerID, &req.Media, req.PostType); err != nil {
+		return nil, 400, err
+	}
 	payload, err := buildSchedulePayload(req)
 	if err != nil {
 		return nil, 400, err
 	}
-	for _, cid := range req.ChannelIDs {
-		ok, ch, err := repositories.UserCanAccessChannel(ctx, cid, userIDStr)
-		if err != nil || ch == nil {
-			return nil, 403, fmt.Errorf("channel %d not found or inaccessible", cid)
-		}
-		if !ok {
-			return nil, 403, fmt.Errorf("no access to channel %d", cid)
-		}
-		if ch.Provider != "instagram" {
-			return nil, 400, fmt.Errorf("channel %d is not an Instagram channel", cid)
-		}
+	igChannels, ytChannels, err := validateAndPartitionChannels(ctx, userIDStr, req)
+	if err != nil {
+		return nil, 400, err
+	}
+	if len(igChannels) == 0 && len(ytChannels) == 0 {
+		return nil, 400, fmt.Errorf("no valid channels for selected platforms")
+	}
+	if len(ytChannels) > 0 && req.PostType != "video" {
+		return nil, 400, fmt.Errorf("youtube only supports video post type")
 	}
 
 	mediaJSON, err := json.Marshal(req.Media)
@@ -102,30 +103,45 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 		}
 	}
 
-	// Future posts: queue Asynq job at scheduled_at; Meta does not document scheduled_publish_time on IG /media.
+	// Future posts: queue Asynq jobs at scheduled_at.
 	if !req.PublishNow {
 		stateMap := map[string]any{
 			"publish_now": false,
 			"queue":       "asynq",
 			"run_at_utc":  schedUTC.Format(time.RFC3339),
 			"instagram":   map[string]any{"channels": map[string]any{}},
+			"youtube":     map[string]any{"channels": map[string]any{}},
 		}
-		channelsMap, _ := stateMap["instagram"].(map[string]any)
-		inner, _ := channelsMap["channels"].(map[string]any)
 		results := make([]modelsv1.ChannelScheduleResult, 0, len(req.ChannelIDs))
-		for _, cid := range req.ChannelIDs {
-			results = append(results, modelsv1.ChannelScheduleResult{ChannelID: cid, Success: true})
-			inner[fmt.Sprintf("%d", cid)] = map[string]any{"status": "queued"}
+		if igInner, ok := stateMap["instagram"].(map[string]any); ok {
+			if inner, ok := igInner["channels"].(map[string]any); ok {
+				for _, cid := range igChannels {
+					results = append(results, modelsv1.ChannelScheduleResult{ChannelID: cid, Success: true})
+					inner[fmt.Sprintf("%d", cid)] = map[string]any{"status": "queued"}
+				}
+			}
+		}
+		if ytInner, ok := stateMap["youtube"].(map[string]any); ok {
+			if inner, ok := ytInner["channels"].(map[string]any); ok {
+				for _, cid := range ytChannels {
+					results = append(results, modelsv1.ChannelScheduleResult{ChannelID: cid, Success: true})
+					inner[fmt.Sprintf("%d", cid)] = map[string]any{"status": "queued"}
+				}
+			}
 		}
 		stateBytes, _ := json.Marshal(stateMap)
 		if err := repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, string(entities.ScheduledStatusScheduled), stateBytes); err != nil {
 			return nil, 500, err
 		}
-		if _, err := tasks.EnqueueInstagramScheduledPostPublish(sp.ID, schedUTC); err != nil {
-			fail := map[string]any{"error": "enqueue: " + err.Error()}
-			fb, _ := json.Marshal(fail)
-			_ = repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, string(entities.ScheduledStatusFailed), fb)
-			return nil, 500, fmt.Errorf("queue publish job: %w", err)
+		if len(igChannels) > 0 {
+			if _, err := tasks.EnqueueInstagramScheduledPostPublish(sp.ID, schedUTC); err != nil {
+				return nil, 500, fmt.Errorf("queue instagram job: %w", err)
+			}
+		}
+		if len(ytChannels) > 0 {
+			if _, err := tasks.EnqueueYouTubeScheduledPostPublish(sp.ID, schedUTC); err != nil {
+				return nil, 500, fmt.Errorf("queue youtube job: %w", err)
+			}
 		}
 		return &modelsv1.CreateScheduledPostResponse{
 			ScheduledPostID: sp.ID,
@@ -142,12 +158,15 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 	stateMap := map[string]any{
 		"publish_now": req.PublishNow,
 		"instagram":   map[string]any{"channels": map[string]any{}},
+		"youtube":     map[string]any{"channels": map[string]any{}},
 	}
 	channelsMap, _ := stateMap["instagram"].(map[string]any)
 	inner, _ := channelsMap["channels"].(map[string]any)
+	ytChannelsMap, _ := stateMap["youtube"].(map[string]any)
+	ytInner, _ := ytChannelsMap["channels"].(map[string]any)
 
-	successN := 0
-	for _, cid := range req.ChannelIDs {
+	igSuccessN := 0
+	for _, cid := range igChannels {
 		res := modelsv1.ChannelScheduleResult{ChannelID: cid}
 		tok, err := repositories.GetLatestTokenByChannelID(ctx, cid)
 		if err != nil {
@@ -195,7 +214,7 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 			res.Success = true
 			res.CreationID = creationID
 			res.PublishedID = publishedID
-			successN++
+			igSuccessN++
 			inner[fmt.Sprintf("%d", cid)] = map[string]any{
 				"creation_id":          creationID,
 				"published_media_id": publishedID,
@@ -204,15 +223,39 @@ func CreateScheduledPost(ctx context.Context, userIDStr string, req *modelsv1.Cr
 		results = append(results, res)
 	}
 
+	ytQueued := 0
+	for _, cid := range ytChannels {
+		res := modelsv1.ChannelScheduleResult{ChannelID: cid}
+		ytInner[fmt.Sprintf("%d", cid)] = map[string]any{"status": "queued"}
+		res.Success = true
+		ytQueued++
+		results = append(results, res)
+	}
+	if len(ytChannels) > 0 {
+		if _, err := tasks.EnqueueYouTubeScheduledPostPublish(sp.ID, time.Now().UTC()); err != nil {
+			for _, cid := range ytChannels {
+				ytInner[fmt.Sprintf("%d", cid)] = map[string]any{"error": err.Error()}
+			}
+		}
+	}
+
 	stateBytes, _ := json.Marshal(stateMap)
 	overall := "failed"
 	finalStatus := string(entities.ScheduledStatusFailed)
-	if successN == len(req.ChannelIDs) {
-		overall = "published"
-		finalStatus = string(entities.ScheduledStatusPublished)
-	} else if successN > 0 {
+	igDone := len(igChannels) == 0 || igSuccessN == len(igChannels)
+	ytDone := len(ytChannels) == 0 || ytQueued == len(ytChannels)
+	if igDone && ytDone && len(ytChannels) == 0 {
+		if igSuccessN == len(igChannels) {
+			overall = "published"
+			finalStatus = string(entities.ScheduledStatusPublished)
+		} else if igSuccessN > 0 {
+			overall = "partial_failure"
+		}
+	} else if igDone && len(ytChannels) > 0 {
+		overall = "submitting"
+		finalStatus = string(entities.ScheduledStatusSubmitting)
+	} else if igSuccessN > 0 || ytQueued > 0 {
 		overall = "partial_failure"
-		finalStatus = string(entities.ScheduledStatusFailed)
 	}
 	_ = repositories.UpdateScheduledPostStatusAndProviderState(ctx, sp.ID, ownerID, finalStatus, stateBytes)
 
@@ -305,6 +348,9 @@ func mustInstagramFetchableMediaURL(s string) error {
 	q := strings.ToLower(u.RawQuery)
 
 	switch {
+	case strings.Contains(path, "/media/stream/"):
+		// Signed proxy URLs serve raw media bytes for Meta ingestion.
+		return nil
 	case strings.Contains(host, "drive.google.com"):
 		// Viewer/share pages are HTML; Meta cURLs the URL and expects raw JPEG/video bytes.
 		if strings.Contains(path, "/file/d/") || strings.Contains(path, "/file/u/") ||
@@ -323,8 +369,70 @@ func mustInstagramFetchableMediaURL(s string) error {
 
 func validatePlatforms(platforms []string) error {
 	for _, p := range platforms {
-		if p != publishing.PlatformInstagram {
-			return fmt.Errorf("unsupported platform %q (only instagram is available)", p)
+		if p != publishing.PlatformInstagram && p != publishing.PlatformYouTube {
+			return fmt.Errorf("unsupported platform %q", p)
+		}
+	}
+	return nil
+}
+
+func validateAndPartitionChannels(ctx context.Context, userIDStr string, req *modelsv1.CreateScheduledPostRequest) (ig []int64, yt []int64, err error) {
+	platformSet := make(map[string]bool)
+	for _, p := range req.Platforms {
+		platformSet[p] = true
+	}
+	for _, cid := range req.ChannelIDs {
+		ok, ch, e := repositories.UserCanAccessChannel(ctx, cid, userIDStr)
+		if e != nil || ch == nil {
+			return nil, nil, fmt.Errorf("channel %d not found or inaccessible", cid)
+		}
+		if !ok {
+			return nil, nil, fmt.Errorf("no access to channel %d", cid)
+		}
+		switch ch.Provider {
+		case "instagram":
+			if !platformSet[publishing.PlatformInstagram] {
+				return nil, nil, fmt.Errorf("channel %d is instagram but instagram not in platforms", cid)
+			}
+			ig = append(ig, cid)
+		case "youtube":
+			if !platformSet[publishing.PlatformYouTube] {
+				return nil, nil, fmt.Errorf("channel %d is youtube but youtube not in platforms", cid)
+			}
+			yt = append(yt, cid)
+		default:
+			return nil, nil, fmt.Errorf("channel %d provider %q is not supported for publishing", cid, ch.Provider)
+		}
+	}
+	return ig, yt, nil
+}
+
+func resolveScheduledMediaItems(ctx context.Context, ownerID uuid.UUID, media *modelsv1.ScheduledMediaPayload, postType string) error {
+	for i := range media.Items {
+		item := &media.Items[i]
+		if item.MediaVersionID != nil {
+			v, oid, err := repositories.GetMediaVersionWithOwner(ctx, *item.MediaVersionID)
+			if err != nil {
+				return err
+			}
+			if v == nil || oid != ownerID {
+				return fmt.Errorf("media version %d not found", *item.MediaVersionID)
+			}
+			url, err := ResolveVersionMediaURL(v)
+			if err != nil {
+				return err
+			}
+			item.URL = url
+			if item.Kind == "" {
+				if strings.HasPrefix(v.ContentType, "video/") {
+					item.Kind = "video"
+				} else {
+					item.Kind = "image"
+				}
+			}
+		}
+		if item.URL == "" {
+			return fmt.Errorf("media item requires url or media_version_id")
 		}
 	}
 	return nil
