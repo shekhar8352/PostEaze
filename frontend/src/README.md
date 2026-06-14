@@ -20,7 +20,7 @@ TypeScript/React source for the PostEaze web app.
 | Path | Purpose |
 |------|---------|
 | `app/` | Providers, **`routes/`** (including `ProtectedLayout`, `MainLayout` usage), **`store/`** Redux, **`theme/`** design tokens, shell CSS |
-| `features/` | Feature modules: **auth**, **layout**, **landing**, **dashboard**, **channels**, **analytics**, **calendar** (scheduled posts), **media-workspace**, **studio**, … |
+| `features/` | Feature modules: **auth**, **layout**, **landing**, **dashboard**, **channels** (Instagram, YouTube), **analytics**, **calendar** (scheduled posts), **media-workspace**, **integrations** (Google Drive OAuth), **studio**, … |
 | `services/` | Shared API client, interceptors; see README there |
 | `utils/` | Cross-feature helpers |
 | `assets/` | Images/SVG imported through Vite |
