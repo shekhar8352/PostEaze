@@ -15,6 +15,7 @@ Numbered SQL migrations for PostgreSQL. Each change has a matching `.up.sql` and
 | `007_media_workspace.up/down.sql` | Media assets and versions (blob-backed workspace). |
 | `008_social_comments.up/down.sql` | Provider-agnostic `social_comments` (Instagram ingestion first; Facebook-ready). |
 | `009_studio_pipeline.up/down.sql` | Studios, phases, pieces, positions, asset links, scheduled-post links, comments, activities. |
+| `010_google_drive.up/down.sql` | `user_integrations` (encrypted Google tokens); `media_assets.drive_file_id`; `media_versions.storage_provider`, `drive_file_id`, `drive_revision_id`. |
 
 Apply in numeric order on empty or known-state databases. For a greenfield dev DB, run `001` through the latest migration (or as required by your branch).
 
@@ -67,7 +68,7 @@ The canonical picture of tables and indexes is the latest `001` + subsequent mig
 - **Auth** — Users identified by `firebase_id`; refresh tokens in `refresh_tokens`.
 - **Teams** — `teams`, `team_members` with roles and status.
 - **Social** — Channels, encrypted tokens, posts, Instagram post/story analytics (see `001` and analytics migrations).
-- **Media workspace** — `media_assets` and `media_versions` (blob-backed assets with versioning); see `007_media_workspace`.
+- **Media workspace** — `media_assets` and `media_versions` (blob-backed assets with versioning); see `007_media_workspace`. Drive-backed versions and user-level Drive OAuth in `010_google_drive`.
 
 ## golang-migrate (recommended)
 

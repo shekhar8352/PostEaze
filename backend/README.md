@@ -1,6 +1,6 @@
 # PostEaze Backend
 
-Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Facebook channels, Meta OAuth and analytics sync, webhooks, scheduled posts, **Studio** (per-team phases and pieces with media and scheduled-post links), media workspace (versioned assets and publish-to-scheduled-post), background jobs (Asynq/Redis), and channel analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
+Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Facebook channels, **YouTube** channels, **Google Drive** integration, Meta OAuth and analytics sync, webhooks, scheduled posts (Instagram + YouTube), **Studio** (per-team phases and pieces with media and scheduled-post links), media workspace (versioned assets, Drive import, signed stream proxy, publish-to-scheduled-post), background jobs (Asynq/Redis), and channel analytics. HTTP layer uses Gin; data access uses PostgreSQL with a raw-query entity pattern (`lib/pq`).
 
 ## Architecture overview
 
@@ -32,8 +32,8 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Fa
 └─────────────────────────┬───────────────────────────────────┘
                           │
 ┌─────────────────────────▼───────────────────────────────────┐
-│  Providers — Meta / Instagram Graph API, insights               │
-│  Tasks — Asynq client (API) + worker (cmd/worker)               │
+│  Providers — Meta / Instagram Graph API, insights; Google OAuth, Drive, YouTube │
+│  Tasks — Asynq client (API) + worker (cmd/worker); YouTube publish on `slow`   │
 └───────────────────────────────────────────────────────────────┘
 ```
 
@@ -56,14 +56,14 @@ Go REST API for PostEaze: Firebase-based authentication, teams, Instagram and Fa
 | `models/v1/` | Request/response and shared structs |
 | `migrations/` | Numbered `*.up.sql` / `*.down.sql` |
 | `middleware/` | Logging, JWT auth, roles, Instagram analytics access |
-| `provider/` | Meta Graph API, Instagram OAuth, insights |
-| `services/` | Email, Redis, Meta, Instagram orchestration |
+| `provider/` | Meta Graph API, Instagram OAuth, insights; **Google OAuth**, **Google Drive**, **YouTube** upload |
+| `services/` | Email, Redis, Meta, Instagram orchestration; **google_drive_service**, **youtube_service**, publishing |
 | `services/studio/` | Fractional indexing + default phase templates for the Studio pipeline |
 | `tasks/` | Asynq task definitions, handlers, scheduler |
 | `cmd/worker/` | Standalone worker process |
 | `utils/` | Config, DB, env, flags, HTTP, JWT, Firebase, Redis, encryption |
 | `resources/configs/` | Per-environment YAML (`dev/`, `cug/`, `prod/`) |
-| `docs/` | Generated Swagger + human guides (`firebase-authentication.md`, `studio-pipeline.md`, …) |
+| `docs/` | Generated Swagger + human guides (`firebase-authentication.md`, `google-cloud-setup.md`, `studio-pipeline.md`, …) |
 
 ## Service initialization (`main.go`)
 
@@ -87,11 +87,13 @@ Base path: `/api/v1` unless noted.
 | Team | `POST /team/create`, `GET /team/all`, `GET /team/:id`, `GET /team/owner/:id`, `PUT /team/update`, `PUT /team/update-status` | |
 | Meta | `POST /meta/callback` | OAuth callback |
 | Meta analytics | `POST /meta/analytics/sync` | JWT — sync analytics from Meta for connected accounts |
-| Channels | `GET /channels`, `GET /channels/details`, `POST /channels/instagram/create`, `POST /channels/instagram/subscribe-webhooks`, `POST /channels/facebook/create` | Most require JWT |
+| Channels | `GET /channels`, `GET /channels/details`, `POST /channels/instagram/create`, `POST /channels/instagram/subscribe-webhooks`, `POST /channels/facebook/create`, `POST /channels/youtube/create` | Most require JWT |
+| Integrations | `POST /integrations/google-drive/connect`, `GET /integrations/google-drive`, `DELETE /integrations/google-drive`, `GET /integrations/google-drive/files`, `GET /integrations/google-drive/files/:fileId/revisions` | JWT — Drive OAuth + browse |
+| Media stream | `GET /media/stream/:versionId?sig=&exp=` | **No JWT** — HMAC-signed proxy for Drive-backed versions (Range support) |
 | Webhooks | `GET`, `POST /webhooks/instagram` | Meta verification + events |
 | Posts | `GET /posts` | JWT |
 | Scheduled posts | `GET /scheduled-posts`, `POST /scheduled-posts`, `GET /scheduled-posts/:id`, `DELETE /scheduled-posts/:id` | JWT — list supports calendar range query params (see handlers) |
-| Media workspace | `POST /media/upload`; `GET|POST /media-assets`, `GET|PUT|DELETE /media-assets/:id`, `POST /media-assets/:id/versions`, `DELETE /media-assets/:id/versions/:vid`, `PUT /media-assets/:id/current-version`, `POST /media-assets/:id/publish` | JWT — upload and versioning; publish creates a scheduled post from the current version |
+| Media workspace | `POST /media/upload`; `GET|POST /media-assets`, `GET|PUT|DELETE /media-assets/:id`, `POST /media-assets/:id/versions`, `DELETE /media-assets/:id/versions/:vid`, `PUT /media-assets/:id/current-version`, `POST /media-assets/:id/publish`, `POST /media-assets/import/google-drive`, `POST /media-assets/:id/versions/import-drive-revision` | JWT — upload, versioning, Drive import; publish creates scheduled posts |
 | Studio | `/studios/*`, `/phases/*`, `/pieces/*` (board, phases, pieces, move, assets, scheduled posts, comments, activities) | JWT — see [`docs/studio-pipeline.md`](docs/studio-pipeline.md) |
 | Analytics | See below | JWT + `RequireInstagramChannelAnalyticsAccess` (Instagram channel) |
 | Dev | `POST /dev/generate-token` | Test JWT helpers when `ENV=development` / `dev` |
@@ -158,6 +160,9 @@ cd backend && swag init --generalInfo api/router.go --output docs --parseDepende
 | Firebase / `GOOGLE_APPLICATION_CREDENTIALS` | Firebase Admin (see `utils/firebase.go`) |
 | `ENCRYPTION_KEY` | Base64 32-byte key for channel tokens |
 | `INSTAGRAM_*`, `META_*` | Instagram/Meta app and webhooks |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_OAUTH_REDIRECT_URI` | Google OAuth (Drive + YouTube); see [`docs/google-cloud-setup.md`](docs/google-cloud-setup.md) |
+| `API_PUBLIC_BASE_URL` | Public API base for signed media stream URLs (e.g. `https://api.example.com/api`) |
+| `BLOB_READ_WRITE_TOKEN` | Vercel Blob for uploads and small Drive imports (≤50MB) |
 | `REDIS_ADDR` | Asynq broker (worker + API) |
 | `SMTP_*` | Email (if used) |
 
@@ -178,5 +183,7 @@ Structured logs under `logs/` (see [`logs/README.md`](logs/README.md)); HTTP log
 - [`api/README.md`](api/README.md), [`api/v1/README.md`](api/v1/README.md)
 - [`business/README.md`](business/README.md), [`tasks/README.md`](tasks/README.md)
 - [`migrations/README.md`](migrations/README.md), [`middleware/README.md`](middleware/README.md)
+- [`provider/README.md`](provider/README.md)
 - [`docs/firebase-authentication.md`](docs/firebase-authentication.md)
+- [`docs/google-cloud-setup.md`](docs/google-cloud-setup.md)
 - [`docs/studio-pipeline.md`](docs/studio-pipeline.md), [`services/studio/README.md`](services/studio/README.md)

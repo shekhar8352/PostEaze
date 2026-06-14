@@ -10,10 +10,11 @@ Feature-based folders: each module owns pages, components, routes, and usually *
 | **layout** | `MainLayout` (AppShell), sidebar, header, nav constants |
 | **landing** | In-app home page component (routed at `/` inside the protected shell) |
 | **dashboard** | Dashboard route `/dashboard` |
-| **channels** | Instagram connect/list/OAuth callback; routes under `/channels/...` |
+| **channels** | Instagram connect/list/OAuth callback; **YouTube** connect at `/channels/youtube`; routes under `/channels/...` |
 | **analytics** | Instagram analytics UI at `/analytics` |
-| **calendar** | Scheduled posts calendar at `/calendar`; uses `/api/v1/scheduled-posts` |
-| **media-workspace** | Media library at `/workspace` and asset detail at `/workspace/:assetId`; `/api/v1/media-assets` (+ multipart upload/version); see [media-workspace/README.md](./media-workspace/README.md) |
+| **calendar** | Scheduled posts calendar at `/calendar`; uses `/api/v1/scheduled-posts` (Instagram + YouTube channels) |
+| **media-workspace** | Media library at `/workspace` and asset detail at `/workspace/:assetId`; `/api/v1/media-assets` (+ multipart upload/version, **Drive import**); see [media-workspace/README.md](./media-workspace/README.md) |
+| **integrations** | Google Drive connect card, OAuth popup callbacks, browse/import API hooks; see `components/GoogleDriveConnectCard.tsx`, `hooks/useGoogleDriveQueries.ts` |
 | **studio** | Kanban board at `/studio`, settings at `/studio/settings`; phases and pieces, links to media + scheduled posts; see [studio/README.md](./studio/README.md) |
 
 ## Typical feature layout

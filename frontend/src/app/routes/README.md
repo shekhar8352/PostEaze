@@ -6,7 +6,7 @@ Central routing for the SPA: **`index.tsx`** composes feature `RouteObject[]` ar
 
 | File | Role |
 |------|------|
-| `index.tsx` | Merges auth + protected tree (dashboard, analytics, landing home, channels, calendar, media workspace, studio) + catch-all 404 |
+| `index.tsx` | Merges auth + protected tree (dashboard, analytics, landing home, channels, calendar, media workspace, studio) + OAuth callbacks + catch-all 404 |
 | `ProtectedRoute.tsx` | `ProtectedLayout` — requires authenticated user |
 | `PublicRoute.tsx` | Redirects authenticated users away from public auth pages |
 | `NotFound.tsx` | 404 |
@@ -36,12 +36,20 @@ Central routing for the SPA: **`index.tsx`** composes feature `RouteObject[]` ar
 | `/studio` | studio (Kanban board) |
 | `/studio/settings` | studio (phases + labels) |
 | `/channels/instagram` | channels |
+| `/channels/youtube` | channels (YouTube connect) |
+
+**OAuth callbacks** (popup flows; defined in `channelRoutes.tsx`)
+
+| Path | Feature |
+|------|---------|
+| `/oauth/google/drive/callback` | integrations — Google Drive OAuth |
+| `/oauth/google/youtube/callback` | integrations — YouTube channel OAuth |
 
 **Special**
 
 | Path | Notes |
 |------|--------|
-| `/auth/instagram/callback` | OAuth redirect (still under protected branch in `index.tsx`) |
+| `/auth/instagram/callback` | Meta OAuth redirect (still under protected branch in `index.tsx`) |
 
 **Catch-all**
 
