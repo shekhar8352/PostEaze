@@ -1,6 +1,6 @@
 # PostEaze
 
-PostEaze is a social media management platform for influencers and marketing teams. It connects **Instagram** and **Facebook** (Meta), supports **scheduled posts** with a calendar-oriented API and UI, **channel analytics**, **teams**, **Firebase-backed authentication** (JWT session with the Go API), a **media workspace** (assets, versions, publish-to-schedule), and **background jobs** (Asynq on Redis)—designed to grow with additional networks over time.
+PostEaze is a social media management platform for influencers and marketing teams. It connects **Instagram** and **Facebook** (Meta), **YouTube**, and **Google Drive**, supports **scheduled posts** with a calendar-oriented API and UI, **channel analytics**, **teams**, **Firebase-backed authentication** (JWT session with the Go API), a **media workspace** (assets, versions, Drive import, publish-to-schedule), and **background jobs** (Asynq on Redis)—designed to grow with additional networks over time.
 
 ## Table of contents
 
@@ -20,10 +20,11 @@ PostEaze is a social media management platform for influencers and marketing tea
 ## Features
 
 - **Auth** — Firebase client sign-in; API exchanges ID tokens for JWT access/refresh.
-- **Channels** — Instagram and Facebook via Meta OAuth; webhooks for Instagram.
-- **Posts & scheduling** — List posts, create and manage scheduled posts; calendar views on the frontend.
+- **Channels** — Instagram and Facebook via Meta OAuth; **YouTube** via Google OAuth; webhooks for Instagram.
+- **Google Drive** — User-level integration to browse/import media; large videos stay Drive-backed with a signed streaming proxy.
+- **Posts & scheduling** — List posts, create and manage scheduled posts (Instagram + YouTube); calendar views on the frontend.
 - **Analytics** — Instagram channel analytics (profile, posts, audience, stories, comparisons, etc.) with access controls.
-- **Media workspace** — Uploads, versioned assets, publish flow into scheduled posts.
+- **Media workspace** — Uploads, versioned assets, **Drive import and revisions**, publish flow into scheduled posts.
 - **Studio** — Per-team content pipeline: customizable **phases**, **pieces** (cards) with media links, scheduled-post links, comments, and activity; Kanban board UI and dashboard pipeline widget; see [`frontend/src/features/studio/README.md`](./frontend/src/features/studio/README.md) and [`backend/docs/studio-pipeline.md`](./backend/docs/studio-pipeline.md).
 - **Teams** — Multi-user team model on the API.
 - **Jobs** — Asynq workers for sync and related background work.
@@ -58,6 +59,8 @@ Sub-project docs: [`frontend/README.md`](./frontend/README.md), [`backend/README
 | Frontend architecture, scripts, env | [`frontend/README.md`](./frontend/README.md) |
 | Backend architecture, Swagger, migrations, env | [`backend/README.md`](./backend/README.md) |
 | Firebase + API auth notes | [`backend/docs/firebase-authentication.md`](./backend/docs/firebase-authentication.md) |
+| Google Drive + YouTube OAuth setup | [`backend/docs/google-cloud-setup.md`](./backend/docs/google-cloud-setup.md) |
+| Media workspace (UI) | [`frontend/src/features/media-workspace/README.md`](./frontend/src/features/media-workspace/README.md) |
 | Studio pipeline (pieces, phases, API) | [`backend/docs/studio-pipeline.md`](./backend/docs/studio-pipeline.md); UI: [`frontend/src/features/studio/README.md`](./frontend/src/features/studio/README.md) |
 
 ## Prerequisites
@@ -125,8 +128,8 @@ Ports reference:
 ## Environment configuration
 
 - **Root `.env`** — Used by `docker-compose.yml` / `docker-compose.local.yml` for Postgres and services that load `env_file`.
-- **Backend** — Dev configs live under [`backend/resources/configs/dev/`](./backend/resources/configs/dev/); env-specific secrets are documented in [`backend/README.md`](./backend/README.md) (e.g. `ENV`, `API_HOST`, Firebase, `ENCRYPTION_KEY`, Meta/Instagram, `REDIS_ADDR`).
-- **Frontend** — `VITE_API_BASE_URL` (see [`frontend/README.md`](./frontend/README.md)).
+- **Backend** — Dev configs live under [`backend/resources/configs/dev/`](./backend/resources/configs/dev/); env-specific secrets are documented in [`backend/README.md`](./backend/README.md) (e.g. `ENV`, `API_HOST`, Firebase, `ENCRYPTION_KEY`, Meta/Instagram, **Google OAuth**, `API_PUBLIC_BASE_URL`, `REDIS_ADDR`).
+- **Frontend** — `VITE_API_BASE_URL`; Google OAuth client and redirect URIs (see [`backend/docs/google-cloud-setup.md`](./backend/docs/google-cloud-setup.md) and [`frontend/README.md`](./frontend/README.md)).
 
 ## API & tooling
 

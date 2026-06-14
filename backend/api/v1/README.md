@@ -15,7 +15,10 @@ All routes below are prefixed with `/api/v1` unless stated. Request/response bod
 | `log.go` | Read application logs by date or ID |
 | `posts.go` | List posts for authenticated user |
 | `scheduled_post.go` | Scheduled posts CRUD + calendar listing |
-| `media_asset.go` | Media upload, assets, versions, current version, publish to scheduled post |
+| `media_asset.go` | Media upload, assets, versions, current version, publish to scheduled post, Drive import |
+| `google_drive.go` | Google Drive integration: connect, status, disconnect, browse files, list revisions |
+| `media_stream.go` | Public signed media stream proxy (`GET /media/stream/:versionId`) |
+| `youtube_channel.go` | YouTube channel create via Google OAuth |
 | `studio.go` | Studios, phases, pieces, moves, asset/post links, comments, activities |
 | `analytics.go` | Instagram analytics under `/channels/:channelId/analytics` |
 | `dev.go` | Development-only test JWT |
@@ -68,6 +71,25 @@ Swagger may reference `/users`; the live paths are `/user/:user_id` per `constan
 | POST | `/channels/instagram/create` | JWT |
 | POST | `/channels/instagram/subscribe-webhooks` | JWT |
 | POST | `/channels/facebook/create` | JWT |
+| POST | `/channels/youtube/create` | JWT — body: Google OAuth code; creates YouTube channel + encrypted tokens |
+
+## Google Drive integration (`/integrations/google-drive`)
+
+All routes require JWT except where noted.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| POST | `/integrations/google-drive/connect` | Exchange OAuth code; store encrypted tokens in `user_integrations` |
+| GET | `/integrations/google-drive` | Connection status (email, connected flag) |
+| DELETE | `/integrations/google-drive` | Disconnect / revoke integration |
+| GET | `/integrations/google-drive/files` | Browse folders/files (query: folder id, page token) |
+| GET | `/integrations/google-drive/files/:fileId/revisions` | List Drive revisions for import |
+
+## Media stream (public)
+
+| Method | Path | Auth | Description |
+|--------|------|------|-------------|
+| GET | `/media/stream/:versionId` | Signed URL (`sig`, `exp` query params) | Stream blob or Drive-backed media with `Range` support; used by Meta and YouTube publish paths |
 
 ## Webhooks
 
@@ -116,6 +138,8 @@ All routes require JWT (`AuthMiddleware`).
 | DELETE | `/media-assets/:id/versions/:vid` | Remove a version |
 | PUT | `/media-assets/:id/current-version` | Set active version |
 | POST | `/media-assets/:id/publish` | Create a scheduled post from the current version (body: channels, caption, schedule) |
+| POST | `/media-assets/import/google-drive` | Import a Drive file as a new asset (small files copied to blob; large videos stay Drive-backed) |
+| POST | `/media-assets/:id/versions/import-drive-revision` | Import a specific Drive revision as a new version |
 
 ## Studio (`/studios`, `/phases`, `/pieces`)
 
@@ -172,3 +196,4 @@ Manual enqueue of background jobs (handlers restrict non-dev `ENV` — see `cron
 - [Models v1](../../models/v1/README.md)
 - [Middleware](../../middleware/README.md)
 - [Studio pipeline](../../docs/studio-pipeline.md)
+- [Google Cloud setup (Drive + YouTube)](../../docs/google-cloud-setup.md)

@@ -33,8 +33,11 @@ Workers prioritize queues `fast`, `medium`, `slow` (see `server.go` for weights)
 - `TypeSyncInstagramPosts`
 - `TypePeriodSnapshot`
 - `TypeSyncInstagramAnalytics`
+- `TypeYouTubeScheduledPostPublish` — chunked Drive→YouTube upload for scheduled posts ( **`slow`** queue)
 
 Add a new task: define type + payload in `definitions.go`, implement `Handle...` in `handlers.go`, register in `RegisterHandlers`, enqueue from code with `tasks.EnqueueTask` (or scheduler).
+
+YouTube publish jobs are enqueued on the **`slow`** queue because uploads can take several minutes.
 
 ## Periodic tasks
 

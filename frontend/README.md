@@ -1,6 +1,6 @@
 # PostEaze Frontend
 
-React SPA for PostEaze: auth (Firebase + JWT), dashboard, Instagram channels, analytics, a **calendar** for scheduled posts, a **media workspace** (assets, versions, publish to schedule), and **Studio** (Kanban phases and pieces with links to assets and scheduled posts). Uses a feature-based layout with a shared shell (sidebar/header).
+React SPA for PostEaze: auth (Firebase + JWT), dashboard, Instagram and **YouTube** channels, analytics, a **calendar** for scheduled posts (Instagram + YouTube), a **media workspace** (assets, versions, **Google Drive import**, publish to schedule), and **Studio** (Kanban phases and pieces with links to assets and scheduled posts). Uses a feature-based layout with a shared shell (sidebar/header).
 
 ## Architecture
 
@@ -26,7 +26,7 @@ React SPA for PostEaze: auth (Firebase + JWT), dashboard, Instagram channels, an
 ```
 src/
 ├── app/                 # App shell: providers, routes, Redux store, theme, global styles
-├── features/            # Feature modules (auth, layout, dashboard, channels, analytics, calendar, media-workspace, studio, landing)
+├── features/            # Feature modules (auth, layout, dashboard, channels, analytics, calendar, media-workspace, integrations, studio, landing)
 ├── services/            # api/client, interceptors, legacy axios re-export
 ├── utils/               # Shared helpers (grow as needed)
 ├── assets/              # Bundled static assets
@@ -39,7 +39,17 @@ src/
 - **Providers** (`app/App.tsx`): Redux → TanStack Query → Auth → Mantine → Router.
 - **API base URL**: `import.meta.env.VITE_API_BASE_URL` or default `http://localhost:8080/api` (`services/api/client.ts`). Must match your Go server port and include `/api` if that is how the backend is mounted.
 - **Auth**: JWT access token attached by interceptors (`services/api/interceptors.ts`); refresh flow coordinated with the API.
-- **Protected UI**: `ProtectedLayout` + `MainLayout` wrap dashboard, analytics, channels, calendar, media workspace (`/workspace`), Studio (`/studio`, `/studio/settings`), and the in-app home route.
+- **Protected UI**: `ProtectedLayout` + `MainLayout` wrap dashboard, analytics, channels (Instagram, Facebook, YouTube), calendar, media workspace (`/workspace`), Studio (`/studio`, `/studio/settings`), and the in-app home route.
+
+### Google OAuth (Drive + YouTube)
+
+Separate from Firebase login. Configure `VITE_GOOGLE_CLIENT_ID` and redirect URIs per [`backend/docs/google-cloud-setup.md`](../backend/docs/google-cloud-setup.md):
+
+| Variable | Purpose |
+|----------|---------|
+| `VITE_GOOGLE_CLIENT_ID` | OAuth client ID (same GCP app as backend) |
+| `VITE_GOOGLE_DRIVE_REDIRECT_URI` | Popup callback, default `{origin}/oauth/google/drive/callback` |
+| `VITE_GOOGLE_YOUTUBE_REDIRECT_URI` | Popup callback, default `{origin}/oauth/google/youtube/callback` |
 
 ## Getting started
 
@@ -71,9 +81,10 @@ npx vitest run       # single run (e.g. CI)
 
 - [`src/README.md`](src/README.md) — source tree overview
 - [`src/features/README.md`](src/features/README.md) — feature modules
-- [`src/features/media-workspace/README.md`](src/features/media-workspace/README.md) — media assets, versions, publish
+- [`features/media-workspace/README.md`](src/features/media-workspace/README.md) — media assets, versions, Drive import, publish
 - [`src/features/studio/README.md`](src/features/studio/README.md) — Studio Kanban (phases, pieces, assets, publish links)
 - [`src/app/routes/README.md`](src/app/routes/README.md) — route composition
+- [`../backend/docs/google-cloud-setup.md`](../backend/docs/google-cloud-setup.md) — Google Drive + YouTube OAuth
 - [`src/app/store/README.md`](src/app/store/README.md) — Redux store
 - [`src/services/README.md`](src/services/README.md) — HTTP client
 - [`src/test/README.md`](src/test/README.md) — testing setup
